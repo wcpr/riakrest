@@ -66,7 +66,7 @@ module RiakRest
     # call-seq:
     #    JiakSchema.create(arg)  -> JiakSchema
     #
-    # Create a schema from either a Hash or an single-element Array.
+    # Create a schema from either a hash or an single-element array.
     # 
     # ====Hash structure
     # <em>required</em>
@@ -75,10 +75,10 @@ module RiakRest
     # <code>required_fields</code>:: Fields that must be provided on storage.
     # <code>read_mask</code>:: Fields returned on retrieval.
     # <code>write_mask</code>:: Fields that can be changed and stored.
-    # The value for key must be an Array.
+    # The value for key must be an array.
     #
     # =====OR
-    # <code>schema</code>: A Hash whose value is the above hash structure.
+    # <code>schema</code>: A hash whose value is the above hash structure.
     #
     # Notes
     # * Keys can either be symbols or strings.
@@ -91,8 +91,8 @@ module RiakRest
     # <code>[:f1, :f2, ...]</code>:: Allowed fields as symbols or strings.
     #
     # All other fields take the same value as the <code>allowed_fields</code>
-    # element. The Array structure is provided for simplicity but does not
-    # provide the finer-grained control of the Hash structure.
+    # element. The array structure is provided for simplicity but does not
+    # provide the finer-grained control of the hash structure.
     #
     # Raise JiakSchemaException if:
     # * the method argument is not either a hash or array
@@ -105,6 +105,12 @@ module RiakRest
         # is a hash. If the arg hash has a schema key, set the opts hash to
         # that; otherwise use the arg as the opts hash.
         opts = arg[:schema] || arg['schema'] || arg
+
+ # CxINC
+ # Whoops! As of Riak 0.6 a bucket with an unset schema returns
+ # {"allowed_fields":"*","required_fields":[],"read_mask":"*","write_mask":"*"}
+ # when the schema is requested. Previous behavior was an HTTP 503.
+
         opts[:allowed_fields] ||= opts['allowed_fields']
         check_arr("allowed_fields",opts[:allowed_fields])
 
@@ -129,7 +135,7 @@ module RiakRest
           :write_mask      => arg
         }
       else
-        raise JiakSchemaException, "Create arg must be either Hash or Array"
+        raise JiakSchemaException, "Create arg must be either hash or array"
       end
       new(opts)
     end
@@ -173,6 +179,9 @@ module RiakRest
       @write_mask = arr
     end
 
+    #
+    # CxTBD Should == be removed?
+
     # call-seq:
     #    schema == other -> true or false
     #
@@ -191,10 +200,11 @@ module RiakRest
     # Returns <code>true</code> if <i>schema</i> and <i>other</i> contain the
     # same array elements for all attributes.
     def eql?(other)
-      (other.allowed_fields.eql?(@allowed_fields) &&
-       other.required_fields.eql?(@required_fields) &&
-       other.read_mask.eql?(@read_mask) &&
-       other.write_mask.eql?(@write_mask)) rescue false
+      other.is_a?(JiakSchema) &&
+        same_fields(other.allowed_fields, @allowed_fields)  &&
+        same_fields(other.required_fields,@required_fields) &&
+        same_fields(other.read_mask,@read_mask) &&
+        same_fields(other.write_mask,@write_mask)
     end
 
     # String representation of this schema.
@@ -209,16 +219,26 @@ module RiakRest
     # Each option must be an array of symbol or string elements.
     def self.check_arr(desc,arr)
       unless arr.is_a?(Array)
-        raise JiakSchemaException, "#{desc} must be an Array"
+        raise JiakSchemaException, "#{desc} must be an array"
       end
       arr.each do |field| 
         unless(field.is_a?(String) || field.is_a?(Symbol)) 
-          raise JiakSchemaException, "#{desc} must be Strings or Symbols"
+          raise JiakSchemaException, "#{desc} must be strings or symbols"
         end
       end
       unless arr.map{|f| f.to_s}.uniq.size == arr.size
         raise JiakSchemaException, "#{desc} must have unique elements."
       end
+    end
+
+    # Compare the fields in two arrays for equal string/symbol.to_s elements.
+    def same_fields(arr1,arr2)
+      same = arr1.size == arr2.size
+      arr2 = arr2.map{|f| f.to_s} if same
+      same &&= arr1.map{|f| f.to_s}.reduce(true) do |same,value|
+        same && arr2.include?(value)
+      end
+      same
     end
 
   end

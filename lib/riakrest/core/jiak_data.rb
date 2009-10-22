@@ -41,22 +41,36 @@ module RiakRest
   #     end
   #   end
   # </code>
-  # Given the above definition, for FooBarBaz to be useful would require Riak
-  # server-side data manipulation since <code>bar</code> is readable but not
-  # writable and <code>baz</code> is writable but not readable. Note that
-  # <code>FooBarBase.jiak_create</code> initializes from <code>readable</code>
-  # fields and <code>for_jiak</code> sends only writable fields to Jiak. If you
-  # do not have Riak server-side manipulations in place having the readable and
-  # writable fields be the same as <code>allowed_fields</code> is
-  # reasonable. This is the default, so only setting the
-  # <code>allowed_fields</code> array via <code>allowed</code> method achieves
-  # this behavior.
+  #
+  # Note that FooBarBaz <code>bar</code> is readable but not writable and
+  # <code>baz</code> is writable but not readable. Also note
+  # <code>for_jiak</code> only provides the <code>writable</code> fields for
+  # writing to the Jiak server and <code>jiak_create</code> only initializes
+  # from the <code>readable</code> fields returned by the Jiak server.
+  #
+  # Under these constraints a user of FooBarBaz could change <code>baz</code>
+  # but not see that change and could access <code>bar</code> but not change
+  # it. This would be useful if either another JiakData class created access
+  # into the same data allowing <code>bar</code> writes and <code>baz</code>
+  # reads or if Riak server-side manipulation affected those fields. The
+  # constraints declared in FooBarBaz simply provide structured interaction
+  # with the data on the Jiak server.
+  #
+  # If only one JiakData will be used for a particular type of data on the Jiak
+  # server it is desirable to have the <code>readable</code> and
+  # <code>writable</code> fields be the same as <code>allowed</code>. Setting
+  # only <code>allowed</code> fields provide this reasonable default, hence only
+  # that call is mandatory.
   module JiakData
 
-    # Class methods for use in creating a user-defined JiakData class. The four
-    # methods <code>allowed, required, readable, writable</code> define the
-    # JiakSchema for this JiakData. See JiakSchema for discussion on the use of
-    # schemas in Riak.
+    # ----------------------------------------------------------------------
+    #   Class methods
+    # ----------------------------------------------------------------------
+    
+    # Class methods for use in creating a user-defined JiakData. The methods
+    # <code>allowed, required, readable, writable</code> define the JiakSchema
+    # for this JiakData. See JiakSchema for discussion on the use of schemas in
+    # Riak.
     module ClassMethods
 
       # :call-seq:
@@ -174,8 +188,15 @@ module RiakRest
         array.map {|field| field}
         array
       end
-      
     end
+
+    def self.included(including_class)  # :nodoc:
+      including_class.extend(ClassMethods)
+    end
+    
+    # ----------------------------------------------------------------------
+    #   Instance methods
+    # ----------------------------------------------------------------------
 
     # :call-seq:
     #   JiakData.for_jiak
@@ -183,19 +204,24 @@ module RiakRest
     # Override to return the structure for the data to be written to Jiak. The
     # default implementation throws JiakDataException to force this override.
     #
-    # A simple implementation is:
-    # <pre>
-    #  CxTBD
-    # </pre>
+    # The fields returned by this method should come from the
+    # <code>writable</code> fields. A simple implementation would look like:
+    # <code>
+    #    def for_jiak
+    #      { :writable_field_1 => @writable_field_1,
+    #        :writable_field_2 => @writable_field_2
+    #      }
+    #    end
+    # </code>
     #
     def for_jiak
       raise JiakDataException, "#{self} must define for_jiak"
     end
 
-    def self.included(including_class)  # :nodoc:
-      including_class.extend(ClassMethods)
+    def keygen  # :nodoc:
+      nil
     end
-    
+
   end
 end
 

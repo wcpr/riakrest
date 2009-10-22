@@ -97,9 +97,9 @@ module RiakRest
     # storage key or the stored JiakObject. The object for storage must be
     # JiakObject. Valid options are:
     #
-    # <code>:key</code>:: If <code>true</code> (default), on success return the Riak key used to store the JiakObject; otherwise return the stored JiakObject.
-    # <code>:writes</code>:: The number of Riak nodes that must successfully store the data value.  Defaults to the value set on the Riak cluster. In general you do not need to provide this value on the Jiak interface.
-    # <code>:durable_writes</code>:: The number of Riak nodes (<code>< writes</code>) that must successfully store the data value in a durable manner.  Defaults to the value set on the Riak cluster. In general you do not need to provide this value on the Jiak interface.
+    # <code>key</code>:: If <code>true</code>, on success return the Riak key used to store the JiakObject; otherwise return the stored JiakObject. Defaults to <code>true</code>.
+    # <code>writes</code>:: The number of Riak nodes that must successfully store the data value. Defaults to the value set on the Riak cluster. In general you do not need to provide this value on the Jiak interface.
+    # <code>durable_writes</code>:: The number of Riak nodes (<code>< writes</code>) that must successfully store the data value in a durable manner.  Defaults to the value set on the Riak cluster. In general you do not need to provide this value on the Jiak interface.
     #
     # Raise JiakClientException on RESTful HTTP errors.
     #
@@ -133,8 +133,10 @@ module RiakRest
         resp_object = JiakObject.from_jiak(resp,jobj.bucket.data_class)
         return_body ? resp_object : resp_object.key
         # CxHack --End--
+      rescue RestClient::ExceptionWithResponse => err
+        fail_with_response("put", err)
       rescue RestClient::Exception => err
-        raise JiakClientException, "failed put: #{err.message}"
+        fail_with_message("put", err)
       end
     end
     
@@ -174,8 +176,10 @@ module RiakRest
         JiakObject.from_jiak(resp,bucket.data_class)
       rescue RestClient::ResourceNotFound => err
         raise JiakResourceNotFound, "failed get: #{err.message}"
+      rescue RestClient::ExceptionWithResponse => err
+        fail_with_response("get", err)
       rescue RestClient::Exception => err
-        raise JiakClientException, "failed get: #{err.message}"
+        fail_with_message("get",err)
       end
     end
 
@@ -197,8 +201,10 @@ module RiakRest
         uri = jiak_uri(bucket,key,uri_opts)
         RestClient.delete(uri, :accept => APP_JSON)
         true
+      rescue RestClient::ExceptionWithResponse => err
+        fail_with_response("delete", err)
       rescue RestClient::Exception => err
-        raise JiakClientException, "failed delete: #{err.message}"
+        fail_with_message("delete", err)
       end
     end
 
@@ -217,8 +223,10 @@ module RiakRest
         end
         resp = RestClient.get(uri, :accept => APP_JSON)
         results = JSON.parse(resp)['results'][0]
+      rescue RestClient::ExceptionWithResponse => err
+        fail_with_response("put", err)
       rescue RestClient::Exception => err
-        raise JiakClientException, "failed walk: #{err.message}"
+        fail_with_message("put", err)
       end
     end
 
@@ -258,9 +266,20 @@ module RiakRest
       begin
         uri = jiak_uri(bucket,"",{ignore => false})
         JSON.parse(RestClient.get(uri, :accept => APP_JSON))[info]
+      rescue RestClient::ExceptionWithResponse => err
+        fail_with_response("get", err)
       rescue RestClient::Exception => err
-        raise JiakClientException, "failed get: #{err.message}"
+        fail_with_message("get", err)
       end
+    end
+
+    def fail_with_response(action,err)
+      raise( JiakClientException,
+             "failed #{action}: HTTP code #{err.http_code}: #{err.http_body}")
+    end
+
+    def fail_with_message(action,err)
+      raise JiakClientException, "failed #{action}: #{err.message}"
     end
 
   end

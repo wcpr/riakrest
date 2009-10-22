@@ -1,12 +1,24 @@
 module RiakRest
   module JiakResource
 
-    # :stopdoc:
-    #
     # CxINC How to handle options to store,get,delete ?
-    #
-    # :startdoc:
 
+    # ----------------------------------------------------------------------
+    # Class methods
+    # ----------------------------------------------------------------------
+    
+    # Class methods for use in creating a user-defined JiakResource. The
+    # methods <code>server</code> and <code>resource</code> are mandatory.
+    #
+    # ===Usage
+    # <code>
+    #   class Dog
+    #     include JiakResource
+    #     server   'http://localhost:8002/jiak'
+    #     resource :name => 'dog', :data_class => DogData
+    #   end
+    # </code>
+    # 
     module ClassMethods
 
       # :call-seq:
@@ -22,20 +34,37 @@ module RiakRest
       #   resource options
       #
       # Valid options are:
-      # <code>data_class<code>:: data class for the resource. <em>Mandatory</em>
-      # <code>name<code>:: Jiak bucket name for this resource. <em>Optional</em>
+      # <code>data_class</code> :: data class for the resource.
+      # <code>name</code> :: Jiak bucket name for the resource.
+      # <code>activate</code> :: <code>true> to activate this JiakResource at
+      # the time of class creation. Default is <code>false</code>.
       #
-      # For each field in the <code>allowed_fields</code> array of the
-      # JiakSchema for the data class a instance method is added for instances
-      # of this resource. These instance methods allow easy access to getting
-      # and setting the data values wrapped by a JiakResource.
+      # <code>data_class</code> is mandatory. For each field in the data class
+      # JiakSchema#allowed_fields accessor methods are added to facilitate
+      # manipulating the data wrapped by a JiakResource.
+      #
+      # If <code>name</code> is not provided the default is to use the name of
+      # the data class as the name for the resource.
+      #
+      # If <code>activate</code> is not provided or set to <code>false</code> a
+      # call to JiakResource#activate must preceed any resource interaction
+      # with the Jiak server.
+      #
+      # Raise JiakResourceException if a valid JiakData class is not provided
+      # for <code>data_class</code>.
       def resource(opts={})
         unless opts[:data_class]
-          raise JiakResourceException, ":data_class required."
+          raise JiakResourceException, "data_class required."
         end
+        unless opts[:data_class].include?(JiakData)
+          raise JiakResourceException, "data_class must include module JiakData"
+        end
+
         name = opts[:name] || opts[:data_class].to_s.split(/::/).last
+
         jiak.bucket = JiakBucket.create(name,opts[:data_class])
-        jiak.client.set_schema(jiak.bucket)
+        jiak.client.set_schema(jiak.bucket) if opts[:activate] 
+
         opts[:data_class].allowed_fields.each do |field|
           define_method("#{field}=") do |val|
             @jiak.data.send("#{field}=",val)
@@ -73,6 +102,24 @@ module RiakRest
       end
 
       # :call-seq:
+      #   JiakResource.activate  -> JiakSchema
+      #
+      # Prepare the Jiak server to accept JiakResource data.
+      def activate
+        jiak.client.set_schema(jiak.bucket)
+        jiak.bucket.schema
+      end
+
+      # :call-seq:
+      #   JiakResource.active?  -> <code>true / false</code>
+      #
+      # Determine if the Jiak server is prepared to accept data for this
+      # JiakResource.
+      def active?
+        jiak.client.schema(jiak.bucket).eql? jiak.bucket.schema
+      end
+
+      # :call-seq:
       #   JiakResource.keys   -> []
       #
       # Get an array of the current keys for this resource. Since key lists are
@@ -83,59 +130,58 @@ module RiakRest
       end
 
       # :call-seq:
-      #   JiakResource.store(JiakResource)  -> JiakResource
+      #   JiakResource.put(JiakResource)  -> JiakResource
       #
-      # Stores a JiakResource on the Jiak server.
-      def store(resource)
+      # Put a JiakResource on the Jiak server.
+      def put(resource)
         jiak.client.store(resource.jiak,
                           {JiakClient::RETURN_BODY => true})
       end
 
       # :call-seq:
-      #   JiakResource.store!(JiakResource)  -> JiakResource
+      #   JiakResource.post(JiakResource)  -> JiakResource
       #
-      # Stores a JiakResource on the Jiak server with a guard to ensure the
-      # resource has not been previously stored. Provides initial create semantics.
-      def store!(resource)
+      # Put a JiakResource on the Jiak server with a guard to ensure the
+      # resource has not been previously stored.
+      def post(resource)
         unless(resource.jiak.riak.nil?)
           raise JiakResourceException, "Resource already initially stored"
         end
-        store(resource)
+        put(resource)
       end
 
       # :call-seq:
-      #   JiakResource.update(JiakResource)  -> JiakResource
+      #   JiakResource.store(JiakResource)  -> JiakResource
       #
       # Updates a JiakResource on the Jiak server with a guard to ensure the
       # resource has been previously stored.
-      def update(resource)
+      def store(resource)
         if(resource.jiak.riak.nil?)
           raise JiakResourceException, "Resource not previously stored"
         end
-        store(resource)
+        put(resource)
       end
 
       # :call-seq:
       #   JiakResource.get(key)  -> JiakResource
       #
-      # Get the JiakResource store on the Jiak server by the specified key in
-      # the JiakResource bucket.
+      # Get the JiakResource on the Jiak server by the specified key in the
+      # JiakResource bucket.
       def get(key)
         new(jiak.client.get(jiak.bucket,key))
-        # create(jiak.client.get(jiak.bucket,key))
       end
 
       # :call-seq:
-      #   JiakResource.refresh!(resource)  -> JiakResource
+      #   JiakResource.get!(resource)  -> JiakResource
       #
       # Updates a JiakResource with the data on the Jiak server. The current
       # data of the JiakResource is overwritten, so use with caution.
-      def refresh!(resource)
+      def get!(resource)
         resource.jiak = get(resource.jiak.key).jiak
       end
 
       # :call-seq:
-      #   JiakResource.delete(resource)  -> ???
+      #   JiakResource.delete(resource)  -> <code>true</code>/<code>false</code>
       #
       # Delete the JiakResource store on the Jiak server by the specified key
       # in the JiakResource bucket.
@@ -156,6 +202,9 @@ module RiakRest
       end
     end
 
+    # ----------------------------------------------------------------------
+    # Instance methods
+    # ----------------------------------------------------------------------
 
     attr_accessor :jiak
 
@@ -172,38 +221,38 @@ module RiakRest
     end
 
     # :call-seq:
-    #   resource.store  -> nil
+    #   resource.put   -> nil
     #
-    # Stores this resource on the Jiak server.
+    # Put this resource on the Jiak server.
+    def put
+      @jiak = self.class.put(self)
+    end
+
+    # :call-seq:
+    #   resource.post   -> nil
+    #
+    # Put this resource on the Jiak server with a guard to ensure the resource
+    # has not been previously stored.
+    def post
+      @jiak = self.class.post(self)
+    end
+
+    # :call-seq:
+    #   resource.store   -> nil
+    #
+    # Put this resource on the Jiak server with a guard to ensure the resource
+    # has been previously stored.
     def store
       @jiak = self.class.store(self)
     end
 
     # :call-seq:
-    #   resource.store!   -> nil
+    #   resource.get   -> nil
     #
-    # Stores this resource on the Jiak server with a guard to ensure the
-    # resource has not been previously stored. Provides initial create sematics.
-    def store!
-      @jiak = self.class.store!(self)
-    end
-
-    # :call-seq:
-    #   resource.update   -> nil
-    #
-    # Updates this resource on the Jiak server with a guard to ensure the
-    # resource has been previously stored.
-    def update
-      @jiak = self.class.update(self)
-    end
-
-    # :call-seq:
-    #   resource.refresh!   -> nil
-    #
-    # Updates this resource with the data on the Jiak server. The current data
-    # of the resource is overwritten, so use with caution.
-    def refresh!
-      self.class.refresh!(self)
+    # Get this resource from the Jiak server. The current data of the resource
+    # is overwritten, so use with caution.
+    def get
+      self.class.get!(self)
     end
 
     # :call-seq:

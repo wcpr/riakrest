@@ -34,7 +34,7 @@ module RiakRest
           hsh.each {|key,value| send("#{key}=",value)}
         end
 
-        def self.create(hsh)
+        def self.create(hsh={})
           new(hsh)
         end
 

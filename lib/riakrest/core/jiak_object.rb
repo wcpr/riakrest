@@ -1,6 +1,6 @@
 module RiakRest
 
-  # Jiak wrapper for a data object storable in a Jiak server.
+  # Wrapper for JiakData.
   class JiakObject
 
     attr_accessor :bucket, :key, :data, :links
@@ -24,16 +24,14 @@ module RiakRest
     # Create a Jiak object to be stored in a bucket.
     def self.create(opts={})
       opts = { 
-        :key => '',
-        :links => [],
-        :vclock => nil,
-        :vtag   => nil,
+        :links   => [],
+        :vclock  => nil,
+        :vtag    => nil,
         :lastmod => nil}.merge(opts)
-      
-      # bucket = transform_bucket(opts[:bucket])
+
       bucket = check_bucket(opts[:bucket])
-      key = transform_key(opts[:key])
       data = check_data(opts[:data])
+      key = transform_key(opts[:key] || data.keygen)
       links = check_links(opts[:links])
 
       new(bucket,key,data,links,
@@ -158,16 +156,6 @@ module RiakRest
       end
       bucket
     end
-
-    # def self.transform_bucket(bucket)
-    #   raise JiakObjectException, "Bucket cannot be nil" if bucket.nil?
-    #   unless bucket.is_a?(String)
-    #     raise JiakObjectException, "Bucket must be a String"
-    #   end
-    #   bucket.strip!
-    #   raise JiakObjectException, "Bucket cannot be empty" if bucket.empty?
-    #   bucket
-    # end
 
     def self.transform_key(key)
       # Change nil key to empty

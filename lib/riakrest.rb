@@ -84,11 +84,11 @@ $:.unshift(File.dirname(__FILE__)) unless
 #   puts remy.name                           # => "Remy"
 #   puts client.get(bucket,key).data.name    # => "remy"  ???
 # </code>
-# Why wasn't the Jiak server data updated? Because we didn't set the key on the
-# JiakObject being sent, so to Jiak it looked like a new store. The easiest way
-# to be sure we have the Jiak info we need is to ask for the Jiak object to be
-# returned (with all the Jiak internals set) by the store method. Let's try
-# again with callie.
+# Why wasn't the Jiak server data updated? Because we didn't alter any of the
+# metadata on the JiakObject being sent, so to Jiak it looked like a new
+# initial store. The easiest way to be sure we have the Jiak info we need is to
+# ask for the Jiak object to be returned (with all the Jiak internals set) by
+# the store method. Let's try again with callie.
 # <code>
 #   callie = Person.create(:name => "callie", :age => 12)
 #   jobj = JiakObject.create(:bucket => bucket, :data => callie)
@@ -109,11 +109,11 @@ $:.unshift(File.dirname(__FILE__)) unless
 # create resource objects. We'll do the same initial steps we did for Remy
 # above. First we create a JiakData class and a JiakResource to hold it.
 # <code>
-#   PersonData = JiakDataHash.create(:name,:age)
 #   class Person
 #     include JiakResource
 #     server   'http://localhost:8002/jiak'
-#     resource :name => 'person', :data_class => PersonData
+#     resource :name => 'person',
+#              :data_class => JiakDataHash.create(:name,:age)
 #   end
 # </code>
 # Next we create and store remy, check the name on the Jiak server, change and
