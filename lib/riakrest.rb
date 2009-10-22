@@ -153,3 +153,14 @@ require 'riakrest/data/jiak_data_hash'
 
 require 'riakrest/resource/jiak_resource'
 
+class Array
+  # Compare fields in other array for equal string/symbol.to_s elements.
+  def same_fields?(arr)
+    same = size == arr.size
+    arr = arr.map{|f| f.to_s} if same
+    same &&= map{|f| f.to_s}.reduce(true) do |same,value|
+      same && arr.include?(value)
+    end
+    same
+  end
+end

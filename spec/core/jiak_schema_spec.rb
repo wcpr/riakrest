@@ -83,11 +83,11 @@ describe "JiakSchema" do
   end
 
   it "should create from json" do
-    jiak_schema = JiakSchema.from_jiak(@hash.to_json)
-    same_fields(jiak_schema.allowed_fields,@allowed_fields).should be true
-    same_fields(jiak_schema.required_fields,@required_fields).should be true
-    same_fields(jiak_schema.write_mask,@write_mask).should be true
-    same_fields(jiak_schema.read_mask,@read_mask).should be true
+    schema = JiakSchema.from_jiak(@hash.to_json)
+    @allowed_fields.same_fields?(schema.allowed_fields).should be true
+    @required_fields.same_fields?(schema.required_fields).should be true
+    @write_mask.same_fields?(schema.write_mask).should be true
+    @read_mask.same_fields?(schema.read_mask).should be true
   end
 
   it "should validate create options" do

@@ -79,7 +79,15 @@ describe "JiakObject" do
       jobj.data.f1.should eql @data.f1
       jobj.data.f2.should eql @data.f2
       jobj.data.f3['f3_1'].should eql @data.f3[:f3_1]
-      same_elements(jobj.links,@object.links).should be true
+
+  # arr1.size != arr2.size ? false :
+  #   arr1.reduce(true) {|same,value| same && arr2.include?(value)}
+
+      jobj.links.size.should == @object.links.size
+      jlinks = jobj.links
+      olinks = @object.links
+      same = jlinks.reduce(true) {|same,value| same && olinks.include?(value)}
+      same.should be true
     end
 
     jobj = JiakObject.from_jiak(@full_json,@bucket.data_class)

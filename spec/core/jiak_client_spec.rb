@@ -77,14 +77,16 @@ describe "JiakClient processing" do
     end
 
     it "should create and fetch a bucket schema" do
-      resp_schema = @client.schema(@bucket)
-
-      same_fields(resp_schema.allowed_fields,
-                  FooBarBaz.allowed_fields).should be true
-      same_fields(resp_schema.required_fields,
-                  FooBarBaz.required_fields).should be true
-      same_fields(resp_schema.read_mask,FooBarBaz.read_mask).should be true
-      same_fields(resp_schema.write_mask,FooBarBaz.write_mask).should be true
+      schema = @client.schema(@bucket)
+      
+      ['allowed_fields',
+       'required_fields',
+       'read_mask',
+       'write_mask'].each do |fields|
+        schema_fields = schema.send("#{fields}")
+        fbb_fields = FooBarBaz.send("#{fields}")
+        schema_fields.same_fields?(fbb_fields).should be true
+      end
     end
 
     it "should update an existing bucket schema" do
@@ -117,9 +119,8 @@ describe "JiakClient processing" do
       bucket_name = "# <& %"
       bucket = JiakBucket.create(bucket_name,FooBarBaz)
       @client.set_schema(bucket)
-      resp_schema = @client.schema(@bucket)
-      same_fields(resp_schema.allowed_fields,
-                  FooBarBaz.allowed_fields).should be true
+      schema = @client.schema(@bucket)
+      FooBarBaz.read_mask.same_fields?(schema.read_mask).should be true
     end
   end
 

@@ -201,10 +201,10 @@ module RiakRest
     # same array elements for all attributes.
     def eql?(other)
       other.is_a?(JiakSchema) &&
-        same_fields(other.allowed_fields, @allowed_fields)  &&
-        same_fields(other.required_fields,@required_fields) &&
-        same_fields(other.read_mask,@read_mask) &&
-        same_fields(other.write_mask,@write_mask)
+        @allowed_fields.same_fields?(other.allowed_fields)  &&
+        @required_fields.same_fields?(other.required_fields) &&
+        @read_mask.same_fields?(other.read_mask) &&
+        @write_mask.same_fields?(other.write_mask)
     end
 
     # String representation of this schema.
@@ -229,16 +229,6 @@ module RiakRest
       unless arr.map{|f| f.to_s}.uniq.size == arr.size
         raise JiakSchemaException, "#{desc} must have unique elements."
       end
-    end
-
-    # Compare the fields in two arrays for equal string/symbol.to_s elements.
-    def same_fields(arr1,arr2)
-      same = arr1.size == arr2.size
-      arr2 = arr2.map{|f| f.to_s} if same
-      same &&= arr1.map{|f| f.to_s}.reduce(true) do |same,value|
-        same && arr2.include?(value)
-      end
-      same
     end
 
   end
