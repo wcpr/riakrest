@@ -1,18 +1,23 @@
 require 'lib/riakrest'
 include RiakRest
 
+DogBreedData = JiakDataHash.create(:name, :birthdate, :weight, :breed)
+DogBreedData.readable :name, :breed
+DogBreedData.writable :name, :breed
+
 class DogBreed  # :nodoc:
   include JiakResource
   server   'http://localhost:8002/jiak'
-  resource :name => 'dogs',
-           :data_class => JiakDataHash.create(:name, :breed)
+  resource :name => 'dogs', :data_class => DogBreedData
 end
 
 require 'date'
 class DogData  # :nodoc:
   include JiakData
 
-  allowed :name, :birthdate, :weight
+  allowed :name, :birthdate, :weight, :breed
+  writable :name, :birthdate, :weight
+  readable :name, :birthdate, :weight
 
   def initialize(hsh)
     hsh.each {|key,val| send("#{key}=",val)}

@@ -94,6 +94,7 @@ module RiakRest
       #
       def required(*fields)
         arr_fields = create_array(fields)
+        check_allowed(arr_fields)
         instance_variable_set("@required_fields",arr_fields)
         arr_fields
       end
@@ -106,6 +107,7 @@ module RiakRest
       #
       def readable(*fields)
         arr_fields = create_array(fields)
+        check_allowed(arr_fields)
         instance_variable_set("@read_mask",arr_fields)
         arr_fields
       end
@@ -118,6 +120,7 @@ module RiakRest
       #
       def writable(*fields)
         arr_fields = create_array(fields)
+        check_allowed(arr_fields)
         instance_variable_set("@write_mask",arr_fields)
         arr_fields
       end
@@ -187,6 +190,15 @@ module RiakRest
         end
         array.map {|field| field}
         array
+      end
+
+      def check_allowed(fields)
+        allowed_fields = instance_variable_get("@allowed_fields")
+        fields.each do |field|
+          unless allowed_fields.include?(field)
+            raise JiakDataException, "field '#{field}' not allowed"
+          end
+        end
       end
     end
 
