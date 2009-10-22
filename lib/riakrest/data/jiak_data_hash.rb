@@ -53,7 +53,7 @@ module RiakRest
         def for_jiak
           self.class.write_mask.inject({}) do |build,field|
             val = send("#{field}")
-            build[field] = val  #  unless val.nil?
+            build[field] = val
             build
           end
         end
@@ -63,28 +63,9 @@ module RiakRest
         end
 
         def eql?(other)
-          unless other.is_a?(self.class)
-            raise JiakDataException, "eql? requires another #{self.class}"
-          end
-          begin
+          other.is_a?(self.class) &&
             self.class.allowed_fields.reduce(true) do |same,field|
-              same && other.send("#{field}").eql?(send("#{field}"))
-            end
-          rescue
-            false
-          end
-        end
-
-        def ==(other)
-          unless other.is_a?(self.class)
-            raise JiakDataException, "== requires another #{self.class}"
-          end
-          begin
-            self.class.allowed_fields.reduce(true) do |same,field|
-              same && other.send("#{field}") == (send("#{field}"))
-            end
-          rescue
-            false
+            same && other.send("#{field}").eql?(send("#{field}"))
           end
         end
 
