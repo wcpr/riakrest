@@ -22,3 +22,20 @@ puts client.get(bucket,callie.key).data.name    # => "callie"
 callie.data.name = "Callie"
 callie = client.store(callie,{JiakClient::RETURN_BODY => true})
 puts client.get(bucket,callie.key).data.name    # => "Callie"
+
+
+
+Person = JiakDataHash.create(:name,:age)
+remy = Person.create(:name => "remy", :age => 10)
+
+client = JiakClient.new("http://localhost:8002/jiak")
+bucket = JiakBucket.create('person',Person)
+client.set_schema(bucket)
+jobj = JiakObject.create(:bucket => bucket, :data => remy)
+key = client.store(jobj)
+
+remy.name                                # => "remy"
+remy.name = "Remy"                       # => "Remy"
+remy = client.get(bucket,key)
+remy.name                                # => "remy" (overwrote change)
+client.delete(bucket,key)

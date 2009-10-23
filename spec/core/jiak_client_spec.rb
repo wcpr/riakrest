@@ -23,10 +23,7 @@ class FooBarBaz  # :nodoc:
   end
 
   def eql?(other)
-    other.foo.eql?(@foo) && other.bar.eql?(@bar)
-  end
-  def ==(other)
-    (other.foo== @foo) && (other.bar == @bar)
+    other.is_a?(FooBarBaz) && other.foo.eql?(@foo) && other.bar.eql?(@bar)
   end
 end
 
@@ -153,15 +150,15 @@ describe "JiakClient processing" do
         jobj = JiakObject.create(:bucket => @bucket,
                                   :key => key,
                                   :data => @data)
-        resp = @client.store(jobj,{JiakClient::RETURN_BODY => true})
+        resp = @client.store(jobj,{:object => true})
         resp.should be_a JiakObject
         resp.bucket.should eql @bucket
         resp.key.should eql key
         resp.data.should be_a FooBarBaz
 
         jobj = JiakObject.create(:bucket => @bucket, 
-                                  :data => @data)
-        resp = @client.store(jobj,{JiakClient::RETURN_BODY => true})
+                                 :data => @data)
+        resp = @client.store(jobj,{:object => true})
         resp.should be_a JiakObject
         resp.key.should_not be_nil
         resp.data.should be_a FooBarBaz
@@ -210,7 +207,7 @@ describe "JiakClient processing" do
         jobj =
           @client.store(JiakObject.create(:bucket => @bucket,
                                           :data => @data),
-                        {JiakClient::RETURN_BODY => true})
+                        {:object => true})
         
         jobj.data.should eql @data
         [:vclock,:vtag,:lastmod].each do |field|
@@ -222,7 +219,7 @@ describe "JiakClient processing" do
         updated_data = FooBarBaz.new(:foo => 'new val')
         jobj.data = updated_data
         updated_object = 
-          @client.store(jobj,{JiakClient::RETURN_BODY => true})
+          @client.store(jobj,{:object => true})
         updated_data = updated_object.data
         updated_data.should_not eql @data
         updated_data.foo.should eql 'new val'

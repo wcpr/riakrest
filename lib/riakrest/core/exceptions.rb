@@ -6,7 +6,7 @@ module RiakRest
   end
 
   # Client exception in accessing a resource on the Jiak server.
-  class JiakClientException < RiakRest::Exception
+  class JiakResourceException < RiakRest::Exception
     attr_accessor :params
     
     # call-seq:
@@ -39,7 +39,7 @@ module RiakRest
   end
 
   # Exceptions pertaining to JiakClient usage.
-  class JiakResourceException < RiakRest::Exception
+  class JiakClientException < RiakRest::Exception
   end
 
   # Resource not found on the Jiak server.

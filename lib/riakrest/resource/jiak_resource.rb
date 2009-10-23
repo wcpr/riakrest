@@ -79,6 +79,24 @@ module RiakRest
       alias bucket resource
 
       # :call-seq:
+      #   JiakResource.params {}  -> {}
+      #
+      # Set the bucket default request parameters. Valid options are:
+      #
+      # <code>:writes</code> :: The number of Riak nodes that must successfully store data.
+      # <code>:durable_writes</code> :: The number of Riak nodes (<code>< writes</code>) that must successfully store data in a durable manner.
+      # <code>:reads</code> :: The number of Riak nodes that must successfully read data.
+    # <code>:waits</code> :: The number of Riak nodes that must reply the delete has occurred before success.
+      #
+      # On Jiak interactions these parameters take precendent over the values
+      # set on the Riak cluster. Per interaction requests can override the
+      # parameters set on the bucket. In general the values set on the Riak
+      # cluster should suffice.
+      def params(opts={})
+        jiak.bucket.params = opts
+      end
+
+      # :call-seq:
       #   JiakResource.create(*args)   -> JiakResource
       #
       # Create a JiakResource wrapping a JiakData instance created with the
@@ -168,63 +186,82 @@ module RiakRest
       end
 
       # :call-seq:
-      #   JiakResource.put(JiakResource)  -> JiakResource
+      #   JiakResource.put(JiakResource,opts={})  -> JiakResource
       #
-      # Put a JiakResource on the Jiak server.
-      def put(resource)
-        jiak.server.store(resource.jiak,
-                          {JiakClient::RETURN_BODY => true})
+      # Put a JiakResource on the Jiak server. Valid options are:
+      #
+      # <code>:writes</code> :: The number of Riak nodes that must successfully store the data.
+      # <code>:durable_writes</code> :: The number of Riak nodes (<code>< writes</code>) that must successfully store the data in a durable manner.
+      # <code>:reads</code> :: The number of Riak nodes that must successfully read data being returned.
+      # 
+      # If any of the request parameters <code>:writes, :durable_writes,
+      # :reads</code> are not set, each first defaults to the value set for the
+      # JiakResource class, then to the value set on the Riak cluster. In
+      # general the values set on the Riak cluster should suffice.
+      def put(resource,opts={})
+        opts[:object] = true
+        resource.jiak = jiak.server.store(resource.jiak,opts)
+        resource
       end
 
       # :call-seq:
-      #   JiakResource.post(JiakResource)  -> JiakResource
+      #   JiakResource.post(JiakResource,opts={})  -> JiakResource
       #
       # Put a JiakResource on the Jiak server with a guard to ensure the
-      # resource has not been previously stored.
-      def post(resource)
+      # resource has not been previously stored. See JiakResource#put for options.
+      def post(resource,opts={})
         unless(resource.jiak.riak.nil?)
           raise JiakResourceException, "Resource already initially stored"
         end
-        put(resource)
+        put(resource,opts)
       end
 
       # :call-seq:
-      #   JiakResource.store(JiakResource)  -> JiakResource
+      #   JiakResource.store(JiakResource,opts={})  -> JiakResource
       #
       # Updates a JiakResource on the Jiak server with a guard to ensure the
-      # resource has been previously stored.
-      def store(resource)
+      # resource has been previously stored. See JiakResource#put for options.
+      def store(resource,opts={})
         if(resource.jiak.riak.nil?)
           raise JiakResourceException, "Resource not previously stored"
         end
-        put(resource)
+        put(resource,opts)
       end
 
       # :call-seq:
-      #   JiakResource.get(key)  -> JiakResource
+      #   JiakResource.get(key,opts={})  -> JiakResource
       #
-      # Get the JiakResource on the Jiak server by the specified key in the
-      # JiakResource bucket.
-      def get(key)
-        new(jiak.server.get(jiak.bucket,key))
+      # Get a JiakResource on the Jiak server by the specified key. Valid
+      # options are:
+      #
+      # <code>:reads</code> --- The number of Riak nodes that must successfully
+      # reply with the data. If not set, defaults first to the value set for the
+      # JiakResource class, then to the value set on the Riak cluster.
+      def get(key,opts={})
+        new(jiak.server.get(jiak.bucket,key,opts))
       end
 
       # :call-seq:
-      #   JiakResource.get!(resource)  -> JiakResource
+      #   JiakResource.get!(resource,opts={})  -> JiakResource
       #
       # Updates a JiakResource with the data on the Jiak server. The current
-      # data of the JiakResource is overwritten, so use with caution.
-      def get!(resource)
-        resource.jiak = get(resource.jiak.key).jiak
+      # data of the JiakResource is overwritten, so use with caution. See
+      # JiakResource.get for options.
+      def get!(resource,opts={})
+        resource.jiak = get(resource.jiak.key,opts).jiak
       end
 
       # :call-seq:
-      #   JiakResource.delete(resource)  -> true or false
+      #   JiakResource.delete(resource,opts={})  -> true or false
       #
       # Delete the JiakResource store on the Jiak server by the specified key
-      # in the JiakResource bucket.
-      def delete(resource)
-        jiak.server.delete(jiak.bucket,resource.jiak.key)
+      # in the JiakResource bucket. Valid options are:
+      # <code>:waits</code> --- The number of Riak nodes that must reply the
+      # delete has occurred before success. If not set, defaults first to the
+      # value set for the JiakResource, then to the value set on the Riak
+      # cluster. In general the values set on the Riak cluster should suffice.
+      def delete(resource,opts={})
+        jiak.server.delete(jiak.bucket,resource.jiak.key,opts)
       end
 
     end
@@ -271,46 +308,47 @@ module RiakRest
     end
 
     # :call-seq:
-    #   resource.put   -> nil
+    #   resource.put(opts={})   -> nil
     #
-    # Put this resource on the Jiak server.
-    def put
-      @jiak = self.class.put(self)
+    # Put this resource on the Jiak server. See JiakResource#put for options.
+    def put(opts={})
+      @jiak = self.class.put(self,opts)
     end
 
     # :call-seq:
-    #   resource.post   -> nil
-    #
-    # Put this resource on the Jiak server with a guard to ensure the resource
-    # has not been previously stored.
-    def post
-      @jiak = self.class.post(self)
-    end
-
-    # :call-seq:
-    #   resource.store   -> nil
+    #   resource.post(opts={})   -> nil
     #
     # Put this resource on the Jiak server with a guard to ensure the resource
-    # has been previously stored.
-    def store
-      @jiak = self.class.store(self)
+    # has not been previously stored. See JiakResource#put for options.
+    def post(opts={})
+      @jiak = self.class.post(self,opts)
     end
 
     # :call-seq:
-    #   resource.get   -> nil
+    #   resource.store(opts={})   -> nil
+    #
+    # Put this resource on the Jiak server with a guard to ensure the resource
+    # has been previously stored. See JiakResource#put for options.
+    def store(opts={})
+      @jiak = self.class.store(self,opts)
+    end
+
+    # :call-seq:
+    #   resource.get(opts={})   -> nil
     #
     # Get this resource from the Jiak server. The current data of the resource
-    # is overwritten, so use with caution.
-    def get
-      self.class.get!(self)
+    # is overwritten, so use with caution. See JiakResource#get for options.
+    def get(opts={})
+      self.class.get!(self,opts)
     end
 
     # :call-seq:
-    #   resource.delete     ->  true or false
+    #   resource.delete(opts={})     ->  true or false
     #
-    # Deletes the resource on the Jiak server. The local object is uneffected.
-    def delete
-      self.class.delete(self)
+    # Deletes the resource on the Jiak server. The local object is
+    # uneffected. See JiakResource#delete for options.
+    def delete(opts={})
+      self.class.delete(self,opts)
     end
   end
 end

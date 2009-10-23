@@ -1,7 +1,22 @@
 module RiakRest
 
   # Restful client interaction with a Riak document store via a JSON
-  # interface. See RiakRest for example usage.
+  # interface. See RiakRest for descriptive usage.
+  #
+  # ====Usage
+  # <code>
+  #   Person = JiakDataHash.create(:name,:age)
+  #   remy = Person.create(:name => "remy", :age => 10)
+  #   bucket = JiakBucket.create('person',Person)
+  #   client.set_schema(bucket)
+  #   jobj = JiakObject.create(:bucket => bucket, :data => remy)
+  #   key = client.store(jobj)
+  #   remy.name                                # => "remy"
+  #   remy.name = "Remy"                       # => "Remy"
+  #   remy = client.get(bucket,key)
+  #   remy.name                                # => "remy" (overwrote change)
+  #   client.delete(bucket,key)
+  # </code>
   class JiakClient
 
     # :stopdoc:
@@ -89,39 +104,46 @@ module RiakRest
     # :call-seq:
     #   client.store(object,opts={})  -> JiakObject or key
     #
-    # Stores user-defined data (wrapped in a JiakObject) on the Jiak server. To
-    # prepare the user-defined data for JSON transport JiakData#to_jiak is
-    # called on the user-defined data. That call is expected to return a Ruby
-    # hash representation of the writable JiakData fields that can then be
-    # JSONized for HTTP transport. Successful server writes return either the
-    # storage key or the stored JiakObject. The object for storage must be
-    # JiakObject. Valid options are:
+    # Stores user-defined data (wrapped in a JiakObject) on the Jiak
+    # server. JiakData#to_jiak is used to prepare user-defined data for JSON
+    # transport to Jiak. That call is expected to return a Ruby hash
+    # representation of the writable JiakData fields that are JSONized for HTTP
+    # transport. Successful server writes return either the storage key or the
+    # stored JiakObject depending on the option <code>key</code>. The object
+    # for storage must be JiakObject. Valid options are:
     #
-    # <code>key</code>:: If <code>true</code>, on success return the Riak key used to store the JiakObject; otherwise return the stored JiakObject. Defaults to <code>true</code>.
-    # <code>writes</code>:: The number of Riak nodes that must successfully store the data value. Defaults to the value set on the Riak cluster. In general you do not need to provide this value on the Jiak interface.
-    # <code>durable_writes</code>:: The number of Riak nodes (<code>< writes</code>) that must successfully store the data value in a durable manner.  Defaults to the value set on the Riak cluster. In general you do not need to provide this value on the Jiak interface.
-    # <code>reads</code>:: The number of Riak nodes that must successfully read the data value if the JiakObject is being returned. Defaults to the value set on the Riak cluster. In general you do not need to provide this value on the Jiak interface.
+    # <code>:object</code> :: If <code>true</code>, on success return the stored JiakObject (which includes Jiak metadata); otherwise return just the key. Default is <code>false</code>
+    # <code>:writes</code> :: The number of Riak nodes that must successfully store the data.
+    # <code>:durable_writes</code> :: The number of Riak nodes (<code>< writes</code>) that must successfully store the data in a durable manner.
+    # <code>:reads</code> :: The number of Riak nodes that must successfully read data if the JiakObject is being returned.
     #
-    # Raise JiakClientException on RESTful HTTP errors.
+    # If any of the request parameters <code>:writes, :durable_writes,
+    # :reads</code> are not set, each first defaults to the value set for the
+    # JiakBucket in the JiakObject, then to the value set on the Riak
+    # cluster. In general the values set on the Riak cluster should suffice.
+    #
+    # Raise JiakClientException if object is not a JiakObject or illegal options.
+    # Raise JiakResourceException on RESTful HTTP errors.
     #
     def store(jobj,opts={})
-      uri_opts = {
-        WRITES => opts[:writes], 
-        DURABLE_WRITES => opts[:durable_writes],
-        READS => opts[:reads]
+      params = jobj.bucket.params
+      req_params = {
+        WRITES => opts[:writes] || params[:writes], 
+        DURABLE_WRITES => opts[:durable_writes] || params[:durable_writes],
+        READS => opts[:reads] || params[:reads]
       }
-      uri_opts[RETURN_BODY] = opts[:key] || true
+      req_params[RETURN_BODY] = opts[:object]  if opts[:object]
 
       begin
-        uri = jiak_uri(jobj.bucket,jobj.key,uri_opts)
+        uri = jiak_uri(jobj.bucket,jobj.key,req_params)
         payload = jobj.to_jiak
-        req_opts = { 
+        headers = { 
           :content_type => APP_JSON,
           :data_type => JSON_DATA, 
           :accept => APP_JSON }
 
-        # resp = jobj.key.empty? ? RestClient.post(uri,payload,req_opts) :
-        #   RestClient.put(uri,payload,req_opts)
+        # resp = jobj.key.empty? ? RestClient.post(uri,payload,headers) :
+        #   RestClient.put(uri,payload,headers)
         # opts[RETURN_BODY] ? JiakObject.from_jiak(resp,jobj.bucket.data_class) : resp
 
         # CxHack --Begin--
@@ -130,13 +152,12 @@ module RiakRest
         # in the future. The lines below are a current hack which always sets
         # returnbody=true then returns just the key if the returned object
         # wasn't requested.
-        return_body = opts[RETURN_BODY]
-        opts[RETURN_BODY] = true
-        uri = jiak_uri(jobj.bucket,jobj.key,opts)
-        resp = jobj.key.empty? ? RestClient.post(uri,payload,req_opts) :
-          RestClient.put(uri,payload,req_opts)
+        req_params[RETURN_BODY] = true
+        uri = jiak_uri(jobj.bucket,jobj.key,req_params)
+        resp = jobj.key.empty? ? RestClient.post(uri,payload,headers) :
+          RestClient.put(uri,payload,headers)
         resp_object = JiakObject.from_jiak(resp,jobj.bucket.data_class)
-        return_body ? resp_object : resp_object.key
+        opts[:object] ? resp_object : resp_object.key
         # CxHack --End--
       rescue RestClient::ExceptionWithResponse => err
         fail_with_response("put", err)
@@ -161,22 +182,22 @@ module RiakRest
     # String. Valid options are:
     #
     # <code>:reads</code> --- The number of Riak nodes that must successfully
-    # reply with the data value. Defaults to the value set on the Riak
-    # cluster. In general you do not need to provide this value on the Jiak
-    # interface.
+    # reply with the data. If not set, defaults first to the value set for the
+    # JiakBucket, then to the value set on the Riak cluster. In general the
+    # values set on the Riak cluster should suffice.
     #
     # Raise JiakClientException bucket not a JiakBucket or on RESTful HTTP errors.
     # Raise JiakResourceNotFound if the resource not found on the Jiak server.
-    # Raise JiakClientException on other HTTP RESTful errors.
+    # Raise JiakResourceException on other HTTP RESTful errors.
     #
     def get(bucket,key,opts={})
       unless bucket.is_a?(JiakBucket)
         raise JiakClientException, "Bucket must be a JiakBucket."
       end
-      uri_opts = {READS => opts[:reads]}
+      req_params = {READS => opts[:reads] || bucket.params[:reads]}
 
       begin
-        uri = jiak_uri(bucket,key,uri_opts)
+        uri = jiak_uri(bucket,key,req_params)
         resp = RestClient.get(uri, :accept => APP_JSON)
         JiakObject.from_jiak(resp,bucket.data_class)
       rescue RestClient::ResourceNotFound => err
@@ -194,16 +215,16 @@ module RiakRest
     # Delete the JiakObject stored at the bucket/key. Valid options are:
     #
     # <code>:waits</code> --- The number of Riak nodes that must reply the
-    # delete has occurred before success. Defaults to the value set on the Riak
-    # cluster. In general you do not need to provide this value on the Jiak
-    # interface.
+    # delete has occurred before success. If not set, defaults first to the
+    # value set for the JiakBucket, then to the value set on the Riak
+    # cluster. In general the values set on the Riak cluster should suffice.
     #
-    # Raise JiakClientException on RESTful HTTP errors.
+    # Raise JiakResourceException on RESTful HTTP errors.
     #
     def delete(bucket,key,opts={})
       begin
-        uri_opts = {RESPONSE_WAITS => opts[:waits]}
-        uri = jiak_uri(bucket,key,uri_opts)
+        req_params = {RESPONSE_WAITS => opts[:waits] || bucket.params[:waits]}
+        uri = jiak_uri(bucket,key,req_params)
         RestClient.delete(uri, :accept => APP_JSON)
         true
       rescue RestClient::ExceptionWithResponse => err
@@ -245,10 +266,10 @@ module RiakRest
 
     private
     # Build the URI for accessing the Jiak server.
-    def jiak_uri(bucket,key="",opts={})
+    def jiak_uri(bucket,key="",params={})
       uri = "#{@uri}#{URI.encode(bucket.name)}"
       uri += "/#{URI.encode(key)}" unless key.empty?
-      qstring = opts.reject {|k,v| v.nil?}.map{|k,v| "#{k}=#{v}"}.join('&')
+      qstring = params.reject {|k,v| v.nil?}.map{|k,v| "#{k}=#{v}"}.join('&')
       uri += "?#{URI.encode(qstring)}"  unless qstring.empty?
       uri
     end
@@ -267,12 +288,12 @@ module RiakRest
     end
 
     def fail_with_response(action,err)
-      raise( JiakClientException,
+      raise( JiakResourceException,
              "failed #{action}: HTTP code #{err.http_code}: #{err.http_body}")
     end
 
     def fail_with_message(action,err)
-      raise JiakClientException, "failed #{action}: #{err.message}"
+      raise JiakResourceException, "failed #{action}: #{err.message}"
     end
 
   end

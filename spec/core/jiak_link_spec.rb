@@ -20,18 +20,20 @@ describe "JiakLink" do
 
     @jiak_link.should respond_to(:for_jiak,:for_uri)
 
-    @jiak_link.should respond_to(:==,:eql?)
+    @jiak_link.should respond_to(:eql?,:==)
   end
 
   it "should fill in missing opts with ANY" do
     jiak_link = JiakLink.create
     jiak_link.should eql @jiak_link_any
+    jiak_link.should == @jiak_link_any
 
     [:bucket,:tag,:acc].each do |key|
       hash = {}
       hash[key] = @any
       jiak_link = JiakLink.create(hash)
       jiak_link.should eql @jiak_link_any
+      jiak_link.should == @jiak_link_any
     end
   end
 
@@ -67,6 +69,7 @@ describe "JiakLink" do
     ["","  ",nil].each do |val|
       jiak_link = JiakLink.create([val,val,val])
       jiak_link.should eql jiak_any_link
+      jiak_link.should == jiak_any_link
     end
   end
 
@@ -91,7 +94,7 @@ describe "JiakLink" do
     jiak_link.for_uri.should eql URI.encode([b,t,a].join(','))
   end
 
-  it "should compare to another JiakLink via eql? and ==" do
+  it "should compare to another JiakLink via eql?" do
     jiak_link_1 = JiakLink.create(['a','b','c'])
     jiak_link_2 = JiakLink.create(['a','b','c'])
     jiak_link_3 = JiakLink.create(['a','','c'])

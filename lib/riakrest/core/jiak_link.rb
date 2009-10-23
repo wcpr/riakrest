@@ -83,19 +83,20 @@ module RiakRest
     # Returns <code>true</code> if <i>link</i> and <i>other</i> contain the
     # same attribute values.
     def eql?(other)
-      (other.bucket.eql?(@bucket) &&
-       other.tag.eql?(@tag) &&
-       other.acc.eql?(@acc)) rescue false
+      other.is_a?(JiakLink) &&
+        @bucket.eql?(other.bucket) &&
+        @tag.eql?(other.tag) &&
+        @acc.eql?(other.acc)
     end
 
     # call-seq:
     #    link == other -> true or false
     #
-    # Equality -- JiakLinks are equal if they contain the same attribute values.
+    # Equality -- JiakLinks are equal if they contain the same attribute values
     def ==(other)
-      (other.bucket == @bucket &&
-       other.tag == @tag &&
-       other.acc == @acc) rescue false
+      (@bucket == other.bucket &&
+       @tag    == other.tag    &&
+       @acc    == other.acc) rescue false
     end
 
     # String representation of this JiakLink.
