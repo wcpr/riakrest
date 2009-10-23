@@ -59,7 +59,7 @@ module RiakRest
       unless bucket.is_a?(JiakBucket)
         raise JiakClientException, "Bucket must be a JiakBucket."
       end
-      resp = RestClient.put(jiak_uri(bucket.name),
+      resp = RestClient.put(jiak_uri(bucket),
                             bucket.schema.to_jiak,
                             :content_type => APP_JSON,
                             :data_type => JSON_DATA,
@@ -174,7 +174,7 @@ module RiakRest
       uri_opts = {READS => opts[:reads]}
 
       begin
-        uri = jiak_uri(bucket.name,key,uri_opts)
+        uri = jiak_uri(bucket,key,uri_opts)
         resp = RestClient.get(uri, :accept => APP_JSON)
         JiakObject.from_jiak(resp,bucket.data_class)
       rescue RestClient::ResourceNotFound => err
@@ -244,9 +244,7 @@ module RiakRest
     private
     # Build the URI for accessing the Jiak server.
     def jiak_uri(bucket,key="",opts={})
-      bucket_name = bucket.is_a?(JiakBucket) ? bucket.name : bucket
-
-      uri = "#{@uri}#{URI.encode(bucket_name)}"
+      uri = "#{@uri}#{URI.encode(bucket.name)}"
       uri += "/#{URI.encode(key)}" unless key.empty?
       qstring = opts.reject {|k,v| v.nil?}.map{|k,v| "#{k}=#{v}"}.join('&')
       uri += "?#{URI.encode(qstring)}"  unless qstring.empty?
