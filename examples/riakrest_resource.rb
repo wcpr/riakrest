@@ -1,4 +1,4 @@
-require 'riakrest'
+require 'lib/riakrest'
 include RiakRest
 
 class Person
@@ -9,13 +9,13 @@ class Person
 end
 
 remy = Person.create(:name => 'remy', :age => 10)
-remy.store
+remy.post
 
 puts remy.name                           # => "remy"
 puts Person.get(remy.jiak.key).name      # => "remy"
 
 remy.name = "Remy"
-remy.update
+remy.put
 
 puts remy.name                           # => "Remy"
 puts Person.get(remy.jiak.key).name      # => "Remy"

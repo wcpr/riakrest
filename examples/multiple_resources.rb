@@ -1,65 +1,69 @@
+
 require 'lib/riakrest'
 include RiakRest
 
-DogBreedData = JiakDataHash.create(:name, :birthdate, :weight, :breed)
-DogBreedData.readable :name, :breed
-DogBreedData.writable :name, :breed
-
-class DogBreed  # :nodoc:
-  include JiakResource
-  server   'http://localhost:8002/jiak'
-  resource :name => 'dogs', :data_class => DogBreedData
-end
-
-require 'date'
-class DogData  # :nodoc:
-  include JiakData
-
-  allowed :name, :birthdate, :weight, :breed
-  writable :name, :birthdate, :weight
-  readable :name, :birthdate, :weight
-
-  def initialize(hsh)
-    hsh.each {|key,val| send("#{key}=",val)}
-  end
-
-  def self.create(hsh)
-    new(hsh)
-  end
-
-  def self.jiak_create(jiak)
-    jiak['birthdate'] = Date.parse(jiak['birthdate']) if jiak['birthdate']    
-    new(jiak)
-  end
-
-  def for_jiak
-    self.class.write_mask.inject({}) do |build,field|
-      val = send("#{field}")
-      build[field] = val   unless val.nil?
-      build
-    end
-  end
-
+DogData = JiakDataHash.create(:name, :weight, :breed)
+class DogData
   def keygen
     @name
   end
 end
-
-class Dog   # :nodoc:
+class Dog
   include JiakResource
   server   'http://localhost:8002/jiak'
-  resource :name => 'dogs',
-           :data_class => DogData
+  resource :name => 'dogs', :data_class => DogData
 end
 
+DogBreedData = JiakDataHash.create(DogData.schema.allowed_fields)
+DogBreedData.readable :name, :breed
+DogBreedData.writable :name, :breed
+class DogBreed
+  include JiakResource
+  server   Dog.jiak.uri
+  resource :name => Dog.jiak.name,
+           :data_class => DogBreedData
+end
+
+DogWeightData = JiakDataHash.create(DogData.schema.allowed_fields)
+DogWeightData.readable :name, :weight
+DogWeightData.writable :name, :weight
+class DogWeight
+  include JiakResource
+  server   Dog.jiak.uri
+  resource :name => Dog.jiak.name,
+           :data_class => DogWeightData
+end
+
+
+
+
 Dog.activate
-addie = Dog.create(:name => 'adelaide', :weight => 45)
+addie = Dog.create(:name => 'adelaide', :weight => 45, :breed => 'heeler')
 addie.post
 
 DogBreed.activate
 addie = DogBreed.get('adelaide')
-
-addie.breed = "heeler"
+addie.breed = "Heeler"
 addie.put
 
+DogWeight.activate
+addie = DogWeight.get('adelaide')
+addie.weight = 47
+addie.put
 
+Dog.activate
+addie = Dog.get('adelaide')
+puts addie.name
+puts addie.breed
+puts addie.weight
+
+
+
+
+# DogBreed = JiakResource.copy(Dog)
+# DogBreed.readable :name, :breed
+# DogBreed.schema.write_mask -= [:weight]
+
+# DogWeight = JiakResource.copy(Dog)
+# DogBreed.readable :name, :weight
+# DogBreed.writable :name, :weight

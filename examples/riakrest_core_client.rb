@@ -1,4 +1,4 @@
-require 'riakrest'
+require 'lib/riakrest'
 include RiakRest
 
 client = JiakClient.new("http://localhost:8002/jiak")
