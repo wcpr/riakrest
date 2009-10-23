@@ -100,13 +100,15 @@ module RiakRest
     # <code>key</code>:: If <code>true</code>, on success return the Riak key used to store the JiakObject; otherwise return the stored JiakObject. Defaults to <code>true</code>.
     # <code>writes</code>:: The number of Riak nodes that must successfully store the data value. Defaults to the value set on the Riak cluster. In general you do not need to provide this value on the Jiak interface.
     # <code>durable_writes</code>:: The number of Riak nodes (<code>< writes</code>) that must successfully store the data value in a durable manner.  Defaults to the value set on the Riak cluster. In general you do not need to provide this value on the Jiak interface.
+    # <code>reads</code>:: The number of Riak nodes that must successfully read the data value if the JiakObject is being returned. Defaults to the value set on the Riak cluster. In general you do not need to provide this value on the Jiak interface.
     #
     # Raise JiakClientException on RESTful HTTP errors.
     #
     def store(jobj,opts={})
       uri_opts = {
         WRITES => opts[:writes], 
-        DURABLE_WRITES => opts[:durable_writes]
+        DURABLE_WRITES => opts[:durable_writes],
+        READS => opts[:reads]
       }
       uri_opts[RETURN_BODY] = opts[:key] || true
 
@@ -163,7 +165,7 @@ module RiakRest
     # cluster. In general you do not need to provide this value on the Jiak
     # interface.
     #
-    # Raise JiakClientException if the bucket is not a JiakBucket or on RESTful HTTP errors.
+    # Raise JiakClientException bucket not a JiakBucket or on RESTful HTTP errors.
     # Raise JiakResourceNotFound if the resource not found on the Jiak server.
     # Raise JiakClientException on other HTTP RESTful errors.
     #
