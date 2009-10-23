@@ -38,18 +38,18 @@ describe "JiakClient init" do
 
   it "should respond to" do
     @client.should respond_to(:set_schema, :schema, :keys)
-    @client.should respond_to(:server_uri)
+    @client.should respond_to(:uri)
     @client.should respond_to(:get, :store, :delete, :walk)
   end
 
   it "should default to base URI" do
-    @client.server_uri.should match @base_uri
+    @client.uri.should match @base_uri
   end
 
   it "should allow specified base URI" do
     base_uri = 'http://localhost:1234/tmp/'
     client = JiakClient.create base_uri
-    client.server_uri.should match base_uri
+    client.uri.should match base_uri
   end
 
 end
@@ -84,7 +84,7 @@ describe "JiakClient processing" do
        'read_mask',
        'write_mask'].each do |fields|
         schema_fields = schema.send("#{fields}")
-        fbb_fields = FooBarBaz.send("#{fields}")
+        fbb_fields = FooBarBaz.schema.send("#{fields}")
         schema_fields.same_fields?(fbb_fields).should be true
       end
     end
@@ -120,7 +120,7 @@ describe "JiakClient processing" do
       bucket = JiakBucket.create(bucket_name,FooBarBaz)
       @client.set_schema(bucket)
       schema = @client.schema(@bucket)
-      FooBarBaz.read_mask.same_fields?(schema.read_mask).should be true
+      FooBarBaz.schema.read_mask.same_fields?(schema.read_mask).should be true
     end
   end
 

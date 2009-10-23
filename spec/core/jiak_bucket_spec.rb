@@ -16,7 +16,7 @@ describe "JiakBucket" do
     @bucket.should respond_to(:name,:data_class,:schema)
     @bucket.should respond_to(:data_class=)
     @bucket.should respond_to(:schema)
-    @bucket.should respond_to(:eql?,:==)
+    @bucket.should respond_to(:eql?)
 
     @bucket.should_not respond_to(:name=)
   end
@@ -55,7 +55,6 @@ describe "JiakBucket" do
   it "should be comparable via eql and ==" do
     bucket = JiakBucket.create(@name,DataHash)
     bucket.should eql @bucket
-    bucket.should == @bucket
   end
 
 end

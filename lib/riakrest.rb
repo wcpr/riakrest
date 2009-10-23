@@ -26,19 +26,21 @@ $:.unshift(File.dirname(__FILE__)) unless
 # provides two levels of interaction: Core Client and Resource. Core Client
 # interaction works down at the Jiak level and so exposes Jiak
 # internals. Resource interaction abstracts above that and is much easier to
-# use. But we have to show the Core Client first since Resource is built on top
-# of it.
+# use. But we'll show the Core Client first since Resource is built on top of
+# it.
 #
 # ===Core Client Interaction
-# The primary Jiak constructs are represented by core Jiak classes:
-# JiakClient :: Client used to make Jiak put, get, delete, and other calls.
+# Primary Jiak constructs are represented by core Jiak classes:
+# JiakClient :: Client used to make Jiak store, get, delete, and other calls.
 # JiakBucket :: Bucket name and the data class stored in the bucket.
-# JiakSchema :: The schema used by a Jiak server bucket.
-# JiakData :: User-defined data to be stored.
-# JiakObject :: The Jiak object wrapper that includes the user data.
-# JiakLink :: Jiak link objects.
+# JiakSchema :: Schema used by a Jiak server bucket.
+# JiakData :: Class to define user data to be stored on a Jiak server.
+# JiakObject :: Jiak object wrapper that includes the user-defined data.
+# JiakLink :: Jiak link objects for associations between Jiak server data.
 #
 # ====Example Usage
+# This example works at the Jiak core layer. See the Resource example below for
+# an abstraction layered on top of this core.
 # <code>
 #   require 'riakrest'
 #   include RiakRest
@@ -84,11 +86,12 @@ $:.unshift(File.dirname(__FILE__)) unless
 #   puts remy.name                           # => "Remy"
 #   puts client.get(bucket,key).data.name    # => "remy"  ???
 # </code>
-# Why wasn't the Jiak server data updated? Because we didn't alter any of the
-# metadata on the JiakObject being sent, so to Jiak it looked like a new
-# initial store. The easiest way to be sure we have the Jiak info we need is to
-# ask for the Jiak object to be returned (with all the Jiak internals set) by
-# the store method. Let's try again with callie.
+# Why wasn't the data updated on the Jiak server? Because although we changed
+# the data locally, we didn't alter the metadata in the JiakObject being sent,
+# so to Jiak it looked like a new request to store info. The easiest way to be
+# sure we get the Jiak metadata info is to ask for the Jiak object to be
+# returned (which sets the Jiak internals) by the store method. Let's try again
+# with a new data object.
 # <code>
 #   callie = Person.create(:name => "callie", :age => 12)
 #   jobj = JiakObject.create(:bucket => bucket, :data => callie)
@@ -106,8 +109,9 @@ $:.unshift(File.dirname(__FILE__)) unless
 # ===Resource Interaction
 # Much of the above code can be abstracted into resource-based
 # interaction. RiakRest provides a module JiakResource that allows you to
-# create resource objects. We'll do the same initial steps we did for Remy
-# above. First we create a JiakData class and a JiakResource to hold it.
+# create resource objects that encapsulate a lot of the cruft from above. We'll
+# do the same initial steps we did for Remy above using resources. First we use
+# JiakResource to hold our data and encapsulate the server interaction.
 # <code>
 #   class Person
 #     include JiakResource
@@ -120,13 +124,13 @@ $:.unshift(File.dirname(__FILE__)) unless
 # update remy's name, then check the name on the server again.
 # <code>
 #   remy = Person.create(:name => 'remy', :age => 10)
-#   remy.store
+#   remy.post
 #
 #   puts remy.name                           # => "remy"
 #   puts Person.get(remy.jiak.key).name      # => "remy"
 #
 #   remy.name = "Remy"
-#   remy.update
+#   remy.put
 #
 #   puts remy.name                           # => "Remy"
 #   puts Person.get(remy.jiak.key).name      # => "Remy"
@@ -154,7 +158,7 @@ require 'riakrest/data/jiak_data_hash'
 require 'riakrest/resource/jiak_resource'
 
 class Array
-  # Compare fields in other array for equal string/symbol.to_s elements.
+  # Compare fields for equal string/symbol.to_s elements regardless of order.
   def same_fields?(arr)
     same = size == arr.size
     arr = arr.map{|f| f.to_s} if same

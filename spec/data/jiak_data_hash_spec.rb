@@ -7,8 +7,8 @@ describe "JiakDataHash" do
   end
 
   it "should create a fully usable JiakData class" do
-    Person.should respond_to(:allowed_fields,:required_fields,
-                             :read_mask,:write_mask)
+    Person.schema.should respond_to(:allowed_fields,:required_fields,
+                                    :read_mask,:write_mask)
   end
 
 end

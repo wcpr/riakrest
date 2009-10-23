@@ -1,18 +1,18 @@
 module RiakRest
-  # A simple JiakData initialized by a hash. Creates accessors for each hash
-  # key. Values can also be accessed via [] and []=. Other hash sematics are
-  # not provided. To operate on the data as a hash, use JiakDataHash#to_hash to
-  # get a hash of the data values.
+  # A simple JiakData created from a list of fields and initialized by a hash
+  # with those fields as keys. Creates read and write accessors for each
+  # field. Values can also be accessed via [] and []=. Other hash sematics are
+  # not provided. The method JiakDataHash#to_hash does, however, return a hash
+  # of the data fields and values.
   #
   # ===Usage
   # <code>
-  #   require 'date'
   #   Dog = JiakDataHash.create(:name,:weight)
-  #   addie = Dog.create(:name => "Adelaide",
-  #                      :weight => 45)
+  #   addie = Dog.create(:name => "Adelaide", :weight => 45)
+  #   addie.name                                           # => "Adeliade"
+  #   addie.weight                                         # => 45
   #
-  #   addie.name                                       # -> "Adeliade"
-  #   addie.weight                                     # -> 45
+  #   addie.weight = 47                                    # => 47
   # </code>
   #
   class JiakDataHash
@@ -20,55 +20,107 @@ module RiakRest
     private_class_method :new   # :nodoc:
 
     # :call-seq:
-    #   JiakDataHash.create :field_1, :field_2, ..., field_n  -> JiakDataHash
+    #   JiakDataHash.create :field_1, ..., field_n    -> JiakDataHash
+    #   JiakDataHash.create [:field_1, ..., field_n]  -> JiakDataHash
+    #   JiakDataHash.create schema                    -> JiakDataHash
     #
     # Creates a JiakDataHash class that can be used to create JiakData objects
     # containing the specified fields.
-    def self.create(*fields)
+    def self.create(*args)
       Class.new do
         include JiakData
 
-        allowed *fields
+        if(args.size == 1)
+          case args[0]
+          when Symbol, Array
+            allowed *args[0]
+          when JiakSchema
+            allowed  *args[0].allowed_fields
+            required *args[0].required_fields
+            readable *args[0].read_mask
+            writable *args[0].write_mask
+          end
+        else
+          allowed *args
+        end          
 
-        def initialize(hsh)
+        def initialize(hsh)  # :nodoc:
           hsh.each {|key,value| send("#{key}=",value)}
         end
-
+        
+        # :call-seq:
+        #   data.create({})  -> JiakDataHash
+        #
+        # Create an instance of the user-defined JiakDataHash using the provide
+        # hash as initial values.
         def self.create(hsh={})
           new(hsh)
         end
 
+        # :call-seq:
+        #   data.jiak_create(jiak)  ->  JiakDataHash
+        #
+        # Used by RiakRest to create an instance of the user-defined data class
+        # from the values returned by the Jiak server.
         def self.jiak_create(jiak)
           new(jiak)
         end
 
+        # :call-seq:
+        #   data[field] -> value
+        #
+        # Returns <code>nil</code> if <code>field</code> was not declared for
+        # this class. <code>field</code> can be in either string or symbol
+        # form.
         def [](key)
-          send("#{key}")
+          send("#{key}") rescue nil
         end
 
+        # :call-seq:
+        #   data[field] = value
+        #
+        # Returns <code>nil</code> if <code>field</code> was not declared for
+        # this class. Note this is not the same as Hash sematics.
         def []=(key,value)
-          send("#{key}=",value)
+          send("#{key}=",value)  rescue nil
         end
 
+        # :call-seq:
+        #   data.for_jiak  -> {}
+        #
+        # Hash of the writable fields and their values. Used by RiakRest to
+        # prepare the data for transport to the Jiak server.
         def for_jiak
-          self.class.write_mask.inject({}) do |build,field|
+          self.class.schema.write_mask.inject({}) do |build,field|
+            val = send("#{field}")
+            build[field] = val  unless val.nil?
+            build
+          end
+        end
+        
+        # :call-seq:
+        #   data.to_hash
+        #
+        # A Hash of the allowed fields and their values.
+        def to_hash
+          self.class.schema.allowed_fields.inject({}) do |build,field|
             val = send("#{field}")
             build[field] = val
             build
           end
         end
 
-        def to_hash
-          for_jiak
-        end
-
+        # call-seq:
+        #    data.eql?(other) -> true or false
+        #
+        # Returns <code>true</code> if <i>data</i> and <i>other</i> contain
+        # the same attribute values for all allowed fields.
         def eql?(other)
           other.is_a?(self.class) &&
-            self.class.allowed_fields.reduce(true) do |same,field|
+            self.class.schema.allowed_fields.reduce(true) do |same,field|
             same && other.send("#{field}").eql?(send("#{field}"))
           end
         end
-
       end
     end
 

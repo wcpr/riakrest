@@ -1,7 +1,7 @@
 module RiakRest
 
   # Restful client interaction with a Riak document store via a JSON
-  # interface. The Riak RESTful server is called Jiak.
+  # interface. See RiakRest for example usage.
   class JiakClient
 
     # :stopdoc:
@@ -19,32 +19,32 @@ module RiakRest
     # :startdoc:
 
     # :call-seq:
-    #   JiakClient.new(server_uri)  -> uri
+    #   JiakClient.new(uri)  -> uri
     #
     # Create a new client for Riak RESTful (Jiak) interaction with the server at
     # the specified URI.
     #
     # Raise JiakClientException if the server URI is not a string.
     #
-    def initialize(server_uri='http://127.0.0.1:8002/jiak/')
-      unless server_uri.is_a?(String)
+    def initialize(uri='http://127.0.0.1:8002/jiak/')
+      unless uri.is_a?(String)
         raise JiakClientException, "Jiak server URI shoud be a String."
       end
-      @server_uri = server_uri
-      @server_uri += '/' unless @server_uri.end_with?('/')
-      @server_uri
+      @uri = uri
+      @uri += '/' unless @uri.end_with?('/')
+      @uri
     end
 
     # :call-seq:
-    #   JiakClient.create(server_uri)  -> uri
+    #   JiakClient.create(uri)  -> uri
     #
     # Create a new client for Riak RESTful (Jiak) interaction with the server at
     # the specified URI.
     #
     # Raise JiakClientException if the server URI is not a string.
     #
-    def self.create(server_uri)
-      new(server_uri)
+    def self.create(uri)
+      new(uri)
     end
 
     # :call-seq:
@@ -104,7 +104,10 @@ module RiakRest
     # Raise JiakClientException on RESTful HTTP errors.
     #
     def store(jobj,opts={})
-      uri_opts = {WRITES => opts[:writes], DURABLE_WRITES => opts[:durable_writes]}
+      uri_opts = {
+        WRITES => opts[:writes], 
+        DURABLE_WRITES => opts[:durable_writes]
+      }
       uri_opts[RETURN_BODY] = opts[:key] || true
 
       begin
@@ -121,10 +124,10 @@ module RiakRest
 
         # CxHack --Begin--
         # As of Riak 0.6 put/post with returnbody=false returns nil rather than
-        # the key. The comment lines above should work in the future. (They
-        # worked until Riak 0.5). The lines below are a current hack which
-        # always sets returnbody=true then returns just the key if the returned
-        # object wasn't requested.
+        # the key. The comment lines above worked for Riak 0.4 and should work
+        # in the future. The lines below are a current hack which always sets
+        # returnbody=true then returns just the key if the returned object
+        # wasn't requested.
         return_body = opts[RETURN_BODY]
         opts[RETURN_BODY] = true
         uri = jiak_uri(jobj.bucket,jobj.key,opts)
@@ -231,11 +234,11 @@ module RiakRest
     end
 
     # :call-seq:
-    #   client.server_uri  -> string
+    #   client.uri  -> string
     #
     # String representation of the base URI of the Jiak server.
-    def server_uri
-      @server_uri
+    def uri
+      @uri
     end
 
     private
@@ -243,7 +246,7 @@ module RiakRest
     def jiak_uri(bucket,key="",opts={})
       bucket_name = bucket.is_a?(JiakBucket) ? bucket.name : bucket
 
-      uri = @server_uri + URI.encode(bucket_name)
+      uri = @uri + URI.encode(bucket_name)
       uri += '/'+URI.encode(key) unless key.empty?
       uri += query_string(opts) unless opts.empty?
       uri

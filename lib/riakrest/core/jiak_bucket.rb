@@ -1,9 +1,26 @@
 module RiakRest
 
-  # A bucket on a Jiak server. In Riak parlance, buckets just have a name. In
-  # RiakRest, buckets also have an associated JiakData class. This data class
-  # is used to inflate the user-defined data into JiakData objects when
+  # Data is stored on the Jiak server by key under a bucket. During Jiak
+  # interaction, the bucket on the server has an associated schema which
+  # determines permissible data interaction. See JiakSchema for a discussion of
+  # schemas in Jiak. Since the bucket schema can be changed dynamically,
+  # schemas can be viewed more as a loose type system rather an onerous
+  # restriction.
+  #
+  # In RiakRest buckets have an associated JiakData class, and each JiakData
+  # class has an associated JiakSchema. These associations facility setting and
+  # maintaining the schema in use for a Jiak bucket. Dynamically changing the
+  # bucket schema means you can have either homogeneous (simplest) or
+  # heterogenous data in a single Jiak server bucket. It also means you can
+  # define multiple JiakData classes that effectively present different "views"
+  # (via schemas) into the same data stored on the Jiak server. These classes
+  # act like types that can determine which fields are accessible for reading
+  # and writing data.The JiakData class associated with a bucket is also used
+  # to automatically inflate the user-defined data into JiakData objects when
   # retrieved from the Jiak server.
+  #
+  # JiakResource greatly eases the bookkeeping necessary for heterogenous, as
+  # well as homogenous, data interaction with the Jiak server.
   class JiakBucket
 
     attr_reader :name
@@ -22,7 +39,7 @@ module RiakRest
     # Create a bucket for use in Jiak interaction.
     #
     # Raise JiakBucketException if the bucket name is not a non-empty string or
-    # the data class is not a JiakData.
+    # the data class has not included the JiakData module.
     def self.create(name,data_class)
       new(transform_name(name),check_data_class(data_class))
     end
@@ -58,16 +75,6 @@ module RiakRest
     def eql?(other)
       (other.name.eql?(@name) &&
        other.data_class.eql?(@data_class)) rescue false
-    end
-
-    # call-seq:
-    #    jiak_bucket == other -> true or false
-    #
-    # Equality -- JiakBuckets are equal if they contain the same attribute
-    # values.
-    def ==(other)
-      (other.name == @name &&
-       other.data_class == @data_class) rescue false
     end
 
     private
