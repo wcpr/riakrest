@@ -246,23 +246,13 @@ module RiakRest
     def jiak_uri(bucket,key="",opts={})
       bucket_name = bucket.is_a?(JiakBucket) ? bucket.name : bucket
 
-      uri = @uri + URI.encode(bucket_name)
-      uri += '/'+URI.encode(key) unless key.empty?
-      uri += query_string(opts) unless opts.empty?
+      uri = "#{@uri}#{URI.encode(bucket_name)}"
+      uri += "/#{URI.encode(key)}" unless key.empty?
+      qstring = opts.reject {|k,v| v.nil?}.map{|k,v| "#{k}=#{v}"}.join('&')
+      uri += "?#{URI.encode(qstring)}"  unless qstring.empty?
       uri
     end
     
-    # Build the query string portion of the URI based on passed options.
-    def query_string(opts={})
-      result = ""
-      pre = '?'
-      opts.reject {|field,value| value.nil?} .each do |field,value|
-        result += "#{pre}#{field}=#{value}"
-        pre = '&'
-      end
-      result
-    end
-
     # Get either the schema or keys for the bucket.
     def bucket_info(bucket,info)
       ignore = (info == SCHEMA) ? KEYS : SCHEMA
