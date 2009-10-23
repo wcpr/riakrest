@@ -1,14 +1,13 @@
 module RiakRest
+  # JiakResource provides a resource-oriented wrapper for Jiak interaction. 
+  
   module JiakResource
-
-    # CxINC How to handle options to store,get,delete ?
-
     # ----------------------------------------------------------------------
     # Class methods
     # ----------------------------------------------------------------------
     
-    # Class methods for use in creating a user-defined JiakResource. The
-    # methods <code>server</code> and <code>resource</code> are mandatory.
+    # Class methods for creating a user-defined JiakResource. The methods
+    # <code>server</code> and <code>resource</code> are mandatory.
     #
     # ===Usage
     # <code>
@@ -22,21 +21,22 @@ module RiakRest
     module ClassMethods
 
       # :call-seq:
-      #   server uri
+      #   JiakServer.server(uri)
       #
       # Set the URI for Jiak server interaction.
       #
       def server(uri)
         jiak.uri = uri
         jiak.server = JiakClient.create(uri)
+        uri
       end
 
       # :call-seq:
-      #   JiakResource.resource options
+      #   JiakResource.resource(opts)
       #
       # Valid options are:
       # <code>data_class</code> :: data class for the resource.
-      # <code>name</code> :: Jiak bucket name for the resource.
+      # <code>name</code> :: Jiak (bucket) name for the resource.
       # <code>activate</code> :: <code>true> to activate this JiakResource at
       # the time of class creation. Default is <code>false</code>.
       #
@@ -53,7 +53,7 @@ module RiakRest
       #
       # Raise JiakResourceException if a valid JiakData class is not provided
       # for <code>data_class</code>.
-      def resource(opts={})
+      def resource(opts)
         unless opts[:data_class]
           raise JiakResourceException, "data_class required."
         end
@@ -79,19 +79,22 @@ module RiakRest
       alias bucket resource
 
       # :call-seq:
-      #   JiakResource.params {}  -> {}
+      #   JiakResource.params(opts={})  -> {}
       #
-      # Set the bucket default request parameters. Valid options are:
+      # Default options for request parameters during Jiak interaction. Valid
+      # options are:
       #
+      # <code>:reads</code> :: The number of Riak nodes that must successfully read data.
       # <code>:writes</code> :: The number of Riak nodes that must successfully store data.
       # <code>:durable_writes</code> :: The number of Riak nodes (<code>< writes</code>) that must successfully store data in a durable manner.
-      # <code>:reads</code> :: The number of Riak nodes that must successfully read data.
-    # <code>:waits</code> :: The number of Riak nodes that must reply the delete has occurred before success.
+      # <code>:waits</code> :: The number of Riak nodes that must reply the delete has occurred before success.
       #
-      # On Jiak interactions these parameters take precendent over the values
-      # set on the Riak cluster. Per interaction requests can override the
-      # parameters set on the bucket. In general the values set on the Riak
-      # cluster should suffice.
+      # Request parameters can be set at the JiakResource level using this
+      # method, or at the individual call level. The order of precedence for
+      # setting each parameter at the time of the Jiak interaction is
+      # individual call : JiakResource : Riak cluster. In general the values
+      # set on the Riak cluster should suffice and these parameters aren't
+      # necessary for Jiak interaction.
       def params(opts={})
         jiak.bucket.params = opts
       end
@@ -99,8 +102,9 @@ module RiakRest
       # :call-seq:
       #   JiakResource.create(*args)   -> JiakResource
       #
-      # Create a JiakResource wrapping a JiakData instance created with the
-      # passed arguments.
+      # Create a JiakResource wrapping a JiakData instance. The argument array
+      # is passed to the <code>new</code> method of the JiakData associated
+      # with the JiakResource.
       def create(*args)
         new(*args)
       end
@@ -108,15 +112,15 @@ module RiakRest
       # :call-seq:
       #   JiakResource.schema  -> JiakSchema
       #
-      # Gets the schema for the data class of this resource.
+      # Get the schema for a resource.
       def schema
         jiak.bucket.schema
       end
 
       # :call-seq:
-      #   JiakResource.allowed :f1, ..., :fn  -> JiakSchema
+      #   JiakResource.allowed(:f1,...,:fn)  -> JiakSchema
       #
-      # Set the allowed fields for the schema of this resource.
+      # Set the allowed fields for the schema of a resource.
       #
       # Returns the altered JiakSchema.
       def allowed(*fields)
@@ -125,9 +129,9 @@ module RiakRest
       end
 
       # :call-seq:
-      #   JiakResource.required :f1, ..., :fn  -> JiakSchema
+      #   JiakResource.required(:f1,...,:fn)  -> JiakSchema
       #
-      # Sets the required fields for data class schema of this resource.
+      # Sets the required fields for the schema of a resource.
       #
       # Returns the altered JiakSchema.
       def required(*fields)
@@ -136,9 +140,9 @@ module RiakRest
       end
 
       # :call-seq:
-      #   JiakResource.readable :f1, ..., :fn  -> JiakSchema
+      #   JiakResource.readable(:f1,...,:fn)  -> JiakSchema
       #
-      # Sets the readable fields for data class schema of this resource.
+      # Sets the readable fields for the schema of a resource.
       #
       # Returns the altered JiakSchema.
       def readable(*fields)
@@ -147,9 +151,9 @@ module RiakRest
       end
 
       # :call-seq:
-      #   JiakResource.writable :f1, ..., :fn  -> JiakSchema
+      #   JiakResource.writable(:f1,...,:fn)  -> JiakSchema
       #
-      # Sets the writable fields for data class schema of this resource.
+      # Sets the writable fields for the schema of a resource.
       #
       # Returns the altered JiakSchema.
       def writable(*fields)
@@ -160,14 +164,15 @@ module RiakRest
       # :call-seq:
       #   JiakResource.activate  -> JiakSchema
       #
-      # Prepare the Jiak server to accept JiakResource data.
+      # Prepare the Jiak server to accept JiakResource. Returns the schema set
+      # on the Jiak server.
       def activate
         jiak.server.set_schema(jiak.bucket)
         jiak.bucket.schema
       end
 
       # :call-seq:
-      #   JiakResource.active?  -> <code>true / false</code>
+      #   JiakResource.active?  -> true or false
       #
       # Determine if the Jiak server is prepared to accept data for this
       # JiakResource.
@@ -179,8 +184,8 @@ module RiakRest
       #   JiakResource.keys   -> []
       #
       # Get an array of the current keys for this resource. Since key lists are
-      # updated asynchronously on the Riak cluster fronted by the Jiak server
-      # the returned array can be out of synch.
+      # updated asynchronously on a Riak cluster the returned array can be out
+      # of synch immediately after new puts or deletes.
       def keys
         jiak.server.keys(jiak.bucket)
       end
@@ -254,8 +259,9 @@ module RiakRest
       # :call-seq:
       #   JiakResource.delete(resource,opts={})  -> true or false
       #
-      # Delete the JiakResource store on the Jiak server by the specified key
-      # in the JiakResource bucket. Valid options are:
+      # Delete the JiakResource store on the Jiak server by the specified
+      # key. Valid options are:
+      #
       # <code>:waits</code> --- The number of Riak nodes that must reply the
       # delete has occurred before success. If not set, defaults first to the
       # value set for the JiakResource, then to the value set on the Riak
@@ -270,30 +276,30 @@ module RiakRest
       including_class.instance_eval do
         extend ClassMethods
         private_class_method :new
-        def jiak
+        def jiak  # :nodoc:
           @jiak
         end
         @jiak = Struct.new(:server,:uri,:name,:data,:bucket).new
       end
     end
 
-    def self.copy(klass)
-      unless klass.include?(JiakResource)
-        raise JiakResourceException, "expect a JiakResource class."
-      end
-      Class.new do
-        include JiakResource
-        self.server klass.jiak.server.uri
-        self.resource :name => klass.jiak.bucket.name,
-                     :data_class => klass.jiak.bucket.data_class
-        end
-    end
+    # def self.copy(klass)
+    #   unless klass.include?(JiakResource)
+    #     raise JiakResourceException, "expect a JiakResource class."
+    #   end
+    #   Class.new do
+    #     include JiakResource
+    #     self.server klass.jiak.server.uri
+    #     self.resource :name => klass.jiak.bucket.name,
+    #                  :data_class => klass.jiak.bucket.data_class
+    #     end
+    # end
 
     # ----------------------------------------------------------------------
     # Instance methods
     # ----------------------------------------------------------------------
 
-    attr_accessor :jiak
+    attr_accessor :jiak   # :nodoc:
 
     # First form is used by the JiakResource.get; the second form is used by
     # JiakResource.create.
@@ -303,50 +309,54 @@ module RiakRest
       else
         bucket = self.class.jiak.bucket
         @jiak = JiakObject.create(:bucket => bucket,
-                                  :data => bucket.data_class.create(*args))
+                                  :data => bucket.data_class.new(*args))
       end
     end
 
     # :call-seq:
-    #   resource.put(opts={})   -> nil
+    #   put(opts={})   -> nil
     #
-    # Put this resource on the Jiak server. See JiakResource#put for options.
+    # Put this resource on the Jiak server. See JiakResource#ClassMethods#put
+    # for options.
     def put(opts={})
       @jiak = self.class.put(self,opts)
     end
 
     # :call-seq:
-    #   resource.post(opts={})   -> nil
+    #   post(opts={})   -> nil
     #
     # Put this resource on the Jiak server with a guard to ensure the resource
-    # has not been previously stored. See JiakResource#put for options.
+    # has not been previously stored. See JiakResource#ClassMethods#put for
+    # options.
     def post(opts={})
       @jiak = self.class.post(self,opts)
     end
 
     # :call-seq:
-    #   resource.store(opts={})   -> nil
+    #   store(opts={})   -> nil
     #
     # Put this resource on the Jiak server with a guard to ensure the resource
-    # has been previously stored. See JiakResource#put for options.
+    # has been previously stored. See JiakResource#ClassMethods#put for
+    # options.
     def store(opts={})
       @jiak = self.class.store(self,opts)
     end
 
     # :call-seq:
-    #   resource.get(opts={})   -> nil
+    #   get(opts={})   -> nil
     #
     # Get this resource from the Jiak server. The current data of the resource
-    # is overwritten, so use with caution. See JiakResource#get for options.
+    # is overwritten, so use with caution. See JiakResource#ClassMethods#get
+    # for options.
     def get(opts={})
       self.class.get!(self,opts)
     end
 
     # :call-seq:
-    #   resource.delete(opts={})     ->  true or false
+    #   delete(opts={})     ->  true or false
     #
     # Deletes the resource on the Jiak server. The local object is
-    # uneffected. See JiakResource#delete for options.
+    # uneffected. See JiakResource#ClassMethods#delete for options.
     def delete(opts={})
       self.class.delete(self,opts)
     end

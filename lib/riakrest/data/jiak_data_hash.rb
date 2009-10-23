@@ -20,9 +20,9 @@ module RiakRest
     private_class_method :new   # :nodoc:
 
     # :call-seq:
-    #   JiakDataHash.create :field_1, ..., field_n    -> JiakDataHash
-    #   JiakDataHash.create [:field_1, ..., field_n]  -> JiakDataHash
-    #   JiakDataHash.create schema                    -> JiakDataHash
+    #   JiakDataHash.create(:f1,...,fn)    -> JiakDataHash
+    #   JiakDataHash.create([:f1,...,fn])  -> JiakDataHash
+    #   JiakDataHash.create(schema)        -> JiakDataHash
     #
     # Creates a JiakDataHash class that can be used to create JiakData objects
     # containing the specified fields.
@@ -44,7 +44,7 @@ module RiakRest
           allowed *args
         end          
 
-        def initialize(hsh)  # :nodoc:
+        def initialize(hsh={})
           hsh.each {|key,value| send("#{key}=",value)}
         end
         
@@ -69,6 +69,8 @@ module RiakRest
         # :call-seq:
         #   data[field] -> value
         #
+        # Get the value of a field.
+        #
         # Returns <code>nil</code> if <code>field</code> was not declared for
         # this class. <code>field</code> can be in either string or symbol
         # form.
@@ -79,8 +81,10 @@ module RiakRest
         # :call-seq:
         #   data[field] = value
         #
-        # Returns <code>nil</code> if <code>field</code> was not declared for
-        # this class. Note this is not the same as Hash sematics.
+        # Set the value of a field.
+        #
+        # Returns the value set, or <code>nil</code> if <code>field</code> was
+        # not declared for this class.
         def []=(key,value)
           send("#{key}=",value)  rescue nil
         end
@@ -88,8 +92,8 @@ module RiakRest
         # :call-seq:
         #   data.for_jiak  -> {}
         #
-        # Hash of the writable fields and their values. Used by RiakRest to
-        # prepare the data for transport to the Jiak server.
+        # Return a hash of the writable fields and their values. Used by
+        # RiakRest to prepare the data for transport to the Jiak server.
         def for_jiak
           self.class.schema.write_mask.inject({}) do |build,field|
             val = send("#{field}")
@@ -101,7 +105,7 @@ module RiakRest
         # :call-seq:
         #   data.to_hash
         #
-        # A Hash of the allowed fields and their values.
+        # Return a hash of the allowed fields and their values.
         def to_hash
           self.class.schema.allowed_fields.inject({}) do |build,field|
             val = send("#{field}")
@@ -113,7 +117,7 @@ module RiakRest
         # call-seq:
         #    data.eql?(other) -> true or false
         #
-        # Returns <code>true</code> if <i>data</i> and <i>other</i> contain
+        # Returns<code>true</code> if <i>data</i> and <i>other</i> contain
         # the same attribute values for all allowed fields.
         def eql?(other)
           other.is_a?(self.class) &&
