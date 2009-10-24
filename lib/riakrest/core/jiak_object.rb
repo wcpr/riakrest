@@ -127,26 +127,12 @@ module RiakRest
     # Returns <code>true</code> if <i>jiak_object</i> and <i>other</i> contain
     # the same attribute values.
     def eql?(other)
-      (other.bucket.eql?(@bucket) &&
-       other.key.eql?(@key) &&
-       other.data.eql?(@data) &&
-       other.links.eql?(@links) &&
-       other.riak.eql?(@riak)
-       ) rescue false
-    end
-
-    # call-seq:
-    #    jiak_object == other -> true or false
-    #
-    # Equality -- JiakObjects are equal if they contain the same attribute
-    # values.
-    def ==(other)
-      (other.bucket == @bucket &&
-       other.key == @key &&
-       other.data == @data &&
-       other.links == @links &&
-       other.riak == @riak
-       ) rescue false
+      other.is_a?(JiakObject) &&
+        @bucket.eql?(other.bucket) &&
+        @key.eql?(other.key) &&
+        @data.eql?(other.data) &&
+        @links.eql?(other.links) &&
+        @riak.eql?(other.riak)
     end
 
     private
