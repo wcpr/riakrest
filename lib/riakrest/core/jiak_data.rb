@@ -86,7 +86,7 @@ module RiakRest
       def allowed(*fields)
         arr_fields = create_array(fields)
         fields.each {|field| attr_accessor field}
-        @schema = JiakSchema.create(arr_fields)
+        @schema = JiakSchema.new(arr_fields)
         arr_fields
       end
 

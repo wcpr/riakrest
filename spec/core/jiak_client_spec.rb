@@ -45,7 +45,7 @@ describe "JiakClient init" do
 
   it "should allow specified base URI" do
     base_uri = 'http://localhost:1234/tmp/'
-    client = JiakClient.create base_uri
+    client = JiakClient.new base_uri
     client.uri.should match base_uri
   end
 
@@ -55,7 +55,7 @@ describe "JiakClient URI handling" do
   before do
     @base_uri = 'http://127.0.0.1:8002/jiak/'
     @client = JiakClient.new @base_uri
-    @bucket = JiakBucket.create('uri_bucket',FooBarBaz)
+    @bucket = JiakBucket.new('uri_bucket',FooBarBaz)
     @key = 'uri_key'
   end
 end
@@ -69,7 +69,7 @@ describe "JiakClient processing" do
   describe "for buckets" do
     before do
       @bucket_name = 'bucket_1'
-      @bucket = JiakBucket.create(@bucket_name,FooBarBaz)
+      @bucket = JiakBucket.new(@bucket_name,FooBarBaz)
       @client.set_schema(@bucket)
     end
 
@@ -88,7 +88,7 @@ describe "JiakClient processing" do
 
     it "should update an existing bucket schema" do
       FooBarBazBuz = JiakDataHash.create(:foo,:bar,:baz,:buz)
-      @client.set_schema(JiakBucket.create(@bucket_name,FooBarBazBuz))
+      @client.set_schema(JiakBucket.new(@bucket_name,FooBarBazBuz))
       
       resp_schema = @client.schema(@bucket)
       resp_schema.allowed_fields.should include 'buz'
@@ -103,9 +103,9 @@ describe "JiakClient processing" do
              {:key=>'key2',:dobj=>FooBarBaz.new(:foo=>'v21',:bar=>'v22')},
              {:key=>'',:dobj=>FooBarBaz.new(:foo=>'v3')}]
       keys = arr.map do |hsh|
-        jo = JiakObject.create(:bucket => @bucket,
-                               :key => hsh[:key],
-                               :data => hsh[:dobj])
+        jo = JiakObject.new(:bucket => @bucket,
+                            :key => hsh[:key],
+                            :data => hsh[:dobj])
         @client.store(jo)
       end
       srv_keys = @client.keys(@bucket)
@@ -114,7 +114,7 @@ describe "JiakClient processing" do
 
     it "should encode odd bucket strings" do
       bucket_name = "# <& %"
-      bucket = JiakBucket.create(bucket_name,FooBarBaz)
+      bucket = JiakBucket.new(bucket_name,FooBarBaz)
       @client.set_schema(bucket)
       schema = @client.schema(@bucket)
       FooBarBaz.schema.read_mask.same_fields?(schema.read_mask).should be true
@@ -123,7 +123,7 @@ describe "JiakClient processing" do
 
   describe "for CRUD" do
     before do
-      @bucket = JiakBucket.create('bucket_2',FooBarBaz)
+      @bucket = JiakBucket.new('bucket_2',FooBarBaz)
       @client.set_schema(@bucket)
       @data = FooBarBaz.new(:foo => 'foo val')
     end
@@ -131,33 +131,27 @@ describe "JiakClient processing" do
     describe "storage" do
       it "should store a JiakObject by the specified key" do
         key = 'store_key_1'
-        jobj = JiakObject.create(:bucket => @bucket,
-                                    :key => key,
-                                    :data => @data)
+        jobj = JiakObject.new(:bucket => @bucket, :key => key, :data => @data)
         resp = @client.store(jobj)
         resp.should eql key
       end
 
       it "should store a JiakObject w/o a key" do
-        jobj = JiakObject.create(:bucket => @bucket,
-                                  :data => @data)
+        jobj = JiakObject.new(:bucket => @bucket, :data => @data)
         resp = @client.store(jobj)
         resp.should_not be_empty
       end
 
       it "should return a JiakObject at time of storage" do
         key = 'store_key_2'
-        jobj = JiakObject.create(:bucket => @bucket,
-                                  :key => key,
-                                  :data => @data)
+        jobj = JiakObject.new(:bucket => @bucket, :key => key, :data => @data)
         resp = @client.store(jobj,{:object => true})
         resp.should be_a JiakObject
         resp.bucket.should eql @bucket
         resp.key.should eql key
         resp.data.should be_a FooBarBaz
 
-        jobj = JiakObject.create(:bucket => @bucket, 
-                                 :data => @data)
+        jobj = JiakObject.new(:bucket => @bucket, :data => @data)
         resp = @client.store(jobj,{:object => true})
         resp.should be_a JiakObject
         resp.key.should_not be_nil
@@ -166,9 +160,7 @@ describe "JiakClient processing" do
       
       it "should handle odd key values" do
         key = '$ p @ c #'
-        jobj = JiakObject.create(:bucket => @bucket,
-                                  :key => key,
-                                  :data => @data)
+        jobj = JiakObject.new(:bucket => @bucket, :key => key, :data => @data)
         resp_key = @client.store(jobj)
         resp_key.should eql key
       end
@@ -177,9 +169,7 @@ describe "JiakClient processing" do
     describe "fetching" do
       it "should get a previously stored JiakObject" do
         key = 'fetch_key_1'
-        jobj = JiakObject.create(:bucket => @bucket,
-                                  :key => key,
-                                  :data => @data)
+        jobj = JiakObject.new(:bucket => @bucket, :key => key, :data => @data)
         @client.store(jobj)
 
         fetched = @client.get(@bucket,key)
@@ -188,9 +178,7 @@ describe "JiakClient processing" do
         fetched.key.should eql key
         fetched.data.should eql jobj.data
 
-        jobj = JiakObject.create(:bucket => @bucket,
-                                  :key => key,
-                                  :data => @data)
+        jobj = JiakObject.new(:bucket => @bucket, :key => key, :data => @data)
         key = @client.store(jobj)
         fetched = @client.get(@bucket,key)
         fetched.should be_a JiakObject
@@ -205,8 +193,7 @@ describe "JiakClient processing" do
     describe "updating" do
       it "should update a previously stored JiakObject" do
         jobj =
-          @client.store(JiakObject.create(:bucket => @bucket,
-                                          :data => @data),
+          @client.store(JiakObject.new(:bucket => @bucket, :data => @data),
                         {:object => true})
         
         jobj.data.should eql @data
@@ -231,9 +218,7 @@ describe "JiakClient processing" do
     describe "deleting" do
       it "should remove a previously stored JiakObject" do
         key = 'delete_key_1'
-        jobj = JiakObject.create(:bucket => @bucket,
-                                  :key => key,
-                                  :data => @data)
+        jobj = JiakObject.new(:bucket => @bucket, :key => key, :data => @data)
         @client.store(jobj)
 
         @client.delete(@bucket,key).should be true
@@ -253,8 +238,8 @@ describe "JiakClient links" do
     @base_uri = 'http://127.0.0.1:8002/jiak/'
     @client = JiakClient.new @base_uri
 
-    @parent_bucket = JiakBucket.create('parents',Parent)
-    @children_bucket = JiakBucket.create('children',Child)
+    @parent_bucket = JiakBucket.new('parents',Parent)
+    @children_bucket = JiakBucket.new('children',Child)
     @client.set_schema(@parent_bucket)
     @client.set_schema(@children_bucket)
   end
@@ -264,9 +249,9 @@ describe "JiakClient links" do
     parent_keys.each do |parent_key|
       parent_name = parent_key.gsub('_',' ')
       parent_data = Parent.new(:name => parent_name)
-      jobj = JiakObject.create(:bucket => @parent_bucket,
-                               :key => parent_key,
-                               :data => parent_data)
+      jobj = JiakObject.new(:bucket => @parent_bucket,
+                            :key => parent_key,
+                            :data => parent_data)
       @client.store(jobj)
     end
     parent_children = {
@@ -281,12 +266,12 @@ describe "JiakClient links" do
         child_name = child_key.gsub('_',' ')
         child_data = Child.new(:name => child_name, :parent => parent_key)
         child_jobj = 
-          JiakObject.create(:bucket => @children_bucket,
-                            :key => child_key,
-                            :data => child_data)
+          JiakObject.new(:bucket => @children_bucket,
+                         :key => child_key,
+                         :data => child_data)
         @client.store(child_jobj)
         child_link =
-          JiakLink.create([@children_bucket.name,child_jobj.key,'child'])
+          JiakLink.new([@children_bucket.name,child_jobj.key,'child'])
         parent_jobj = @client.get(@parent_bucket,parent_key)
         parent_jobj << child_link
         @client.store(parent_jobj)
@@ -296,12 +281,12 @@ describe "JiakClient links" do
     parent_children.each do |parent_key,children_keys|
       parent = @client.get(@parent_bucket,parent_key)
       children_keys.each do |child_key|
-        child_link = JiakLink.create([@children_bucket.name,child_key,'child'])
+        child_link = JiakLink.new([@children_bucket.name,child_key,'child'])
         parent.links.should include child_link
       end
     end
     
-    walker = JiakLink.create([@children_bucket.name,JiakLink::ANY,'child'])
+    walker = JiakLink.new([@children_bucket.name,JiakLink::ANY,'child'])
     parent_keys.each do |parent_key|
       @client.walk(@parent_bucket,parent_key,walker).each do |child|
         child_data = child['object']

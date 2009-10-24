@@ -6,36 +6,22 @@ module RiakRest
   #++
   # ===Usage
   # <code>
-  #   link = JiakLink.create(:bucket => 'person', :key => 'remy', :tag => 'child')
-  #   link = JiakLink.create(['person','remy','child']
-  #   link = JiakLink.create(['person',JiakLink::ANY,'child']
+  #   link = JiakLink.new(:bucket => 'person', :key => 'remy', :tag => 'child')
+  #   link = JiakLink.new(['person','remy','child']
+  #   link = JiakLink.new(['person',JiakLink::ANY,'child']
   # </code>
   class JiakLink
-
-    private_class_method :new
 
     attr_reader :bucket, :key, :tag
 
     # Jiak (erlang) wildcard character (atom)
     ANY = '_'
 
-    # opts hash keys can be either strings or symbols. Any missing or empty
-    # keys are set to ANY.
-    def initialize(opts)  # nodoc:
-      [:bucket,:key,:tag].each do |key|
-        opts[key] = opts[key] || opts[key.to_s] || ANY
-        opts[key].strip!
-        opts[key] = ANY if opts[key].empty?
-      end
-      @bucket = opts[:bucket]
-      @key = opts[:key]
-      @tag = opts[:tag]
-    end
 
     # call-seq:
-    #    JiakLink.create(opts)  -> JiakLink
+    #    JiakLink.new(opts=[])  -> JiakLink
     #
-    # Create a link from either a Hash or a three-element Array.
+    # Create a link from either a hash or a three-element array.
     # 
     # ====Hash
     # <code>:bucket</code> :: Bucket or bucket name
@@ -50,15 +36,24 @@ module RiakRest
     #
     # ====Array
     # <code>['b','k','t']</code> --- Three-element array of strings
-    def self.create(opts={})
+    def initialize(opts=[]) 
       case opts
       when Hash
-        new(transform_opts(opts))
+        opts = transform_opts(opts)
       when Array
-        new(transform_arr(opts))
+        opts = transform_arr(opts)
       else
         raise JiakLinkException, "Can only create JiakLink from hash or array"
       end
+
+      [:bucket,:key,:tag].each do |key|
+        opts[key] = opts[key] || opts[key.to_s] || ANY
+        opts[key].strip!
+        opts[key] = ANY if opts[key].empty?
+      end
+      @bucket = opts[:bucket]
+      @key = opts[:key]
+      @tag = opts[:tag]
     end
 
     # call-seq:
@@ -106,7 +101,7 @@ module RiakRest
     end
 
     private
-    def self.transform_opts(opts)
+    def transform_opts(opts)
       opts[:bucket] = bucket_to_name(opts[:bucket])
       [:bucket,:key,:tag].each do |opt|
         opts[opt] = opts[opt] || opts[opt.to_s] || ANY
@@ -119,7 +114,8 @@ module RiakRest
       opts
     end
 
-    def self.transform_arr(arr)
+    def transform_arr(arr)
+      arr = [ANY,ANY,ANY]  if arr.empty?
       unless arr.size == 3
         raise JiakLinkException, "Link array must have 3 elements"
       end
@@ -127,7 +123,7 @@ module RiakRest
       transform_opts({:bucket => arr[0], :key => arr[1], :tag => arr[2]})
     end
 
-    def self.bucket_to_name(arg)
+    def bucket_to_name(arg)
       arg.is_a?(JiakBucket) ? arg.name : arg
     end
 

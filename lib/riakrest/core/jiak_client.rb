@@ -6,10 +6,10 @@ module RiakRest
   # ====Usage
   # <code>
   #   Person = JiakDataHash.create(:name,:age)
-  #   remy = Person.create(:name => "remy", :age => 10)
-  #   bucket = JiakBucket.create('person',Person)
+  #   remy = Person.new(:name => "remy", :age => 10)
+  #   bucket = JiakBucket.new('person',Person)
   #   client.set_schema(bucket)
-  #   jobj = JiakObject.create(:bucket => bucket, :data => remy)
+  #   jobj = JiakObject.new(:bucket => bucket, :data => remy)
   #   key = client.store(jobj)
   #   remy.name                                # => "remy"
   #   remy.name = "Remy"                       # => "Remy"
@@ -51,18 +51,6 @@ module RiakRest
     end
 
     # :call-seq:
-    #   JiakClient.create(uri)  -> uri
-    #
-    # Create a new client for Riak RESTful (Jiak) interaction with the server at
-    # the specified URI.
-    #
-    # Raise JiakClientException if the server URI is not a string.
-    #
-    def self.create(uri)
-      new(uri)
-    end
-
-    # :call-seq:
     #   client.set_schema(bucket)  -> nil
     #
     # Set the Jiak server schema for a bucket. The schema is determined by the
@@ -88,7 +76,7 @@ module RiakRest
     # to the Jiak server. See JiakBucket#schema for a way to get this
     # information without server access.
     def schema(bucket)
-      JiakSchema.create(bucket_info(bucket,SCHEMA))
+      JiakSchema.new(bucket_info(bucket,SCHEMA))
     end
 
     # :call-seq:
@@ -141,7 +129,6 @@ module RiakRest
           :content_type => APP_JSON,
           :data_type => JSON_DATA, 
           :accept => APP_JSON }
-
         # resp = jobj.key.empty? ? RestClient.post(uri,payload,headers) :
         #   RestClient.put(uri,payload,headers)
         # opts[RETURN_BODY] ? JiakObject.from_jiak(resp,jobj.bucket.data_class) : resp

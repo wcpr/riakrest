@@ -5,13 +5,10 @@ describe "JiakBucket" do
     @name = 'test'
     @data_class = JiakDataHash.create(:f1,:f2)
     @params = {:reads => 1, :writes => 2, :durable_writes => 3, :waits => 4}
-    @bucket = JiakBucket.create(@name,@data_class)
+    @bucket = JiakBucket.new(@name,@data_class)
   end
 
   it "should respond to" do
-    JiakBucket.should respond_to(:create)
-    JiakBucket.should_not respond_to(:new)
-    
     @bucket.should respond_to(:name,:data_class,:params,:schema)
     @bucket.should respond_to(:data_class=,:params=)
     @bucket.should respond_to(:eql?)
@@ -26,14 +23,14 @@ describe "JiakBucket" do
   end
 
   it "should initialize with name, data class, and params" do
-    bucket = JiakBucket.create('test',@data_class,@params)
+    bucket = JiakBucket.new('test',@data_class,@params)
     bucket.name.should eql @name
     bucket.data_class.should eql @data_class
     bucket.params.should have_exactly(4).items
     @params.each {|k,v| bucket.params[k].should == @params[k]}
 
     @params.delete(:writes)
-    bucket = JiakBucket.create('test',@data_class,@params)
+    bucket = JiakBucket.new('test',@data_class,@params)
     bucket.params.should have_exactly(3).items
     bucket.params[:waits].should == @params[:waits]
   end
@@ -51,16 +48,16 @@ describe "JiakBucket" do
   end
 
   it "should validate name, data class, and params" do
-    empty_name = lambda {JiakBucket.create("",@data_class)}
+    empty_name = lambda {JiakBucket.new("",@data_class)}
     empty_name.should raise_error(JiakBucketException,/Name.*empty/)
 
-    empty_name = lambda {JiakBucket.create("  ",@data_class)}
+    empty_name = lambda {JiakBucket.new("  ",@data_class)}
     empty_name.should raise_error(JiakBucketException,/Name.*empty/)
 
-    nil_name = lambda {JiakBucket.create(nil,@data_class)}
+    nil_name = lambda {JiakBucket.new(nil,@data_class)}
     nil_name.should raise_error(JiakBucketException,/Name.*nil/)
 
-    bad_data_class = lambda {JiakBucket.create(@name,Hash)}
+    bad_data_class = lambda {JiakBucket.new(@name,Hash)}
     bad_data_class.should raise_error(JiakBucketException,/JiakData/)
 
     bad_data_class = lambda {@bucket.data_class = Hash}
@@ -69,7 +66,7 @@ describe "JiakBucket" do
     params = @params
     params.delete(:writes)
     params[:write] = 2
-    bad_params = lambda {JiakBucket.create(@name,@data_class,params)}
+    bad_params = lambda {JiakBucket.new(@name,@data_class,params)}
     bad_params.should raise_error(JiakBucketException,/params/)
 
     bad_params = lambda {@bucket.params = params}
@@ -81,25 +78,25 @@ describe "JiakBucket" do
   end
 
   it "should eql by state" do
-    bucket = JiakBucket.create(@name,@data_class)
+    bucket = JiakBucket.new(@name,@data_class)
     bucket.should eql @bucket
 
-    bucket = JiakBucket.create(@name.upcase,@data_class)
+    bucket = JiakBucket.new(@name.upcase,@data_class)
     bucket.should_not eql @bucket
 
     data_class = JiakDataHash.create(:g1)
-    bucket = JiakBucket.create(@name,data_class)
+    bucket = JiakBucket.new(@name,data_class)
     bucket.should_not eql @bucket
 
-    bucket = JiakBucket.create(@name,@data_class,@params)
+    bucket = JiakBucket.new(@name,@data_class,@params)
     bucket.should_not eql @bucket
 
     @bucket.params = @params
     bucket.should eql @bucket
 
     params = {:reads => @params[:reads]+1}
-    bucket_1 = JiakBucket.create(@name,@data_class,@params)
-    bucket_2 = JiakBucket.create(@name,@data_class,params)
+    bucket_1 = JiakBucket.new(@name,@data_class,@params)
+    bucket_2 = JiakBucket.new(@name,@data_class,params)
     bucket_1.should_not eql bucket_2
   end
 

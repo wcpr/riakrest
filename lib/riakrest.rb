@@ -55,7 +55,7 @@ $:.unshift(File.dirname(__FILE__)) unless
 # </code>
 # Create a bucket to store Person data.
 # <code>
-#   bucket = JiakBucket.create('person',Person)
+#   bucket = JiakBucket.new('person',Person)
 # </code>
 # Set the schema of the Jiak server bucket to prepare for structured interaction.
 # <code>
@@ -63,11 +63,11 @@ $:.unshift(File.dirname(__FILE__)) unless
 # </code>
 # Create a user-defined data object.
 # <code>
-#   remy = Person.create(:name => "Remy", :age => 10)
+#   remy = Person.new(:name => "Remy", :age => 10)
 # </code>
 # Create a Jiak object wrapping the user-defined data.
 # <code>
-#   jobj = JiakObject.create(:bucket => bucket, :data => remy)
+#   jobj = JiakObject.new(:bucket => bucket, :data => remy)
 # </code>
 # Store the Jiak data object on the server
 # <code>
@@ -86,15 +86,15 @@ $:.unshift(File.dirname(__FILE__)) unless
 #   puts remy.name                           # => "Remy"
 #   puts client.get(bucket,key).data.name    # => "remy"  ???
 # </code>
-# Why wasn't the data updated on the Jiak server? Because although we changed
-# the data locally, we didn't alter the metadata in the JiakObject being sent,
-# so to Jiak it looked like a new request to store info. The easiest way to be
-# sure we get the Jiak metadata info is to ask for the Jiak object to be
-# returned (which sets the Jiak internals) by the store method. Let's try again
-# with a new data object.
+# Why wasn't the data for Remy's name updated on the Jiak server? Because
+# although we changed the data locally, we didn't alter the Jiak context in the
+# JiakObject being sent, so to Jiak it looked like a request to store new
+# info. The easiest way to be sure we get the Jiak context is to ask for the
+# Jiak object to be returned (which sets the Jiak context) by the store
+# method. Let's try again with a new data object.
 # <code>
-#   callie = Person.create(:name => "callie", :age => 12)
-#   jobj = JiakObject.create(:bucket => bucket, :data => callie)
+#   callie = Person.new(:name => "callie", :age => 12)
+#   jobj = JiakObject.new(:bucket => bucket, :data => callie)
 #   callie = client.store(jobj,{JiakClient::RETURN_BODY => true})
 #   puts client.get(bucket,callie.key).data.name                 # => "callie"
 #   callie.data.name = "Callie"
@@ -123,7 +123,7 @@ $:.unshift(File.dirname(__FILE__)) unless
 # Next we create and store remy, check the name on the Jiak server, change and
 # update remy's name, then check the name on the server again.
 # <code>
-#   remy = Person.create(:name => 'remy', :age => 10)
+#   remy = Person.new(:name => 'remy', :age => 10)
 #   remy.post
 #
 #   puts remy.name                           # => "remy"

@@ -6,15 +6,12 @@ describe "JiakLink" do
     @key = 'k'
     @tag = 't'
     @any = JiakLink::ANY
-    @jiak_link = JiakLink.create({:bucket => @bucket,:key => @key,:tag =>@tag})
+    @jiak_link = JiakLink.new({:bucket => @bucket,:key => @key,:tag =>@tag})
     @array = [@bucket,@key,@tag]
-    @jiak_link_any = JiakLink.create
+    @jiak_link_any = JiakLink.new
   end
 
   it "should respond to" do
-    JiakLink.should respond_to(:create)
-    JiakLink.should_not respond_to(:new)
-
     @jiak_link.should respond_to(:bucket,:key,:tag)
     @jiak_link.should_not respond_to(:bucket=,:key=,:tag=)
 
@@ -24,14 +21,14 @@ describe "JiakLink" do
   end
 
   it "should fill in missing opts with ANY" do
-    jiak_link = JiakLink.create
+    jiak_link = JiakLink.new
     jiak_link.should eql @jiak_link_any
     jiak_link.should == @jiak_link_any
 
     [:bucket,:key,:tag].each do |key|
       hash = {}
       hash[key] = @any
-      jiak_link = JiakLink.create(hash)
+      jiak_link = JiakLink.new(hash)
       jiak_link.should eql @jiak_link_any
       jiak_link.should == @jiak_link_any
     end
@@ -42,12 +39,12 @@ describe "JiakLink" do
     @jiak_link.key.should eql @key
     @jiak_link.tag.should eql @tag
 
-    jiak_link = JiakLink.create({:bucket => @bucket,:key => @key})
+    jiak_link = JiakLink.new({:bucket => @bucket,:key => @key})
     jiak_link.bucket.should eql @bucket
     jiak_link.key.should eql @key
     jiak_link.tag.should eql @any
 
-    jiak_link = JiakLink.create([@bucket,@key,@tag])
+    jiak_link = JiakLink.new([@bucket,@key,@tag])
     jiak_link.bucket.should eql @bucket
     jiak_link.key.should eql @key
     jiak_link.tag.should eql @tag
@@ -57,24 +54,24 @@ describe "JiakLink" do
     bucket = " "+@bucket+" "
     key = " "+@key+" "
     tag = " "+@tag+" "
-    jiak_link = JiakLink.create([bucket,key,tag])
+    jiak_link = JiakLink.new([bucket,key,tag])
     jiak_link.bucket.should eql @bucket
     jiak_link.key.should eql @key
     jiak_link.tag.should eql @tag
   end
   
   it "should treat blank, empty strings, or nil as ANY on init" do
-    jiak_any_link = JiakLink.create
+    jiak_any_link = JiakLink.new
 
     ["","  ",nil].each do |val|
-      jiak_link = JiakLink.create([val,val,val])
+      jiak_link = JiakLink.new([val,val,val])
       jiak_link.should eql jiak_any_link
       jiak_link.should == jiak_any_link
     end
   end
 
   it "should init from an array" do
-    jiak_link = JiakLink.create(@array)
+    jiak_link = JiakLink.new(@array)
     jiak_link.bucket.should eql @bucket
     jiak_link.key.should eql @key
     jiak_link.tag.should eql @tag
@@ -90,14 +87,14 @@ describe "JiakLink" do
     b = 's p a c e'
     t = '<%>'
     a = '\\'
-    jiak_link = JiakLink.create([b,t,a])
+    jiak_link = JiakLink.new([b,t,a])
     jiak_link.for_uri.should eql URI.encode([b,t,a].join(','))
   end
 
   it "should compare to another JiakLink via eql?" do
-    jiak_link_1 = JiakLink.create(['a','b','c'])
-    jiak_link_2 = JiakLink.create(['a','b','c'])
-    jiak_link_3 = JiakLink.create(['a','','c'])
+    jiak_link_1 = JiakLink.new(['a','b','c'])
+    jiak_link_2 = JiakLink.new(['a','b','c'])
+    jiak_link_3 = JiakLink.new(['a','','c'])
     
     jiak_link_1.should eql jiak_link_2
     jiak_link_1.should_not eql jiak_link_3

@@ -25,16 +25,8 @@ module RiakRest
     attr_reader :name, :schema
     attr_accessor :data_class, :params
 
-    private_class_method :new
-
-    def initialize(name,data_class,params={})  # nodoc:
-      @name = name
-      @data_class = data_class
-      @params = params
-    end
-
     # :call-seq:
-    #   JiakBucket.create(name,data_class,params={})  -> JiakBucket
+    #   JiakBucket.new(name,data_class,params={})  -> JiakBucket
     #
     # Create a bucket for use in Jiak interaction.
     #
@@ -45,9 +37,10 @@ module RiakRest
     #
     # Raise JiakBucketException if the bucket name is not a non-empty string or
     # the data class has not included the JiakData module.
-    def self.create(name,data_class,params={})
-      params = check_params(params)  unless params.empty?
-      new(transform_name(name),check_data_class(data_class),params)
+    def initialize(name,data_class,params={})
+      @name = transform_name(name)
+      @data_class = check_data_class(data_class)
+      @params = check_params(params)
     end
 
     # :call-seq:
@@ -57,7 +50,7 @@ module RiakRest
     #
     # Raise JiakBucketException if the data class is not a JiakData.
     def data_class=(data_class)
-      @data_class = self.class.check_data_class(data_class)
+      @data_class = check_data_class(data_class)
     end
 
     # :call-seq:
@@ -67,7 +60,7 @@ module RiakRest
     # valid parameters.
     #
     def params=(params)
-      @params = self.class.check_params(params)
+      @params = check_params(params)
     end
 
     # :call-seq:
@@ -95,7 +88,7 @@ module RiakRest
     end
 
     private
-    def self.transform_name(name)
+    def transform_name(name)
       raise JiakBucketException, "Name cannot be nil" if name.nil?
       unless name.is_a?(String)
         raise JiakBucketException, "Name must be a String"
@@ -105,14 +98,14 @@ module RiakRest
       name
     end
 
-    def self.check_data_class(data_class)
+    def check_data_class(data_class)
       unless data_class.include?(JiakData)
         raise JiakBucketException, "Data class must be type of JiakData."
       end
       data_class
     end
 
-    def self.check_params(params)
+    def check_params(params)
       valid = [:reads,:writes,:durable_writes,:waits]
       err = params.select {|k,v| !valid.include?(k)}
       unless err.empty?

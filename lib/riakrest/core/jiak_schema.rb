@@ -28,16 +28,16 @@ module RiakRest
   #
   # ===Usage
   # <pre>
-  #   schema = JiakSchema.create({:allowed_fields => [:foo,:bar,:baz],
-  #                               :required_fields => [:foo,:bar],
-  #                               :read_mask => [:foo,:baz],
-  #                               :write_mask => [:foo,:bar] })
+  #   schema = JiakSchema.new({:allowed_fields => [:foo,:bar,:baz],
+  #                            :required_fields => [:foo,:bar],
+  #                            :read_mask => [:foo,:baz],
+  #                            :write_mask => [:foo,:bar] })
   #
   #   schema.required_fields                         # => [:foo,:bar]
   #
   #
-  #   schema = JiakSchema.create({:allowed_fields => [:foo,:bar,:baz],
-  #                               :required_fields => [:foo,:bar]})
+  #   schema = JiakSchema.new({:allowed_fields => [:foo,:bar,:baz],
+  #                            :required_fields => [:foo,:bar]})
   #
   #   schema.read_mask                               # => [:foo,:bar,:baz]
   #   schema.required_fields                         # => [:foo,:bar]
@@ -45,28 +45,19 @@ module RiakRest
   #   schema.required_fields                         # => [:foo,:bar,:baz]
   #
   #
-  #   schema = JiakSchema.create([:foo,:bar,:baz])
+  #   schema = JiakSchema.new([:foo,:bar,:baz])
   #
   #   schema.write_mask                              # => [:foo,:bar,:baz)
   #
   # </pre>
   class JiakSchema
 
-    private_class_method :new
-
     attr_accessor :allowed_fields, :required_fields, :read_mask, :write_mask
 
-    def initialize(opts)  # nodoc:
-      @allowed_fields =  opts[:allowed_fields]
-      @required_fields = opts[:required_fields]
-      @read_mask =       opts[:read_mask]
-      @write_mask =      opts[:write_mask]
-    end
-
     # call-seq:
-    #    JiakSchema.create(arg)  -> JiakSchema
+    #    JiakSchema.new(arg)  -> JiakSchema
     #
-    # Create a schema from either a hash or an single-element array.
+    # New schema from either a hash or an single-element array.
     # 
     # ====Hash structure
     # <em>required</em>
@@ -98,7 +89,7 @@ module RiakRest
     # * the method argument is not either a hash or array
     # * The fields are not either symbols or strings
     # * The fields elements are not unique
-    def self.create(arg)
+    def initialize(arg)
       case arg
       when Hash
         # Jiak returns a JSON structure with a single key 'schema' whose value
@@ -135,9 +126,13 @@ module RiakRest
           :write_mask      => arg
         }
       else
-        raise JiakSchemaException, "Create arg must be either hash or array"
+        raise JiakSchemaException, "Initialize arg must be either hash or array"
       end
-      new(opts)
+
+      @allowed_fields =  opts[:allowed_fields]
+      @required_fields = opts[:required_fields]
+      @read_mask =       opts[:read_mask]
+      @write_mask =      opts[:write_mask]
     end
 
     # call-seq:
@@ -145,7 +140,7 @@ module RiakRest
     #
     # Create a JiakSchema from JSON returned by the Jiak server.
     def self.from_jiak(jiak_json)
-      create(JSON.parse(jiak_json))
+      new(JSON.parse(jiak_json))
     end
 
     # call-seq:
@@ -163,19 +158,19 @@ module RiakRest
     end
 
     def allowed_fields=(arr)  # :nodoc:
-      self.class.check_arr('allowed_fields',arr)
+      check_arr('allowed_fields',arr)
       @allowed_fields = arr
     end
     def required_fields=(arr)  # :nodoc:
-      self.class.check_arr('required_fields',arr)
+      check_arr('required_fields',arr)
       @required_fields = arr
     end
     def read_mask=(arr)  # :nodoc:
-      self.class.check_arr('read_mask',arr)
+      check_arr('read_mask',arr)
       @read_mask = arr
     end
     def write_mask=(arr)  # :nodoc:
-      self.class.check_arr('write_mask',arr)
+      check_arr('write_mask',arr)
       @write_mask = arr
     end
 
@@ -217,7 +212,7 @@ module RiakRest
 
     private
     # Each option must be an array of symbol or string elements.
-    def self.check_arr(desc,arr)
+    def check_arr(desc,arr)
       unless arr.is_a?(Array)
         raise JiakSchemaException, "#{desc} must be an array"
       end

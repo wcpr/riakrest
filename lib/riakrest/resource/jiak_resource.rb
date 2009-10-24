@@ -27,7 +27,7 @@ module RiakRest
       #
       def server(uri)
         jiak.uri = uri
-        jiak.server = JiakClient.create(uri)
+        jiak.server = JiakClient.new(uri)
         uri
       end
 
@@ -64,7 +64,7 @@ module RiakRest
         name = opts[:name] || opts[:data_class].to_s.split(/::/).last
         jiak.name = name
         jiak.data = opts[:data_class]
-        jiak.bucket = JiakBucket.create(name,opts[:data_class])
+        jiak.bucket = JiakBucket.new(name,opts[:data_class])
         jiak.server.set_schema(jiak.bucket) if opts[:activate] 
 
         opts[:data_class].schema.allowed_fields.each do |field|
@@ -97,16 +97,6 @@ module RiakRest
       # necessary for Jiak interaction.
       def params(opts={})
         jiak.bucket.params = opts
-      end
-
-      # :call-seq:
-      #   JiakResource.create(*args)   -> JiakResource
-      #
-      # Create a JiakResource wrapping a JiakData instance. The argument array
-      # is passed to the <code>new</code> method of the JiakData associated
-      # with the JiakResource.
-      def create(*args)
-        new(*args)
       end
 
       # :call-seq:
@@ -301,15 +291,19 @@ module RiakRest
 
     attr_accessor :jiak   # :nodoc:
 
-    # First form is used by the JiakResource.get; the second form is used by
-    # JiakResource.create.
-    def initialize(*args)   # :nodoc:
+    # :call-seq:
+    #   JiakResource.new(*args)   -> JiakResource
+    #
+    # Create a JiakResource wrapping a JiakData instance. The argument array
+    # is passed to the <code>new</code> method of the JiakData associated
+    # with the JiakResource.
+    def initialize(*args)
+      # First form is used by JiakResource.get
       if(args.size == 1 && args[0].is_a?(JiakObject))
         @jiak = args[0]
       else
-        bucket = self.class.jiak.bucket
-        @jiak = JiakObject.create(:bucket => bucket,
-                                  :data => bucket.data_class.new(*args))
+        @jiak = JiakObject.new(:bucket => self.class.jiak.bucket,
+                               :data => bucket.data_class.new(*args))
       end
     end
 

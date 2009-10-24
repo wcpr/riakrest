@@ -12,11 +12,11 @@ describe "JiakSchema" do
       :read_mask => @read_mask,
       :write_mask => @write_mask
     }
-    @jiak_schema = JiakSchema.create(@hash)
+    @jiak_schema = JiakSchema.new(@hash)
   end
 
   it "should respond to" do
-    JiakSchema.should respond_to(:create,:from_jiak)
+    JiakSchema.should respond_to(:from_jiak)
 
     @jiak_schema.should respond_to(:allowed_fields,:allowed_fields=)
     @jiak_schema.should respond_to(:required_fields,:required_fields=)
@@ -28,25 +28,25 @@ describe "JiakSchema" do
   end
 
   it "should create using defaults from allowed_fields" do
-    jiak_schema = JiakSchema.create({:allowed_fields => @allowed_fields})
+    jiak_schema = JiakSchema.new({:allowed_fields => @allowed_fields})
     jiak_schema.allowed_fields.should eql @allowed_fields
     jiak_schema.required_fields.should eql []
     jiak_schema.read_mask.should eql @allowed_fields
     jiak_schema.write_mask.should eql @allowed_fields
 
-    jiak_schema = JiakSchema.create(@allowed_fields)
+    jiak_schema = JiakSchema.new(@allowed_fields)
     jiak_schema.allowed_fields.should eql @allowed_fields
     jiak_schema.required_fields.should eql []
     jiak_schema.read_mask.should eql @allowed_fields
     jiak_schema.write_mask.should eql @allowed_fields
 
-    jiak_schema = JiakSchema.create({:allowed_fields => []})
+    jiak_schema = JiakSchema.new({:allowed_fields => []})
     jiak_schema.allowed_fields.should eql []
     jiak_schema.required_fields.should eql []
     jiak_schema.read_mask.should eql []
     jiak_schema.write_mask.should eql []
 
-    jiak_schema = JiakSchema.create([])
+    jiak_schema = JiakSchema.new([])
     jiak_schema.allowed_fields.should eql []
     jiak_schema.required_fields.should eql []
     jiak_schema.read_mask.should eql []
@@ -61,21 +61,21 @@ describe "JiakSchema" do
   end
 
   it "should create from a Hash" do
-    jiak_schema = JiakSchema.create(@hash)
+    jiak_schema = JiakSchema.new(@hash)
     jiak_schema.allowed_fields.should eql @allowed_fields
     jiak_schema.required_fields.should eql @required_fields
     jiak_schema.read_mask.should eql @read_mask
     jiak_schema.write_mask.should eql @write_mask
 
     hash = {:schema => @hash}
-    jiak_schema = JiakSchema.create(hash)
+    jiak_schema = JiakSchema.new(hash)
     jiak_schema.should eql @jiak_schema
 
     @hash['allowed_fields'] = @hash[:allowed_fields]
     @hash.delete(:allowed_fields)
     @hash['read_mask'] = @hash[:read_mask]
     @hash.delete(:read_mask)
-    jiak_schema = JiakSchema.create(@hash)
+    jiak_schema = JiakSchema.new(@hash)
     jiak_schema.allowed_fields.should eql @allowed_fields
     jiak_schema.required_fields.should eql @required_fields
     jiak_schema.read_mask.should eql @read_mask
@@ -93,41 +93,41 @@ describe "JiakSchema" do
   it "should validate create options" do
     hash = @hash.clone
     hash.delete(:allowed_fields)
-    bad = lambda {JiakSchema.create(hash)}
+    bad = lambda {JiakSchema.new(hash)}
     bad.should raise_error(JiakSchemaException,/allowed_fields.*array/)
 
     hash = @hash.clone
     hash[:allowed_fields] = nil
-    bad = lambda {JiakSchema.create(hash)}
+    bad = lambda {JiakSchema.new(hash)}
     bad.should raise_error(JiakSchemaException,/allowed_fields.*array/)
 
     hash[:allowed_fields] = 'a'
-    bad = lambda {JiakSchema.create(hash)}
+    bad = lambda {JiakSchema.new(hash)}
     bad.should raise_error(JiakSchemaException,/allowed_fields.*array/)
 
     hash = @hash.clone
     hash[:required_fields] = {}
-    bad = lambda {JiakSchema.create(hash)}
+    bad = lambda {JiakSchema.new(hash)}
     bad.should raise_error(JiakSchemaException,/required_fields.*array/)
 
     hash = @hash.clone
     hash[:read_mask] = [1]
-    bad = lambda {JiakSchema.create(hash)}
+    bad = lambda {JiakSchema.new(hash)}
     bad.should raise_error(JiakSchemaException,/read_mask.*strings/)
 
     hash = @hash.clone
     hash[:write_mask] = ['a','b',3]
-    bad = lambda {JiakSchema.create(hash)}
+    bad = lambda {JiakSchema.new(hash)}
     bad.should raise_error(JiakSchemaException,/write_mask.*strings/)
 
     hash = @hash.clone
     hash[:allowed_fields] << @allowed_fields[0].to_s
-    bad = lambda {JiakSchema.create(hash)}
+    bad = lambda {JiakSchema.new(hash)}
     bad.should raise_error(JiakSchemaException,/unique/)
 
     hash = @hash.clone
     hash[:allowed_fields] << @allowed_fields[0].to_sym
-    bad = lambda {JiakSchema.create(hash)}
+    bad = lambda {JiakSchema.new(hash)}
     bad.should raise_error(JiakSchemaException,/unique/)
   end
 
@@ -161,21 +161,21 @@ describe "JiakSchema" do
   end
 
   it "should equal an equal JiakSchema" do
-    jiak_schema = JiakSchema.create(@hash)
+    jiak_schema = JiakSchema.new(@hash)
     jiak_schema.should eql @jiak_schema
 
-    strings = JiakSchema.create(['a','bb','CcC'])
-    symbols = JiakSchema.create([:a,:bb,:CcC])
+    strings = JiakSchema.new(['a','bb','CcC'])
+    symbols = JiakSchema.new([:a,:bb,:CcC])
     strings.should eql symbols
     symbols.should eql strings
 
-    strings = JiakSchema.create(['a','bb','CcC','d'])
-    symbols = JiakSchema.create([:a,:bb,:CcC])
+    strings = JiakSchema.new(['a','bb','CcC','d'])
+    symbols = JiakSchema.new([:a,:bb,:CcC])
     strings.should_not eql symbols
     symbols.should_not eql strings
 
-    strings = JiakSchema.create(['a','bb','CC'])
-    symbols = JiakSchema.create([:a,:bb,:CcC])
+    strings = JiakSchema.new(['a','bb','CC'])
+    symbols = JiakSchema.new([:a,:bb,:CcC])
     strings.should_not eql symbols
     symbols.should_not eql strings
   end
