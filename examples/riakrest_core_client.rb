@@ -3,10 +3,10 @@ include RiakRest
 
 client = JiakClient.new("http://localhost:8002/jiak")
 Person = JiakDataHash.create(:name,:age)
-bucket = JiakBucket.create('person',Person)
+bucket = JiakBucket.new('person',Person)
 client.set_schema(bucket)
-remy = Person.create(:name => "remy", :age => 10)
-jobj = JiakObject.create(:bucket => bucket, :data => remy)
+remy = Person.new(:name => "remy", :age => 10)
+jobj = JiakObject.new(:bucket => bucket, :data => remy)
 key = client.store(jobj)
 puts remy.name                           # => "remy"
 puts client.get(bucket,key).data.name    # => "remy"
@@ -15,27 +15,35 @@ client.store(jobj)
 puts remy.name                           # => "Remy"
 puts client.get(bucket,key).data.name    # => "remy"  ???
 
-callie = Person.create(:name => "callie", :age => 12)
-jobj = JiakObject.create(:bucket => bucket, :data => callie)
-callie = client.store(jobj,{JiakClient::RETURN_BODY => true})
-puts client.get(bucket,callie.key).data.name    # => "callie"
-callie.data.name = "Callie"
-callie = client.store(callie,{JiakClient::RETURN_BODY => true})
-puts client.get(bucket,callie.key).data.name    # => "Callie"
+callie = Person.new(:name => "callie", :age => 12)
+jobj = JiakObject.new(:bucket => bucket, :data => callie)
+jobj = client.store(jobj,{:object => true})
+callie = jobj.data
+callie.name                                   # => "callie"
+puts client.get(bucket,jobj.key).data.name    # => "callie"
+
+callie.name = "Callie"                        # => "Callie"
+jobj = client.store(jobj,{:object => true})
+puts client.get(bucket,jobj.key).data.name    # => "Callie"
+
+client.delete(bucket,jobj.key)
 
 
+
+require 'lib/riakrest'
+include RiakRest
 
 Person = JiakDataHash.create(:name,:age)
-remy = Person.create(:name => "remy", :age => 10)
+remy = Person.new(:name => "remy", :age => 10)
 
 client = JiakClient.new("http://localhost:8002/jiak")
-bucket = JiakBucket.create('person',Person)
+bucket = JiakBucket.new('person',Person)
 client.set_schema(bucket)
-jobj = JiakObject.create(:bucket => bucket, :data => remy)
+jobj = JiakObject.new(:bucket => bucket, :data => remy)
 key = client.store(jobj)
 
 remy.name                                # => "remy"
 remy.name = "Remy"                       # => "Remy"
-remy = client.get(bucket,key)
-remy.name                                # => "remy" (overwrote change)
+remy = client.get(bucket,key).data
+remy.name                                # => "remy" (get overwrote local change)
 client.delete(bucket,key)

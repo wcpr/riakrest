@@ -95,15 +95,14 @@ $:.unshift(File.dirname(__FILE__)) unless
 # <code>
 #   callie = Person.new(:name => "callie", :age => 12)
 #   jobj = JiakObject.new(:bucket => bucket, :data => callie)
-#   callie = client.store(jobj,{JiakClient::RETURN_BODY => true})
-#   puts client.get(bucket,callie.key).data.name                 # => "callie"
-#   callie.data.name = "Callie"
-#   callie = client.store(callie,{JiakClient::RETURN_BODY => true})
-#   puts client.get(bucket,callie.key).data.name                 # => "Callie"
+#   jobj = client.store(jobj,{:object => true})
+#   callie = jobj.data
+#   callie.name                                   # => "callie"
+#   puts client.get(bucket,jobj.key).data.name    # => "callie"
 # </code>
 # Now all is right with the world. But let's delete Callie on our way out the door.
 # <code>
-#   client.delete(bucket,callie.key)
+#   client.delete(bucket,jobj.key)
 # </code>
 #
 # ===Resource Interaction
