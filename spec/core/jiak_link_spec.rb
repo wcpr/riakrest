@@ -3,11 +3,11 @@ require File.dirname(__FILE__) + '/../spec_helper.rb'
 describe "JiakLink" do
   before do
     @bucket = 'b'
+    @key = 'k'
     @tag = 't'
-    @acc = 'a'
     @any = JiakLink::ANY
-    @jiak_link = JiakLink.create({:bucket => @bucket,:tag => @tag,:acc =>@acc})
-    @array = [@bucket,@tag,@acc]
+    @jiak_link = JiakLink.create({:bucket => @bucket,:key => @key,:tag =>@tag})
+    @array = [@bucket,@key,@tag]
     @jiak_link_any = JiakLink.create
   end
 
@@ -15,8 +15,8 @@ describe "JiakLink" do
     JiakLink.should respond_to(:create)
     JiakLink.should_not respond_to(:new)
 
-    @jiak_link.should respond_to(:bucket,:tag,:acc)
-    @jiak_link.should_not respond_to(:bucket=,:tag=,:acc=)
+    @jiak_link.should respond_to(:bucket,:key,:tag)
+    @jiak_link.should_not respond_to(:bucket=,:key=,:tag=)
 
     @jiak_link.should respond_to(:for_jiak,:for_uri)
 
@@ -28,7 +28,7 @@ describe "JiakLink" do
     jiak_link.should eql @jiak_link_any
     jiak_link.should == @jiak_link_any
 
-    [:bucket,:tag,:acc].each do |key|
+    [:bucket,:key,:tag].each do |key|
       hash = {}
       hash[key] = @any
       jiak_link = JiakLink.create(hash)
@@ -39,28 +39,28 @@ describe "JiakLink" do
 
   it "should init from specified values" do
     @jiak_link.bucket.should eql @bucket
+    @jiak_link.key.should eql @key
     @jiak_link.tag.should eql @tag
-    @jiak_link.acc.should eql @acc
 
-    jiak_link = JiakLink.create({:bucket => @bucket,:tag => @tag})
+    jiak_link = JiakLink.create({:bucket => @bucket,:key => @key})
     jiak_link.bucket.should eql @bucket
-    jiak_link.tag.should eql @tag
-    jiak_link.acc.should eql @any
+    jiak_link.key.should eql @key
+    jiak_link.tag.should eql @any
 
-    jiak_link = JiakLink.create([@bucket,@tag,@acc])
+    jiak_link = JiakLink.create([@bucket,@key,@tag])
     jiak_link.bucket.should eql @bucket
+    jiak_link.key.should eql @key
     jiak_link.tag.should eql @tag
-    jiak_link.acc.should eql @acc
   end
 
   it "should ignore leading/trailing spaces for opts on init" do
     bucket = " "+@bucket+" "
+    key = " "+@key+" "
     tag = " "+@tag+" "
-    acc = " "+@acc+" "
-    jiak_link = JiakLink.create([bucket,tag,acc])
+    jiak_link = JiakLink.create([bucket,key,tag])
     jiak_link.bucket.should eql @bucket
+    jiak_link.key.should eql @key
     jiak_link.tag.should eql @tag
-    jiak_link.acc.should eql @acc
   end
   
   it "should treat blank, empty strings, or nil as ANY on init" do
@@ -76,8 +76,8 @@ describe "JiakLink" do
   it "should init from an array" do
     jiak_link = JiakLink.create(@array)
     jiak_link.bucket.should eql @bucket
+    jiak_link.key.should eql @key
     jiak_link.tag.should eql @tag
-    jiak_link.acc.should eql @acc
   end
 
   it "should convert for Jiak" do
@@ -85,7 +85,7 @@ describe "JiakLink" do
   end
   
   it "should convert to a suitable URI string" do
-    @jiak_link.for_uri.should eql @bucket+','+@tag+','+@acc
+    @jiak_link.for_uri.should eql @bucket+','+@key+','+@tag
 
     b = 's p a c e'
     t = '<%>'

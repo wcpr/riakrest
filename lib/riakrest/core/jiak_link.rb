@@ -6,29 +6,30 @@ module RiakRest
   #++
   # ===Usage
   # <code>
-  #   link = JiakLink.create(:bucket => 'person', :tag => key, :acc => 'parent')
-  #   link = JiakLink.create(['person',key,'parent']
+  #   link = JiakLink.create(:bucket => 'person', :key => 'remy', :tag => 'child')
+  #   link = JiakLink.create(['person','remy','child']
+  #   link = JiakLink.create(['person',JiakLink::ANY,'child']
   # </code>
   class JiakLink
 
     private_class_method :new
 
-    attr_reader :bucket, :tag, :acc
+    attr_reader :bucket, :key, :tag
 
-    # Jiak (erlang) wildcard character
+    # Jiak (erlang) wildcard character (atom)
     ANY = '_'
 
     # opts hash keys can be either strings or symbols. Any missing or empty
     # keys are set to ANY.
     def initialize(opts)  # nodoc:
-      [:bucket,:tag,:acc].each do |key|
+      [:bucket,:key,:tag].each do |key|
         opts[key] = opts[key] || opts[key.to_s] || ANY
         opts[key].strip!
         opts[key] = ANY if opts[key].empty?
       end
       @bucket = opts[:bucket]
+      @key = opts[:key]
       @tag = opts[:tag]
-      @acc = opts[:acc]
     end
 
     # call-seq:
@@ -37,9 +38,9 @@ module RiakRest
     # Create a link from either a Hash or a three-element Array.
     # 
     # ====Hash
-    # <code>bucket</code>:: Bucket name
-    # <code>tag</code>:: Tag
-    # <code>acc</code>:: Accumulator
+    # <code>:bucket</code> :: Bucket or bucket name
+    # <code>:key</code> :: Key
+    # <code>:tag</code> :: Tag
     #
     # Notes
     # * Keys can either be strings or symbols.
@@ -48,7 +49,7 @@ module RiakRest
     #   JiakLink::ANY.
     #
     # ====Array
-    # <code>['b','t','a']</code> --- Three-element array of strings
+    # <code>['b','k','t']</code> --- Three-element array of strings
     def self.create(opts={})
       case opts
       when Hash
@@ -56,7 +57,7 @@ module RiakRest
       when Array
         new(transform_arr(opts))
       else
-        raise JiakLinkException, "Can only create JiakLink from Hash or Array"
+        raise JiakLinkException, "Can only create JiakLink from hash or array"
       end
     end
 
@@ -65,7 +66,7 @@ module RiakRest
     #
     # JSON representation of this JiakLink.
     def for_jiak
-      [@bucket, @tag, @acc]
+      [@bucket, @key, @tag]
     end
 
     # call-seq:
@@ -85,8 +86,8 @@ module RiakRest
     def eql?(other)
       other.is_a?(JiakLink) &&
         @bucket.eql?(other.bucket) &&
-        @tag.eql?(other.tag) &&
-        @acc.eql?(other.acc)
+        @key.eql?(other.key) &&
+        @tag.eql?(other.tag)
     end
 
     # call-seq:
@@ -95,18 +96,19 @@ module RiakRest
     # Equality -- JiakLinks are equal if they contain the same attribute values
     def ==(other)
       (@bucket == other.bucket &&
-       @tag    == other.tag    &&
-       @acc    == other.acc) rescue false
+       @key    == other.key    &&
+       @tag    == other.tag) rescue false
     end
 
     # String representation of this JiakLink.
     def to_s
-      '["'+@bucket+'","'+@tag+'","'+@acc+'"]'
+      '["'+@bucket+'","'+@key+'","'+@tag+'"]'
     end
 
     private
     def self.transform_opts(opts)
-      [:bucket,:tag,:acc].each do |opt|
+      opts[:bucket] = bucket_to_name(opts[:bucket])
+      [:bucket,:key,:tag].each do |opt|
         opts[opt] = opts[opt] || opts[opt.to_s] || ANY
         unless opts[opt].is_a?(String)
           raise JiakLinkException, "Link elements must be Strings."
@@ -121,7 +123,12 @@ module RiakRest
       unless arr.size == 3
         raise JiakLinkException, "Link array must have 3 elements"
       end
-      transform_opts({:bucket => arr[0], :tag => arr[1], :acc => arr[2]})
+      arr[0] = bucket_to_name(arr[0])
+      transform_opts({:bucket => arr[0], :key => arr[1], :tag => arr[2]})
+    end
+
+    def self.bucket_to_name(arg)
+      arg.is_a?(JiakBucket) ? arg.name : arg
     end
 
   end
