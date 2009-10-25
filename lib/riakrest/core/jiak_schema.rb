@@ -97,11 +97,6 @@ module RiakRest
         # that; otherwise use the arg as the opts hash.
         opts = arg[:schema] || arg['schema'] || arg
 
- # CxINC
- # Whoops! As of Riak 0.6 a bucket with an unset schema returns
- # {"allowed_fields":"*","required_fields":[],"read_mask":"*","write_mask":"*"}
- # when the schema is requested. Previous behavior was an HTTP 503.
-
         opts[:allowed_fields] ||= opts['allowed_fields']
         check_arr("allowed_fields",opts[:allowed_fields])
 
@@ -213,6 +208,10 @@ module RiakRest
     private
     # Each option must be an array of symbol or string elements.
     def check_arr(desc,arr)
+      if(arr.eql?("*"))
+        raise(JiakSchemaException,
+              "RiakRest does not support wildcard schemas at this time.")
+      end
       unless arr.is_a?(Array)
         raise JiakSchemaException, "#{desc} must be an array"
       end
