@@ -17,8 +17,6 @@ module RiakRest
   #
   class JiakDataHash
 
-    private_class_method :new   # :nodoc:
-
     # :call-seq:
     #   JiakDataHash.create(:f1,...,fn)    -> JiakDataHash
     #   JiakDataHash.create([:f1,...,fn])  -> JiakDataHash

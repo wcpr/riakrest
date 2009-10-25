@@ -265,7 +265,6 @@ module RiakRest
     def self.included(including_class)    # :nodoc:
       including_class.instance_eval do
         extend ClassMethods
-        private_class_method :new
         def jiak  # :nodoc:
           @jiak
         end
@@ -302,7 +301,8 @@ module RiakRest
       if(args.size == 1 && args[0].is_a?(JiakObject))
         @jiak = args[0]
       else
-        @jiak = JiakObject.new(:bucket => self.class.jiak.bucket,
+        bucket = self.class.jiak.bucket
+        @jiak = JiakObject.new(:bucket => bucket,
                                :data => bucket.data_class.new(*args))
       end
     end
@@ -313,7 +313,8 @@ module RiakRest
     # Put this resource on the Jiak server. See JiakResource#ClassMethods#put
     # for options.
     def put(opts={})
-      @jiak = self.class.put(self,opts)
+      @jiak = (self.class.put(self,opts)).jiak
+      self
     end
 
     # :call-seq:
@@ -323,7 +324,8 @@ module RiakRest
     # has not been previously stored. See JiakResource#ClassMethods#put for
     # options.
     def post(opts={})
-      @jiak = self.class.post(self,opts)
+      @jiak = (self.class.post(self,opts)).jiak
+      self
     end
 
     # :call-seq:
@@ -333,7 +335,8 @@ module RiakRest
     # has been previously stored. See JiakResource#ClassMethods#put for
     # options.
     def store(opts={})
-      @jiak = self.class.store(self,opts)
+      @jiak = (self.class.store(self,opts)).jiak
+      self
     end
 
     # :call-seq:
