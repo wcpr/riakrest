@@ -19,7 +19,7 @@ class FooBarBaz  # :nodoc:
   def for_jiak
     { :foo => @foo,
       :bar => @bar
-    }
+    }.reject {|k,v| v.nil?}
   end
 
   def eql?(other)
