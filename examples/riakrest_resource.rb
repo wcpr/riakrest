@@ -8,7 +8,7 @@ class Person
            :data_class => JiakDataHash.create(:name,:age)
 end
 
-remy = Person.create(:name => 'remy', :age => 10)
+remy = Person.new(:name => 'remy', :age => 10)
 remy.post
 
 puts remy.name                           # => "remy"
