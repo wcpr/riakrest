@@ -157,12 +157,12 @@ module RiakRest
 
     def transform_key(key)
       # Change nil key to empty
-      key = "" if key.nil?
-      unless key.is_a?(String)
+      o_key = key.nil? ? '' : key.dup
+      unless o_key.is_a?(String)
         raise JiakObjectException, "Key must be a String" 
       end
-      key.strip!
-      key
+      o_key.strip!
+      o_key
     end
 
     def check_data(data)

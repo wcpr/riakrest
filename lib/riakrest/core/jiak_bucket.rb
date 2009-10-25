@@ -93,9 +93,10 @@ module RiakRest
       unless name.is_a?(String)
         raise JiakBucketException, "Name must be a String"
       end
-      name.strip!
-      raise JiakBucketException, "Name cannot be empty" if name.empty?
-      name
+      b_name = name.dup
+      b_name.strip!
+      raise JiakBucketException, "Name cannot be empty" if b_name.empty?
+      b_name
     end
 
     def check_data_class(data_class)

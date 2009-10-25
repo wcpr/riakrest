@@ -46,11 +46,6 @@ module RiakRest
         raise JiakLinkException, "Can only create JiakLink from hash or array"
       end
 
-      [:bucket,:key,:tag].each do |key|
-        opts[key] = opts[key] || opts[key.to_s] || ANY
-        opts[key].strip!
-        opts[key] = ANY if opts[key].empty?
-      end
       @bucket = opts[:bucket]
       @key = opts[:key]
       @tag = opts[:tag]
@@ -108,8 +103,9 @@ module RiakRest
         unless opts[opt].is_a?(String)
           raise JiakLinkException, "Link elements must be Strings."
         end
-        opts[opt].strip!
-        opts[opt] = ANY if opts[opt].empty?
+        value = opts[opt].dup
+        value.strip!
+        opts[opt] = value.empty? ? ANY : value
       end
       opts
     end
