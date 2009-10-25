@@ -127,25 +127,30 @@ module RiakRest
         payload = jobj.to_jiak
         headers = { 
           :content_type => APP_JSON,
-          :data_type => JSON_DATA, 
+          :data_type => JSON_DATA,
           :accept => APP_JSON }
-        # resp = jobj.key.empty? ? RestClient.post(uri,payload,headers) :
-        #   RestClient.put(uri,payload,headers)
-        # opts[RETURN_BODY] ? JiakObject.from_jiak(resp,jobj.bucket.data_class) : resp
 
-        # CxHack --Begin--
-        # As of Riak 0.6 put/post with returnbody=false returns nil rather than
-        # the key. The comment lines above worked for Riak 0.4 and should work
-        # in the future. The lines below are a current hack which always sets
-        # returnbody=true then returns just the key if the returned object
-        # wasn't requested.
-        req_params[RETURN_BODY] = true
-        uri = jiak_uri(jobj.bucket,jobj.key,req_params)
-        resp = jobj.key.empty? ? RestClient.post(uri,payload,headers) :
-          RestClient.put(uri,payload,headers)
-        resp_object = JiakObject.from_jiak(resp,jobj.bucket.data_class)
-        opts[:object] ? resp_object : resp_object.key
-        # CxHack --End--
+        # Decision tree:
+        #   If key empty POST
+        #   Else PUT
+        #   If object true, return JiakObject
+        #   Else
+        #    POST - parse key from location header
+        #    PUT - return the given key
+        key_empty = jobj.key.empty?
+        if(key_empty)
+          resp = RestClient.post(uri,payload,headers)
+        else
+          resp = RestClient.put(uri,payload,headers)
+        end
+        
+        if(req_params[RETURN_BODY])
+          JiakObject.from_jiak(resp,jobj.bucket.data_class)
+        elsif(key_empty)
+          resp.headers[:location].split('/').last
+        else
+          jobj.key
+        end
       rescue RestClient::ExceptionWithResponse => err
         fail_with_response("put", err)
       rescue RestClient::Exception => err
