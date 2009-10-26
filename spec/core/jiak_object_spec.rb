@@ -68,7 +68,8 @@ describe "JiakObject" do
 
   it "should initialize from JSON" do
     [@core_json,@full_json].each do |json|
-      jobj = JiakObject.from_jiak(json,@bucket.data_class)
+      jiak = JSON.parse(json)
+      jobj = JiakObject.from_jiak(jiak,@bucket.data_class)
       jobj.bucket.should eql @object.bucket
       jobj.key.should eql @object.key
       jobj.data.f1.should eql @data.f1
@@ -85,7 +86,8 @@ describe "JiakObject" do
       same.should be true
     end
 
-    jobj = JiakObject.from_jiak(@full_json,@bucket.data_class)
+    jiak = JSON.parse(@full_json)
+    jobj = JiakObject.from_jiak(jiak,@bucket.data_class)
     jobj.riak[:vclock].should eql 'vclock'
     jobj.riak[:vtag].should eql 'vtag'
     jobj.riak[:lastmod].should eql 'last mod'

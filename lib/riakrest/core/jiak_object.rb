@@ -42,12 +42,10 @@ module RiakRest
     end
 
     # call-seq:
-    #    JiakObject.from_jiak(jiak_json)  -> JiakObject
+    #    JiakObject.from_jiak(jiak)  -> JiakObject
     #
-    # Create a JiakObject from JSON returned by the Jiak server.
-    def self.from_jiak(jiak_json,klass)
-      jiak = JSON.parse(jiak_json)
-
+    # Create a JiakObject from parsed JSON returned by the Jiak server.
+    def self.from_jiak(jiak,klass)
       jiak[:bucket] = JiakBucket.new(jiak.delete('bucket'),klass)
       jiak[:data] = klass.jiak_create(jiak.delete('object'))
       jiak[:links] = jiak.delete('links').map {|link| JiakLink.new(link)}

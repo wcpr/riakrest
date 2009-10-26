@@ -133,9 +133,9 @@ module RiakRest
     # call-seq:
     #    JiakSchema.from_json(json)  -> JiakSchema
     #
-    # Create a JiakSchema from JSON returned by the Jiak server.
-    def self.from_jiak(jiak_json)
-      new(JSON.parse(jiak_json))
+    # Create a JiakSchema from parsed JSON returned by the Jiak server.
+    def self.from_jiak(jiak)
+      new(jiak)
     end
 
     # call-seq:

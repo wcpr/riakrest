@@ -76,7 +76,7 @@ module RiakRest
     # to the Jiak server. See JiakBucket#schema for a way to get this
     # information without server access.
     def schema(bucket)
-      JiakSchema.new(bucket_info(bucket,SCHEMA))
+      JiakSchema.from_jiak(bucket_info(bucket,SCHEMA))
     end
 
     # :call-seq:
@@ -129,7 +129,6 @@ module RiakRest
           :content_type => APP_JSON,
           :data_type => JSON_DATA,
           :accept => APP_JSON }
-
         # Decision tree:
         #   If key empty POST
         #   Else PUT
@@ -145,7 +144,7 @@ module RiakRest
         end
         
         if(req_params[RETURN_BODY])
-          JiakObject.from_jiak(resp,jobj.bucket.data_class)
+          JiakObject.from_jiak(JSON.parse(resp),jobj.bucket.data_class)
         elsif(key_empty)
           resp.headers[:location].split('/').last
         else
@@ -178,7 +177,7 @@ module RiakRest
     # JiakBucket, then to the value set on the Riak cluster. In general the
     # values set on the Riak cluster should suffice.
     #
-    # Raise JiakClientException bucket not a JiakBucket or on RESTful HTTP errors.
+    # Raise JiakClientException if bucket not a JiakBucket
     # Raise JiakResourceNotFound if the resource not found on the Jiak server.
     # Raise JiakResourceException on other HTTP RESTful errors.
     #
@@ -191,7 +190,7 @@ module RiakRest
       begin
         uri = jiak_uri(bucket,key,req_params)
         resp = RestClient.get(uri, :accept => APP_JSON)
-        JiakObject.from_jiak(resp,bucket.data_class)
+        JiakObject.from_jiak(JSON.parse(resp),bucket.data_class)
       rescue RestClient::ResourceNotFound => err
         raise JiakResourceNotFound, "failed get: #{err.message}"
       rescue RestClient::ExceptionWithResponse => err
