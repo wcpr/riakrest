@@ -6,60 +6,104 @@ module RiakRest
   #++
   # ===Usage
   # <code>
-  #   link = JiakLink.new(:bucket => 'person', :key => 'remy', :tag => 'child')
-  #   link = JiakLink.new(['person','remy','child']
-  #   link = JiakLink.new(['person',JiakLink::ANY,'child']
+  #   link = JiakLink.new('person','remy','child')
+  #   link = JiakLink.new(['person','remy','child'])
+  #   link = JiakLink.new('person',JiakLink::ANY,'child')
   # </code>
   class JiakLink
 
-    attr_reader :bucket, :key, :tag
+    attr_accessor :bucket, :key, :tag
 
     # Jiak (erlang) wildcard character (atom)
     ANY = '_'
 
-
-    # call-seq:
-    #    JiakLink.new(opts=[])  -> JiakLink
+    # :call-seq:
+    #   JiakLink.new(*args)  -> JiakLink
     #
-    # Create a link from either a hash or a three-element array.
-    # 
-    # ====Hash
-    # <code>:bucket</code> :: Bucket or bucket name
-    # <code>:key</code> :: Key
-    # <code>:tag</code> :: Tag
+    # Create a link from argument array. Missing, nil, or empty string values
+    # are set to JiakLink::ANY.
     #
-    # Notes
-    # * Keys can either be strings or symbols.
-    # * Values must be strings.
-    # * All keys are optional. Missing keys or nil values are set to
-    #   JiakLink::ANY.
+    # ====Examples
+    # The following create JiakLinks with the shown equivalent array structure:
+    # <code>
+    #   JiakLink.new                       # => ['_','_','_']
+    #   JiakLink.new 'b'                   # => ['b','_','_']
+    #   JiakLink.new 'b','k'               # => ['b','k','_']
+    #   JiakLink.new 'b','k','t'           # => ['b','k','t']
     #
-    # ====Array
-    # <code>['b','k','t']</code> --- Three-element array of strings
-    def initialize(opts=[]) 
-      case opts
-      when Hash
-        opts = transform_opts(opts)
-      when Array
-        opts = transform_arr(opts)
+    #   JiakLink.new []                    # => ['_','_','_']
+    #   JiakLink.new ['b']                 # => ['b','_','_']
+    #   JiakLink.new ['b','k']             # => ['b','k','_']
+    #   JiakLink.new ['b','k','t']         # => ['b','k','t']
+    #
+    #   JikaLink.new ['',nil,' ']          # => ['_','_','_']
+    # </code>
+    #
+    # Passing another JiakLink as an argument makes a copy of that
+    # link. Passing a JiakBucket in the first (bucket) position uses the name
+    # field of that JiakBucket.
+    #
+    def initialize(*args)
+      case args.size
+      when 0
+        bucket = key = tag = ANY
+      when 1
+        if args[0].is_a? String
+          bucket = args[0]
+          key = tag = ANY
+        elsif args[0].is_a? JiakLink
+          bucket, key, tag = args[0].bucket, args[0].key, args[0].tag
+        elsif args[0].is_a? Array
+          bucket, key, tag = args[0][0], args[0][1], args[0][2]
+        else
+          raise JiakLinkException, "argument error"
+        end
+      when 2
+        bucket, key = args[0], args[1]
+        tag = ANY
+      when 3
+        bucket, key, tag = args[0], args[1], args[2]
       else
-        raise JiakLinkException, "Can only create JiakLink from hash or array"
+        raise JiakLinkException, "too many arguments, (#{args.size} for 3)"
       end
-
-      @bucket = opts[:bucket]
-      @key = opts[:key]
-      @tag = opts[:tag]
+      
+      @bucket, @key, @tag  = transform_args(bucket,key,tag)
     end
 
-    # call-seq:
-    #    link.for_jiak  -> JSON
+    # :call-seq
+    #   link.bucket = bucket
+    #
+    # Set the bucket field.
+    def bucket=(bucket)
+      bucket = bucket.name  if bucket.is_a? JiakBucket
+      @bucket = transform_arg(bucket)
+    end
+
+    # :call-seq:
+    #   link.key = key
+    #
+    # Set the key field.
+    def key=(key)
+      @key = transform_arg(key)
+    end
+
+    # :call-seq:
+    #   link.tag = tag
+    #
+    # Set the tag field.
+    def tag=(tag)
+      @tag = transform_arg(tag)
+    end
+
+    # :call-seq:
+    #   link.for_jiak  -> JSON
     #
     # JSON representation of this JiakLink.
     def for_jiak
       [@bucket, @key, @tag]
     end
 
-    # call-seq:
+    # :call-seq:
     #    link.for_uri  -> URI encoded string
     #
     # URI represent this JiakLink, i.e, a string suitable for inclusion in an
@@ -68,7 +112,7 @@ module RiakRest
       URI.encode(for_jiak.join(','))
     end
 
-    # call-seq:
+    # :call-seq:
     #    link.eql?(other) -> true or false
     #
     # Returns <code>true</code> if <i>link</i> and <i>other</i> contain the
@@ -80,7 +124,7 @@ module RiakRest
         @tag.eql?(other.tag)
     end
 
-    # call-seq:
+    # :call-seq:
     #    link == other -> true or false
     #
     # Equality -- JiakLinks are equal if they contain the same attribute values
@@ -96,32 +140,27 @@ module RiakRest
     end
 
     private
-    def transform_opts(opts)
-      opts[:bucket] = bucket_to_name(opts[:bucket])
-      [:bucket,:key,:tag].each do |opt|
-        opts[opt] = opts[opt] || opts[opt.to_s] || ANY
-        unless opts[opt].is_a?(String)
+    def transform_args(b,k,t)
+      b = b.name  if b.is_a? JiakBucket
+      [b,k,t].map do |arg|
+        arg = ANY  if arg.nil?
+        unless arg.is_a? String
           raise JiakLinkException, "Link elements must be Strings."
         end
-        value = opts[opt].dup
+        value = arg.dup
         value.strip!
-        opts[opt] = value.empty? ? ANY : value
+        value.empty? ? ANY : value
       end
-      opts
     end
-
-    def transform_arr(arr)
-      arr = [ANY,ANY,ANY]  if arr.empty?
-      unless arr.size == 3
-        raise JiakLinkException, "Link array must have 3 elements"
+    
+    def transform_arg(arg)
+      arg = ANY  if arg.nil?
+      unless arg.is_a? String
+        raise JiakLinkException, "Link elements must be Strings."
       end
-      arr[0] = bucket_to_name(arr[0])
-      transform_opts({:bucket => arr[0], :key => arr[1], :tag => arr[2]})
+      value = arg.dup
+      value.strip!
+      value.empty? ? ANY : value
     end
-
-    def bucket_to_name(arg)
-      arg.is_a?(JiakBucket) ? arg.name : arg
-    end
-
   end
 end
