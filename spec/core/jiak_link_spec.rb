@@ -6,32 +6,18 @@ describe "JiakLink" do
     @key = 'k'
     @tag = 't'
     @any = JiakLink::ANY
-    @jiak_link = JiakLink.new({:bucket => @bucket,:key => @key,:tag =>@tag})
+    @jiak_link = JiakLink.new(@bucket,@key,@tag)
     @array = [@bucket,@key,@tag]
     @jiak_link_any = JiakLink.new
   end
 
   it "should respond to" do
     @jiak_link.should respond_to(:bucket,:key,:tag)
-    @jiak_link.should_not respond_to(:bucket=,:key=,:tag=)
+    @jiak_link.should respond_to(:bucket=,:key=,:tag=)
 
     @jiak_link.should respond_to(:for_jiak,:for_uri)
 
     @jiak_link.should respond_to(:eql?,:==)
-  end
-
-  it "should fill in missing opts with ANY" do
-    jiak_link = JiakLink.new
-    jiak_link.should eql @jiak_link_any
-    jiak_link.should == @jiak_link_any
-
-    [:bucket,:key,:tag].each do |key|
-      hash = {}
-      hash[key] = @any
-      jiak_link = JiakLink.new(hash)
-      jiak_link.should eql @jiak_link_any
-      jiak_link.should == @jiak_link_any
-    end
   end
 
   it "should init from specified values" do
@@ -39,15 +25,47 @@ describe "JiakLink" do
     @jiak_link.key.should eql @key
     @jiak_link.tag.should eql @tag
 
-    jiak_link = JiakLink.new({:bucket => @bucket,:key => @key})
-    jiak_link.bucket.should eql @bucket
-    jiak_link.key.should eql @key
-    jiak_link.tag.should eql @any
-
     jiak_link = JiakLink.new([@bucket,@key,@tag])
     jiak_link.bucket.should eql @bucket
     jiak_link.key.should eql @key
     jiak_link.tag.should eql @tag
+
+    jiak_link = JiakLink.new(@jiak_link)
+    jiak_link.bucket.should eql @bucket
+    jiak_link.key.should eql @key
+    jiak_link.tag.should eql @tag
+  end
+
+  it "should fill in missing args with ANY" do
+    jiak_link = JiakLink.new(@bucket,@key)
+    jiak_link.bucket.should eql @bucket
+    jiak_link.key.should eql @key
+    jiak_link.tag.should eql @any
+
+    jiak_link = JiakLink.new(@bucket)
+    jiak_link.bucket.should eql @bucket
+    jiak_link.key.should eql @any
+    jiak_link.tag.should eql @any
+
+    jiak_link = JiakLink.new
+    jiak_link.bucket.should eql @any
+    jiak_link.key.should eql @any
+    jiak_link.tag.should eql @any
+
+    jiak_link = JiakLink.new([@bucket,@key])
+    jiak_link.bucket.should eql @bucket
+    jiak_link.key.should eql @key
+    jiak_link.tag.should eql @any
+    
+    jiak_link = JiakLink.new([@bucket])
+    jiak_link.bucket.should eql @bucket
+    jiak_link.key.should eql @any
+    jiak_link.tag.should eql @any
+
+    jiak_link = JiakLink.new []
+    jiak_link.bucket.should eql @any
+    jiak_link.key.should eql @any
+    jiak_link.tag.should eql @any
   end
 
   it "should ignore leading/trailing spaces for opts on init" do
@@ -75,6 +93,10 @@ describe "JiakLink" do
     jiak_link.bucket.should eql @bucket
     jiak_link.key.should eql @key
     jiak_link.tag.should eql @tag
+  end
+
+  it "should allow field updates" do
+    puts "CxINC JiakLink updates"
   end
 
   it "should convert for Jiak" do

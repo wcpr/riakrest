@@ -9,8 +9,8 @@ describe "JiakObject" do
     @bucket_name = 'test'
     @bucket = JiakBucket.new(@bucket_name,DataObject)
     @key = 'hey'
-    @l1 = JiakLink.new({:bucket => 'l1b'})
-    @l2 = JiakLink.new(['l2b', 'l2t', 'l2a'])
+    @l1 = JiakLink.new('l1b')
+    @l2 = JiakLink.new('l2b', 'l2t', 'l2a')
     @links = [@l1,@l2]
 
     object = @data.for_jiak
@@ -143,7 +143,7 @@ describe "JiakObject" do
   end
 
   it "should add a link" do
-    jiak_link3 = JiakLink.new(['a','b','c'])
+    jiak_link3 = JiakLink.new('a','b','c')
     @object.links.should_not include jiak_link3
 
     size = @links.size
@@ -151,7 +151,7 @@ describe "JiakObject" do
     @object.links.should have_exactly(size+1).items
     @object.links.should include jiak_link3
 
-    jiak_link4 = JiakLink.new(['d','e','f'])
+    jiak_link4 = JiakLink.new('d','e','f')
     @object.links.should_not include jiak_link4
     @object << jiak_link4
     @object.links.should have_exactly(size+2).items
