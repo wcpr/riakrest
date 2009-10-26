@@ -226,7 +226,7 @@ module RiakRest
     end
 
     # CxTDB description
-    def walk(bucket,key,walker)
+    def walk(bucket,key,walker,data_class)
       begin
         start = jiak_uri(bucket,key)
         case walker
@@ -239,7 +239,10 @@ module RiakRest
             'a JiakList or an Array of JiakList objects'
         end
         resp = RestClient.get(uri, :accept => APP_JSON)
-        results = JSON.parse(resp)['results'][0]
+        # JSON.parse(resp)['results'][0]
+        JSON.parse(resp)['results'][0].map do |jiak|
+          JiakObject.from_jiak(jiak,data_class)
+        end
       rescue RestClient::ExceptionWithResponse => err
         fail_with_response("put", err)
       rescue RestClient::Exception => err

@@ -231,73 +231,120 @@ describe "JiakClient processing" do
 end
 
 Parent = JiakDataHash.create(:name)
-Child = JiakDataHash.create(:name,:parent)
+Child = JiakDataHash.create(:name)
 
 describe "JiakClient links" do
   before do
     @base_uri = 'http://127.0.0.1:8002/jiak/'
     @client = JiakClient.new @base_uri
 
-    @parent_bucket = JiakBucket.new('parents',Parent)
-    @children_bucket = JiakBucket.new('children',Child)
-    @client.set_schema(@parent_bucket)
-    @client.set_schema(@children_bucket)
+    @p_bucket = JiakBucket.new('parent',Parent)
+    @c_bucket = JiakBucket.new('child',Child)
+    @client.set_schema(@p_bucket)
+    @client.set_schema(@c_bucket)
   end
 
   it "should add links and walk the resulting structure" do
-    parent_keys = ['parent_1','parent_2','parent_3','parent_4']
-    parent_keys.each do |parent_key|
-      parent_name = parent_key.gsub('_',' ')
-      parent_data = Parent.new(:name => parent_name)
-      jobj = JiakObject.new(:bucket => @parent_bucket,
-                            :key => parent_key,
-                            :data => parent_data)
-      @client.store(jobj)
-    end
     parent_children = {
-      'parent_1' => ['child_1','child_2'],
-      'parent_2' => ['child_2','child_3'],
-      'parent_3' => ['child_4','child_5','child_6'],
-      'parent_4' => ['child_4','child_5','child_6']
+      'p1' => ['c1','c2'],
+      'p2' => ['c2','c3','c4'],
+      'p3' => ['c4','c5','c6'],
+      'p4' => ['c5','c6'],
+      'p5' => ['c7']
     }
+
+    # invert the p/c relationships
+    child_parents = parent_children.inject({}) do |build, (p,cs)|
+      cs.each do |c|
+        build[c] ? build[c] << p : build[c] = [p]
+      end
+      build
+    end
+
+    # for each p/c relation
+    #  - create p and c (when necessary)
+    #  - add links for p -> c and c -> p
+    parent_children.each do |p_name,c_names|
+      p_data = Parent.new(:name => p_name)
+      p_obj = JiakObject.new(:bucket => @p_bucket,
+                             :key => p_name,
+                             :data => p_data)
+      parent = @client.store(p_obj,:object => true)
+      p_link = JiakLink.new(@p_bucket,parent.key,'parent')
+      c_names.each do |c_name|
+        begin
+          child = @client.get(@c_bucket,c_name)
+        rescue JiakResourceNotFound
+          c_data = Child.new(:name => c_name)
+          c_obj = JiakObject.new(:bucket => @c_bucket,
+                                 :key => c_name,
+                                 :data => c_data)
+          child = @client.store(c_obj, :object => true)
+        end
+        c_link = JiakLink.new(@c_bucket,child.key,'child')
+        child << p_link
+        @client.store(child)
+        parent << c_link
+      end
+      @client.store(parent)
+    end
+
+    # get the number of links in the p's
+    p1,p2,p3,p4,p5 = parent_children.keys.map {|p| @client.get(@p_bucket,p)}
+    [p1,p4].each {|p| p.links.should have_exactly(2).items}
+    [p2,p3].each {|p| p.links.should have_exactly(3).items}
+    p5.links.should have_exactly(1).item
+
+    # get the number of links in the c's
+    c1,c2,c3,c4,c5,c6,c7 = child_parents.keys.map {|c| @client.get(@c_bucket,c)}
+    [c1,c3,c7].each {|c| c.links.should have_exactly(1).items}
+    [c2,c4,c5,c6].each {|c| c.links.should have_exactly(2).items}
+
+    # check the links in each p and c
+    p_link = JiakLink.new(@p_bucket,nil,'parent')
+    c_link = JiakLink.new(@c_bucket,nil,'child')
+    parent_children.each do |p_name,children|
+      parent = @client.get(@p_bucket,p_name)
+      links = parent.links
+      children.each do |c_name|
+        c_link.key = c_name
+        parent.links.should include c_link
+
+        child = @client.get(@c_bucket,c_name)
+        p_link.key = p_name
+        child.links.should include p_link
+      end
+    end
     
-    parent_children.each do |parent_key,children_keys|
-      children_keys.each do |child_key|
-        child_name = child_key.gsub('_',' ')
-        child_data = Child.new(:name => child_name, :parent => parent_key)
-        child_jobj = 
-          JiakObject.new(:bucket => @children_bucket,
-                         :key => child_key,
-                         :data => child_data)
-        @client.store(child_jobj)
-        child_link =
-          JiakLink.new([@children_bucket.name,child_jobj.key,'child'])
-        parent_jobj = @client.get(@parent_bucket,parent_key)
-        parent_jobj << child_link
-        @client.store(parent_jobj)
+    # p's should include links to their c's
+    c_link = JiakLink.new(@c_bucket,JiakLink::ANY,'child')
+    parent_children.each do |p_name,children|
+      @client.walk(@p_bucket,p_name,c_link,Child).each do |c_obj|
+        children.should include c_obj.data.name
       end
     end
 
-    parent_children.each do |parent_key,children_keys|
-      parent = @client.get(@parent_bucket,parent_key)
-      children_keys.each do |child_key|
-        child_link = JiakLink.new([@children_bucket.name,child_key,'child'])
-        parent.links.should include child_link
+    # c's should include links to their p's
+    p_link = JiakLink.new(@p_bucket,JiakLink::ANY,'parent')
+    child_parents.each do |c_name,parents|
+      @client.walk(@c_bucket,c_name,p_link,Parent).each do |p_obj|
+        parents.should include p_obj.data.name
       end
     end
-    
-    walker = JiakLink.new([@children_bucket.name,JiakLink::ANY,'child'])
-    parent_keys.each do |parent_key|
-      @client.walk(@parent_bucket,parent_key,walker).each do |child|
-        child_data = child['object']
-        child_name = child_data['name']
-        child_key = child_name.gsub(' ','_')
-        parent_children[parent_key].should include child_key
-      end
+
+    c1s,c2s,c3s,c4s,c5s,c6s,c7s = child_parents.keys.map do |c|
+      siblings = @client.walk(@c_bucket,c,[p_link,c_link],Child)
+      me = @client.get(@c_bucket,c)
+      siblings.reject! {|s| s.eql?(me)}
+      siblings
     end
+    c1s.should have_exactly(1).item
+    c2s.should have_exactly(3).items
+    c3s.should have_exactly(2).items
+    c4s.should have_exactly(4).items
+    c5s.should have_exactly(2).items
+    c6s.should have_exactly(2).items
+    c7s.should have_exactly(0).items
   end
 
-  it "should walk a nested structure" do
-    # CxINC Walk more than one step
-  end
 end
