@@ -37,8 +37,11 @@ module RiakRest
       # Valid options are:
       # <code>data_class</code> :: data class for the resource.
       # <code>name</code> :: Jiak (bucket) name for the resource.
-      # <code>activate</code> :: <code>true> to activate this JiakResource at
-      # the time of class creation. Default is <code>false</code>.
+      # <code>activate</code> :: <code>true> activates this JiakResource at the
+      # time of class creation. <code>false</code> delays activation, allowing
+      # class creation without server access. If <code>false</code>,
+      # Resource.actiavate must be called before first using resources in Jiak
+      # interaction. Default is <code>true</code>.
       #
       # <code>data_class</code> is mandatory. For each field in the data class
       # JiakSchema#allowed_fields accessor methods are added to facilitate
@@ -65,7 +68,7 @@ module RiakRest
         jiak.name = name
         jiak.data = opts[:data_class]
         jiak.bucket = JiakBucket.new(name,opts[:data_class])
-        jiak.server.set_schema(jiak.bucket) if opts[:activate] 
+        jiak.server.set_schema(jiak.bucket) unless(opts[:activate] == false)
 
         opts[:data_class].schema.allowed_fields.each do |field|
           define_method("#{field}=") do |val|
@@ -260,6 +263,49 @@ module RiakRest
         jiak.server.delete(jiak.bucket,resource.jiak.key,opts)
       end
 
+      # :call-seq:
+      #   JiakResource.link(from,to,tak)  -> JiakResource
+      #
+      # Create a link from a resource to another resource tagged by tag.
+      def link(from,to,tag)
+        link = JiakLink.new(to.jiak.bucket, to.jiak.key, tag)
+        unless from.jiak.links.include?(link)
+          from.jiak.links << link
+        end
+        from
+      end
+      
+      def walk(from,*steps)
+        unless steps.size.even?
+          raise JiakResource, "walk exspects steps to be resource,tag pairs"
+        end
+
+        links = steps.each_slice(2).map do |pair|
+          JiakLink.new(pair[0].jiak.bucket,pair[1],nil)
+        end
+        links = links[0]  if links.size == 1
+        puts
+        puts links.inspect
+
+        resource_class = steps[steps.size-2]
+        jiak.server.walk(from.jiak.bucket, from.jiak.key, links,
+                         resource_class.jiak.bucket.data_class).map do |jobj|
+          resource_class.new(jobj)
+        end        
+      end
+      
+      def copy(opts={})
+        opts[:server] ||= jiak.server.uri
+        opts[:data_class] ||= jiak.bucket.data_class
+        opts[:name] ||= jiak.bucket.name
+        Class.new do
+          include JiakResource
+          server opts[:server]
+          resource :name => opts[:name],
+                   :data_class => opts[:data_class]
+        end
+      end
+
     end
     
     def self.included(including_class)    # :nodoc:
@@ -280,7 +326,7 @@ module RiakRest
     #     include JiakResource
     #     self.server klass.jiak.server.uri
     #     self.resource :name => klass.jiak.bucket.name,
-    #                  :data_class => klass.jiak.bucket.data_class
+    #                   :data_class => klass.jiak.bucket.data_class
     #     end
     # end
 
@@ -297,7 +343,7 @@ module RiakRest
     # is passed to the <code>new</code> method of the JiakData associated
     # with the JiakResource.
     def initialize(*args)
-      # First form is used by JiakResource.get
+      # First form is used by JiakResource.get and JiakResource.walk
       if(args.size == 1 && args[0].is_a?(JiakObject))
         @jiak = args[0]
       else
@@ -357,5 +403,26 @@ module RiakRest
     def delete(opts={})
       self.class.delete(self,opts)
     end
+
+    # :call-seq:
+    #   link(resource,tag)
+    #
+    # Create a link to the resource tagged by tag.
+    def link(resource,tag)
+      self.class.link(self,resource,tag)
+    end
+
+    def walk(*steps)
+      self.class.walk(self,*steps)
+    end
+
+    def eql?(other)
+      other.is_a?(JiakResource) && other.jiak.eql?(jiak)
+    end
+
+    # def ==(other)
+      
+    # end
+
   end
 end
