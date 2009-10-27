@@ -99,7 +99,6 @@ module RiakRest
       def required(*fields)
         arr_fields = create_array(fields)
         check_allowed(arr_fields)
-        instance_variable_set("@required_fields",arr_fields)
         @schema.required_fields = arr_fields
         arr_fields
       end
@@ -113,7 +112,6 @@ module RiakRest
       def readable(*fields)
         arr_fields = create_array(fields)
         check_allowed(arr_fields)
-        instance_variable_set("@read_mask",arr_fields)
         @schema.read_mask = arr_fields
         arr_fields
       end
@@ -127,7 +125,6 @@ module RiakRest
       def writable(*fields)
         arr_fields = create_array(fields)
         check_allowed(arr_fields)
-        instance_variable_set("@write_mask",arr_fields)
         @schema.write_mask = arr_fields
         arr_fields
       end
@@ -184,7 +181,7 @@ module RiakRest
     # ----------------------------------------------------------------------
 
     # :call-seq:
-    #   JiakData.for_jiak
+    #   data.for_jiak
     #
     # Override to return the structure for the data to be written to Jiak. The
     # default implementation throws JiakDataException to force this
@@ -216,7 +213,7 @@ module RiakRest
     # A simple implementation would look like:
     # <code>
     #   def keygen
-    #     field_1.to_s
+    #     f1.to_s
     #   end
     # </code>
     def keygen
