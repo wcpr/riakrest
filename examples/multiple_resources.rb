@@ -16,7 +16,7 @@ end
 
 DogBreedData = JiakDataHash.create(DogData.schema.allowed_fields)
 DogBreedData.readable :name, :breed
-DogBreedData.writable :name, :breed
+DogBreedData.writable :breed
 class DogBreed
   include JiakResource
   server   Dog.jiak.uri
@@ -26,7 +26,7 @@ end
 
 DogWeightData = JiakDataHash.create(DogData.schema.allowed_fields)
 DogWeightData.readable :name, :weight
-DogWeightData.writable :name, :weight
+DogWeightData.writable :weight
 class DogWeight
   include JiakResource
   server   Dog.jiak.uri
@@ -34,12 +34,12 @@ class DogWeight
            :data_class => DogWeightData
 end
 
-
-
-
 Dog.activate
-addie = Dog.create(:name => 'adelaide', :weight => 45, :breed => 'heeler')
+addie = Dog.new(:name => 'adelaide', :weight => 45, :breed => 'heeler')
 addie.post
+puts addie.name                 # => "adelaide"
+puts addie.breed                # => "heeler"
+puts addie.weight               # => 45
 
 DogBreed.activate
 addie = DogBreed.get('adelaide')
@@ -53,17 +53,7 @@ addie.put
 
 Dog.activate
 addie = Dog.get('adelaide')
-puts addie.name
-puts addie.breed
-puts addie.weight
+puts addie.name                 # => "adelaide"
+puts addie.breed                # => "Heeler"
+puts addie.weight               # => 47
 
-
-
-
-# DogBreed = JiakResource.copy(Dog)
-# DogBreed.readable :name, :breed
-# DogBreed.schema.write_mask -= [:weight]
-
-# DogWeight = JiakResource.copy(Dog)
-# DogBreed.readable :name, :weight
-# DogBreed.writable :name, :weight
