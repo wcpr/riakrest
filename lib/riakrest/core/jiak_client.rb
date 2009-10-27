@@ -225,7 +225,13 @@ module RiakRest
       end
     end
 
-    # CxTDB description
+    # :call-seq:
+    #   client.walk(bucket,key,walker,data_class)
+    #
+    # Return an array of JiakObjects by walking links for a bucket and key. The
+    # data_class is used to create the data objects wrapped in the returned
+    # JiakObjects.
+    #
     def walk(bucket,key,walker,data_class)
       begin
         start = jiak_uri(bucket,key)

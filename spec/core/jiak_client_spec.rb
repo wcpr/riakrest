@@ -317,7 +317,7 @@ describe "JiakClient links" do
     end
     
     # p's should include links to their c's
-    c_link = JiakLink.new(@c_bucket,JiakLink::ANY,'child')
+    c_link = JiakLink.new(@c_bucket,nil,'child')
     parent_children.each do |p_name,children|
       @client.walk(@p_bucket,p_name,c_link,Child).each do |c_obj|
         children.should include c_obj.data.name
@@ -325,13 +325,14 @@ describe "JiakClient links" do
     end
 
     # c's should include links to their p's
-    p_link = JiakLink.new(@p_bucket,JiakLink::ANY,'parent')
+    p_link = JiakLink.new(@p_bucket,nil,'parent')
     child_parents.each do |c_name,parents|
       @client.walk(@c_bucket,c_name,p_link,Parent).each do |p_obj|
         parents.should include p_obj.data.name
       end
     end
 
+    # c siblings requires a second step
     c1s,c2s,c3s,c4s,c5s,c6s,c7s = child_parents.keys.map do |c|
       siblings = @client.walk(@c_bucket,c,[p_link,c_link],Child)
       me = @client.get(@c_bucket,c)
