@@ -10,10 +10,10 @@ module RiakRest
     #   JiakObject.new(opts)  -> JiakObject
     #
     # Create a object for Jiak storage. Valid options:
-    # <code>:bucket</code> :: The JiakBucket for storage.
-    # <code>:data</code> :: The JiakData to be stored.
-    # <code>:key</code> :: The key for the object.
-    # <code>:links</code> :: The Jiak links for the object.
+    # <code>:bucket</code> :: JiakBucket for storage.
+    # <code>:data</code> :: Object JiakData to be stored.
+    # <code>:key</code> :: Object key.
+    # <code>:links</code> :: Object JiakLink array.
     #
     # The bucket and data options are required.
     #
@@ -44,7 +44,9 @@ module RiakRest
     # call-seq:
     #    JiakObject.from_jiak(jiak)  -> JiakObject
     #
-    # Create a JiakObject from parsed JSON returned by the Jiak server.
+    # Create a JiakObject from parsed JSON returned by the Jiak server. Calls
+    # the <code>jiak_create</code> of the JiakData class passed as the second
+    # argument to inflate the data into the user-defined data class.
     def self.from_jiak(jiak,klass)
       jiak[:bucket] = JiakBucket.new(jiak.delete('bucket'),klass)
       jiak[:data] = klass.jiak_create(jiak.delete('object'))
@@ -59,7 +61,9 @@ module RiakRest
     # call-seq:
     #    jiak_object.to_jiak  -> JSON
     #
-    # Create a JSON suitable for sending to a Jiak server.
+    # Create a representation suitable for sending to a Jiak server. Calls the
+    # <code>for_jiak</code> method of the wrapped JiakData. Called by
+    # JiakClient when transporting an object to Jiak.
     def to_jiak
       jiak = {
         :bucket => @bucket.name,
@@ -114,7 +118,7 @@ module RiakRest
     #   jiak_object << JiakLink  -> JiakObject
     #
     # Convenience method for adding a JiakLink to the links for this
-    # jiak_object. Duplicate links are ignored. Returns the jiak_object for
+    # jiak_object. Duplicate links are ignored. Returns the JiakObject for
     # chaining.
     def <<(link)
       link = check_link(link)

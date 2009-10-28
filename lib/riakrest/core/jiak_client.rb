@@ -1,22 +1,7 @@
 module RiakRest
 
   # Restful client interaction with a Riak document store via a JSON
-  # interface. See RiakRest for descriptive usage.
-  #
-  # ====Usage
-  # <code>
-  #   Person = JiakDataHash.create(:name,:age)
-  #   remy = Person.new(:name => "remy", :age => 10)
-  #   bucket = JiakBucket.new('person',Person)
-  #   client.set_schema(bucket)
-  #   jobj = JiakObject.new(:bucket => bucket, :data => remy)
-  #   key = client.store(jobj)
-  #   remy.name                                # => "remy"
-  #   remy.name = "Remy"                       # => "Remy"
-  #   remy = client.get(bucket,key)
-  #   remy.name                                # => "remy" (overwrote change)
-  #   client.delete(bucket,key)
-  # </code>
+  # interface. See RiakRest for a basic example usage.
   class JiakClient
 
     # :stopdoc:
@@ -51,7 +36,7 @@ module RiakRest
     end
 
     # :call-seq:
-    #   client.set_schema(bucket)  -> nil
+    #   set_schema(bucket)  -> nil
     #
     # Set the Jiak server schema for a bucket. The schema is determined by the
     # JiakData associated with the JiakBucket.
@@ -70,7 +55,7 @@ module RiakRest
     end
 
     # :call-seq:
-    #   client.schema(bucket)  -> JiakSchema
+    #   schema(bucket)  -> JiakSchema
     #
     # Get the data schema for a bucket on a Jiak server. This involves a call
     # to the Jiak server. See JiakBucket#schema for a way to get this
@@ -80,7 +65,7 @@ module RiakRest
     end
 
     # :call-seq:
-    #   client.keys(bucket)  -> []
+    #   client.keys(bucket)  -> array
     #
     # Get an Array of all known keys for the specified bucket. Since key lists
     # are updated asynchronously the returned array can be out of date
@@ -90,7 +75,7 @@ module RiakRest
     end
 
     # :call-seq:
-    #   client.store(object,opts={})  -> JiakObject or key
+    #   store(object,opts={})  -> JiakObject or key
     #
     # Stores user-defined data (wrapped in a JiakObject) on the Jiak
     # server. JiakData#to_jiak is used to prepare user-defined data for JSON
@@ -100,17 +85,18 @@ module RiakRest
     # stored JiakObject depending on the option <code>key</code>. The object
     # for storage must be JiakObject. Valid options are:
     #
-    # <code>:object</code> :: If <code>true</code>, on success return the stored JiakObject (which includes Jiak metadata); otherwise return just the key. Default is <code>false</code>
+    # <code>:object</code> :: If <code>true</code>, on success return the stored JiakObject (which includes Jiak metadata); otherwise return just the key. Default is <code>false</code>, which returns the key.
     # <code>:writes</code> :: The number of Riak nodes that must successfully store the data.
     # <code>:durable_writes</code> :: The number of Riak nodes (<code>< writes</code>) that must successfully store the data in a durable manner.
-    # <code>:reads</code> :: The number of Riak nodes that must successfully read data if the JiakObject is being returned.
+    # <code>:reads</code> :: The number of Riak nodes that must successfully read data if a JiakObject is being returned.
     #
     # If any of the request parameters <code>:writes, :durable_writes,
     # :reads</code> are not set, each first defaults to the value set for the
     # JiakBucket in the JiakObject, then to the value set on the Riak
     # cluster. In general the values set on the Riak cluster should suffice.
     #
-    # Raise JiakClientException if object is not a JiakObject or illegal options.
+    # Raise JiakClientException if object not a JiakObject or illegal options
+    # are passed.<br/>
     # Raise JiakResourceException on RESTful HTTP errors.
     #
     def store(jobj,opts={})
@@ -158,16 +144,18 @@ module RiakRest
     end
     
     # :call-seq:
-    #   client.get(bucket,key,opts={})  -> JiakObject
+    #   get(bucket,key,opts={})  -> JiakObject
     #
     # Get data stored on a Jiak server at a bucket/key. The user-defined data
     # stored on the Jiak server is inflated inside a JiakObject that also
     # includes Riak storage information. Data inflation is controlled by the
-    # data class associated with the bucket of this call. Since the data schema
-    # validation that occurs on the Jiak server validates to the last schema
-    # set for that Jiak server bucket, it is imperative that schema be the same
-    # (or at least consistent) with the schema associated with this bucket at
-    # retrieval time.
+    # data class associated with the bucket of this call.
+    #
+    # Since the data schema validation that occurs on the Jiak server validates
+    # to the last schema set for that Jiak server bucket, it is imperative that
+    # schema be the same (or at least consistent) with the schema associated
+    # with this bucket at retrieval time. If you only store homogeneous objects
+    # in a bucket this will not be an issue.
     #
     # The bucket must be a JiakBucket and the key must be a non-empty
     # String. Valid options are:
@@ -177,8 +165,8 @@ module RiakRest
     # JiakBucket, then to the value set on the Riak cluster. In general the
     # values set on the Riak cluster should suffice.
     #
-    # Raise JiakClientException if bucket not a JiakBucket
-    # Raise JiakResourceNotFound if the resource not found on the Jiak server.
+    # Raise JiakClientException if bucket not a JiakBucket.<br/>
+    # Raise JiakResourceNotFound if resource not found on Jiak server.<br/>
     # Raise JiakResourceException on other HTTP RESTful errors.
     #
     def get(bucket,key,opts={})
@@ -201,7 +189,7 @@ module RiakRest
     end
 
     # :call-seq:
-    #   client.delete(bucket,key,opts={})  -> <code>true</code> on success.
+    #   delete(bucket,key,opts={})  -> true or false
     #
     # Delete the JiakObject stored at the bucket/key. Valid options are:
     #
@@ -226,22 +214,24 @@ module RiakRest
     end
 
     # :call-seq:
-    #   client.walk(bucket,key,walker,data_class)
+    #   walk(bucket,key,query,data_class)  -> array
     #
-    # Return an array of JiakObjects by walking links for a bucket and key. The
-    # data_class is used to create the data objects wrapped in the returned
-    # JiakObjects.
+    # Return an array of JiakObjects retrieved by walking a query links
+    # array starting with the links for the object at bucket/key. The
+    # data_class is used to inflate the data objects returned in the
+    # JiakObject array.
     #
-    def walk(bucket,key,walker,data_class)
+    # See QueryLink for a description of the <code>query</code> structure.
+    def walk(bucket,key,query,data_class)
       begin
         start = jiak_uri(bucket,key)
-        case walker
+        case query
         when QueryLink
-          uri = start+'/'+walker.for_uri
+          uri = start+'/'+query.for_uri
         when Array
-          uri = walker.inject(start) {|build,link| build+'/'+link.for_uri}
+          uri = query.inject(start) {|build,link| build+'/'+link.for_uri}
         else
-          raise QueryLinkException, 'failed: walker must be '+
+          raise QueryLinkException, 'failed: query must be '+
             'a QueryLink or an Array of QueryLink objects'
         end
         resp = RestClient.get(uri, :accept => APP_JSON)

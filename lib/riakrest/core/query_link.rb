@@ -1,14 +1,14 @@
 module RiakRest
 
-  # Represents a Jiak link.
-  #--
-  # CxTBD Further description
-  #++
+  # Represents a link used to query linked objects in Jiak. Links are
+  # established using a JiakLink and queried using a QueryLink. The structures
+  # are very similar but significantly different.
+  #
   # ===Usage
   # <code>
-  #   link = QueryLink.new(Parent,'parent',nil)
-  #   link = QueryLink.new([Child,'odd','_'])
-  #   link = QueryLink.new('blogs',QueryLink::ANY,QueryLink::ANY)
+  #   link = QueryLink.new('people','parent')
+  #   link = QueryLink.new(['children','odd','_'])
+  #   link = QueryLink.new('blogs',nil,QueryLink::ANY)
   # </code>
   class QueryLink
 

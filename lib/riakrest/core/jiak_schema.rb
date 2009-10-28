@@ -13,8 +13,8 @@ module RiakRest
   # data object in an existing bucket, add the new field to the schema and
   # reset the bucket schema before storing objects of the new structure. Note
   # that dynamic changes to a bucket schema do not affect the data objects
-  # already stored by Jiak. Schema designations only affect Jiak interaction,
-  # not the data itself.
+  # already stored by Jiak. Schema designations only affect structured Jiak
+  # interaction, not the data itself.
   #
   # The fields are kept as symbols or strings in four attribute arrays:
   # <code>allowed_fields</code>:: Allowed in Jiak interaction.
@@ -22,7 +22,7 @@ module RiakRest
   # <code>write_mask</code>:: Allowed to be written during a Jiak store.
   # <code>read_mask</code>:: Returned by Jiak on a retrieval.
   #
-  # Since Jiak interaction is JSON, duplicate fields names within an array is
+  # Since Jiak interaction is JSON, duplicate fields names within an array are
   # not meaningful, including a symbol that "equals" a string. Duplicates
   # raise an exception.
   #
@@ -77,9 +77,8 @@ module RiakRest
     # * Required fields defaults to an empty array.
     # * Masks default to the <code>allowed_fields</code> array.
     #   
-    # ====Array
-    # Array structure
-    # <code>[:f1, :f2, ...]</code>:: Allowed fields as symbols or strings.
+    # ====Array structure
+    # <code>[:f1,...,fn]</code>:: Allowed fields as symbols or strings.
     #
     # All other fields take the same value as the <code>allowed_fields</code>
     # element. The array structure is provided for simplicity but does not
@@ -141,7 +140,8 @@ module RiakRest
     # call-seq:
     #    schema.to_jiak  -> JSON
     #
-    # Create a JSON suitable for sending to a Jiak server.
+    # Create a representation suitable for sending to a Jiak server. Called by
+    # JiakClient when transporting a schema to Jiak.
     def to_jiak
       { :schema =>
         { :allowed_fields  => @allowed_fields,

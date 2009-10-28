@@ -1,5 +1,6 @@
 module RiakRest
-  # JiakResource provides a resource-oriented wrapper for Jiak interaction. 
+  # JiakResource provides a resource-oriented wrapper for Jiak interaction. See
+  # RiakRest for a basic usage example.
   
   module JiakResource
     # ----------------------------------------------------------------------
@@ -7,7 +8,8 @@ module RiakRest
     # ----------------------------------------------------------------------
     
     # Class methods for creating a user-defined JiakResource. The methods
-    # <code>server</code> and <code>resource</code> are mandatory.
+    # <code>server</code>, <code>group</code> and <code>data_class</code> are
+    # mandatory to create a fully usable JiakResource.
     #
     # ===Usage
     # <code>
@@ -26,7 +28,6 @@ module RiakRest
       #   JiakServer.server(uri)
       #
       # Set the URI for Jiak server interaction.
-      #
       def server(uri)
         jiak.uri = uri
         jiak.server = JiakClient.new(uri)
@@ -95,7 +96,7 @@ module RiakRest
       private :create_jiak_bucket, :create_field_accessors
 
       # :call-seq:
-      #   JiakResource.params(opts={})  -> {}
+      #   JiakResource.params(opts={})  -> hash
       #
       # Default options for request parameters during Jiak interaction. Valid
       # options are:
@@ -187,7 +188,7 @@ module RiakRest
       end
 
       # :call-seq:
-      #   JiakResource.keys   -> []
+      #   JiakResource.keys   -> array
       #
       # Get an array of the current keys for this resource. Since key lists are
       # updated asynchronously on a Riak cluster the returned array can be out
@@ -309,6 +310,14 @@ module RiakRest
         end        
       end
       
+      # :call-seq:
+      #   copy(opts={}) -> JiakResource
+      #
+      # Copies a JiakResource, resetting those values passed as options. Valid
+      # options on copy are those mandatory to create a JiakResource:
+      # <code>:server</code>, <code>:group</code>, and
+      # <code>:data_class</code>.
+      #   
       def copy(opts={})
         opts[:server] ||= jiak.server.uri
         opts[:group] ||= jiak.bucket.name
@@ -332,19 +341,6 @@ module RiakRest
         @jiak = Struct.new(:server,:uri,:group,:data,:bucket).new
       end
     end
-
-
-    # def self.copy(klass)
-    #   unless klass.include?(JiakResource)
-    #     raise JiakResourceException, "expect a JiakResource class."
-    #   end
-    #   Class.new do
-    #     include JiakResource
-    #     self.server klass.jiak.server.uri
-    #     self.resource :name => klass.jiak.bucket.name,
-    #                   :data_class => klass.jiak.bucket.data_class
-    #     end
-    # end
 
     # ----------------------------------------------------------------------
     # Instance methods
@@ -428,6 +424,21 @@ module RiakRest
       self.class.link(self,resource,tag)
     end
 
+    # :call-seq:
+    #   walk(*steps) -> array
+    #
+    # Retrieves an array of JiakResource objects by starting with the links in
+    # this JiakResource and doing the query steps. The steps are a series of
+    # query links designated by a JiakResource and a string tag, or a
+    # JiakResource, a string tag and a string accumulator. The type of
+    # JiakResource returned in the array is determined by the JiakResource
+    # designated in the last step.
+    #
+    # ====Usage
+    # <code>
+    #   walk(Child,'child')
+    #   walk(Parent,'odd',Child,'normal')
+    # </code>
     def walk(*steps)
       self.class.walk(self,*steps)
     end

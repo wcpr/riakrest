@@ -8,6 +8,8 @@ module RiakRest
   # ===Usage
   # <code>
   #   Dog = JiakDataHash.create(:name,:weight)
+  #   Dog.keygen :name
+  #
   #   addie = Dog.new(:name => "Adelaide", :weight => 45)
   #   addie.name                                           # => "Adeliade"
   #   addie.weight                                         # => 45
@@ -95,7 +97,7 @@ module RiakRest
         end
 
         # :call-seq:
-        #   data.for_jiak  -> {}
+        #   data.for_jiak  -> hash
         #
         # Return a hash of the writable fields and their values. Used by
         # RiakRest to prepare the data for transport to the Jiak server.

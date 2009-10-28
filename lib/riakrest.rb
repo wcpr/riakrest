@@ -37,7 +37,7 @@ $:.unshift(File.dirname(__FILE__)) unless
 # JiakData :: Class to define user data to be stored on a Jiak server.
 # JiakObject :: Jiak object wrapper that includes the user-defined data.
 # JiakLink :: Jiak link objects for associations between Jiak server data.
-# QueryLink :: Link objects to query Jiak link associations
+# QueryLink :: Link objects to query Jiak link associations.
 #
 # ====Example Usage
 # This example works at the Jiak core layer. See the Resource example below for
@@ -46,98 +46,88 @@ $:.unshift(File.dirname(__FILE__)) unless
 #   require 'riakrest'
 #   include RiakRest
 # </code>
-# Get a client to talk to the Jiak server at a URI.
-# <code>
-#   client = JiakClient.new("http://localhost:8002/jiak")
-# </code>
-# Create a simple data class.
+# Create a simple class to hold Person data.
 # <code>
 #   Person = JiakDataHash.create(:name,:age)
 # </code>
-# Create a bucket to store Person data.
+# Create a client, a bucket to hold the data, and set the bucket schema for
+# structured interaction.
 # <code>
+#   client = JiakClient.new("http://localhost:8002/jiak")
 #   bucket = JiakBucket.new('person',Person)
-# </code>
-# Set the schema of the Jiak server bucket to prepare for structured interaction.
-# <code>
 #   client.set_schema(bucket)
 # </code>
-# Create a user-defined data object.
+# Wrap a Person data object in a JiakObject and store it. Check the data on the
+# server to see it's really there.
 # <code>
-#   remy = Person.new(:name => "Remy", :age => 10)
+#   remy = client.store(JiakObject.new(:bucket => bucket,
+#                                      :data => Person.new(:name => "remy",
+#                                                           :age => 10)),
+#                       :object => true)
+#   puts client.get(bucket,remy.key).data.name         # => "remy"
 # </code>
-# Create a Jiak object wrapping the user-defined data.
+# Change the data via accessors and update. Again, we print the server value.
 # <code>
-#   jobj = JiakObject.new(:bucket => bucket, :data => remy)
+#   remy.data.name                                     # => "remy"
+#   remy.data.name = "Remy"
+#   client.store(remy)
+#   puts client.get(bucket,remy.key).data.name         # => "Remy"
 # </code>
-# Store the Jiak data object on the server
+# Let's add another person and a link between them.
 # <code>
-#   key = client.store(jobj)
+#   callie = client.store(JiakObject.new(:bucket => bucket,
+#                                        :data => Person.new(:name => "Callie",
+#                                                            :age => 12)),
+#                         :object => true)
+#   remy << JiakLink.new(bucket,callie.key,'sister')
+#   client.store(remy)
 # </code>
-# Data in remy is accessible via accessors. Let's check remy and the Jiak
-# server have the same value for the data name.
+# Now we can get callie as the sister of remy:
 # <code>
-#   puts remy.name                           # => "remy"
-#   puts client.get(bucket,key).data.name    # => "remy"
+#   sisters = client.walk(bucket,remy.key,QueryLink.new(bucket,'sister'),Person)
+#   sisters[0].eql?(callie)                           # => true
 # </code>
-# Things look good. But the next interaction may surprise you.
+# Finally, we'll delete the objects on the way out the door.
 # <code>
-#   remy.name = "Remy"
-#   client.store(jobj)
-#   puts remy.name                           # => "Remy"
-#   puts client.get(bucket,key).data.name    # => "remy"  ???
-# </code>
-# Why wasn't the data for Remy's name updated on the Jiak server? Because
-# although we changed the data locally, we didn't alter the Jiak context in the
-# JiakObject being sent, so to Jiak it looked like a request to store new
-# info. The easiest way to be sure we get the Jiak context is to ask for the
-# Jiak object to be returned (which sets the Jiak context) by the store
-# method. Let's try again with a new data object.
-# <code>
-#   callie = Person.new(:name => "callie", :age => 12)
-#   jobj = JiakObject.new(:bucket => bucket, :data => callie)
-#   jobj = client.store(jobj,{:object => true})
-#   callie = jobj.data
-#   callie.name                                   # => "callie"
-#   puts client.get(bucket,jobj.key).data.name    # => "callie"
-# </code>
-# Now all is right with the world. But let's delete Callie on our way out the door.
-# <code>
-#   client.delete(bucket,jobj.key)
+#   client.delete(bucket,remy.key)
+#   client.delete(bucket,callie.key)
 # </code>
 #
 # ===Resource Interaction
 # Much of the above code can be abstracted into resource-based
 # interaction. RiakRest provides a module JiakResource that allows you to
-# create resource objects that encapsulate a lot of the cruft from above. We'll
-# do the same initial steps we did for Remy above using resources. First we use
-# JiakResource to hold our data and encapsulate the server interaction.
+# create resource objects that encapsulate a lot of the cruft of core client
+# interaction. We'll do the same steps as above using resources.
 # <code>
+#   require 'riakrest'
+#   include RiakRest
+#   
+#   PersonData = JiakDataHash.create(:name,:age)
+#   PersonData.keygen :name
+#   
 #   class Person
 #     include JiakResource
-#     server   'http://localhost:8002/jiak'
-#     resource :name => 'person',
-#              :data_class => JiakDataHash.create(:name,:age)
+#     server      'http://localhost:8002/jiak'
+#     group       'people'
+#     data_class  PersonData
 #   end
-# </code>
-# Next we create and store remy, check the name on the Jiak server, change and
-# update remy's name, then check the name on the server again.
-# <code>
+#   
 #   remy = Person.new(:name => 'remy', :age => 10)
 #   remy.post
-#
-#   puts remy.name                           # => "remy"
-#   puts Person.get(remy.jiak.key).name      # => "remy"
-#
+#   puts Person.get('remy').name                # => "remy"
+#   
 #   remy.name = "Remy"
-#   remy.put
-#
-#   puts remy.name                           # => "Remy"
-#   puts Person.get(remy.jiak.key).name      # => "Remy"
-# </code>
-# Finally, we'll delete remy.
-# <code>
+#   remy.update
+#   puts Person.get('remy').name                # => "Remy"
+#   
+#   callie = Person.new(:name => 'Callie', :age => 12).post
+#   remy.link(callie,'sister').update
+#   
+#   sisters = remy.walk(Person,'sister')
+#   sisters[0].eql?(callie)                     # => true
+#   
 #   remy.delete
+#   callie.delete
 # </code>
 # Ah, that feels better. Go forth and Riak!
 module RiakRest
@@ -159,7 +149,8 @@ require 'riakrest/data/jiak_data_hash'
 require 'riakrest/resource/jiak_resource'
 
 class Array
-  # Compare fields for equal string/symbol.to_s elements regardless of order.
+  # Compare fields for same elements irrespective of whether a string or
+  # symbol and regardless of order.
   def same_fields?(arr)
     same = size == arr.size
     arr = arr.map{|f| f.to_s} if same

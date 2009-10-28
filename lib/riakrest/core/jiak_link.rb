@@ -1,24 +1,28 @@
 module RiakRest
 
-  # Represents a Jiak link.
-  #--
-  # CxTBD Further description
-  #++
+  # Represents a link between object in Jiak. JiakLinks are used to link a
+  # JiakObject to another JiakObject at a bucket/key. The tag allows the link
+  # to be traversed later using a QueryLink.
+  #
   # ===Usage
   # <code>
-  #   link = JiakLink.new('person','remy','child')
-  #   link = JiakLink.new(['person','remy','child'])
-  #   link = JiakLink.new('person',JiakLink::ANY,'child')
+  #   link = JiakLink.new('people','callie','sister')
   # </code>
+  # If the above link were added to a JiakObject in the same bucket and keyed
+  # by the string 'remy', the link from remy to the sister callie would be
+  # retrieve using JiakClient#walk and the query link
+  # <code>QueryLink.new('people','sister')</code>
+  #   
   class JiakLink
 
     attr_accessor :bucket, :key, :tag
 
     # :call-seq:
     #   JiakLink.new(bucket,key,tag)  -> JiakLink
+    #   JiakLink.new([bucket,key,tag])  -> JiakLink
     #
-    # Create a link to a bucket/key data designated by tag. Bucket can be
-    # either a JiakBucket or a string bucket name; key and tag must both be
+    # Create a link (designated by tag) to an object at bucket/key. Bucket can
+    # be either a JiakBucket or a string bucket name; key and tag must both be
     # strings.
     #
     def initialize(*args)
@@ -40,7 +44,7 @@ module RiakRest
       @bucket, @key, @tag  = transform_args(bucket,key,tag)
     end
       
-    # :call-seq
+    # :call-seq:
     #   link.bucket = bucket
     #
     # Set the bucket field.
@@ -68,7 +72,7 @@ module RiakRest
     # :call-seq:
     #   link.for_jiak  -> JSON
     #
-    # JSON representation of this JiakLink.
+    # Representation of this JiakLink for transport to Jiak.
     def for_jiak
       [@bucket, @key, @tag]
     end
@@ -121,7 +125,7 @@ module RiakRest
       end
       value
     end
-    private :transform_args
+    private :transform_arg
 
   end
 end

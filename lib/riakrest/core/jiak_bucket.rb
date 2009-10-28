@@ -66,7 +66,7 @@ module RiakRest
     # :call-seq:
     #   bucket.params = params
     #
-    # Set default params for Jiak client requests. See JiakBucket#create for
+    # Set default params for Jiak client requests. See JiakBucket#new for
     # valid parameters.
     #
     def params=(params)
