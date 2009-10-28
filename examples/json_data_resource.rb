@@ -2,9 +2,8 @@ require 'date'
 class DogData  # :nodoc:
   include JiakData
 
-  allowed :name, :birthdate, :weight, :breed
-  writable :name, :birthdate, :weight
-  readable :name, :birthdate, :weight
+  allowed   :name, :birthdate, :weight, :breed
+  readwrite :name, :birthdate, :weight
 
   def initialize(hsh)
     hsh.each {|key,val| send("#{key}=",val)}

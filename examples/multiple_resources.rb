@@ -1,38 +1,22 @@
-
 require 'lib/riakrest'
 include RiakRest
 
-DogData = JiakDataHash.create(:name, :weight, :breed)
-class DogData
-  def keygen
-    @name
-  end
-end
+DogData = JiakDataHash.create(:name,:weight,:breed)
+DogData.keygen :name
 class Dog
   include JiakResource
-  server   'http://localhost:8002/jiak'
-  resource :name => 'dogs', :data_class => DogData
+  server      'http://localhost:8002/jiak'
+  group       'dogs'
+  data_class  DogData
 end
 
-DogBreedData = JiakDataHash.create(DogData.schema.allowed_fields)
-DogBreedData.readable :name, :breed
-DogBreedData.writable :breed
-class DogBreed
-  include JiakResource
-  server   Dog.jiak.uri
-  resource :name => Dog.jiak.name,
-           :data_class => DogBreedData
-end
+DogBreedData = JiakDataHash.create(DogData.schema)
+DogBreedData.readwrite :name, :breed
+DogBreed = Dog.copy(:data_class => DogBreedData)
 
-DogWeightData = JiakDataHash.create(DogData.schema.allowed_fields)
-DogWeightData.readable :name, :weight
-DogWeightData.writable :weight
-class DogWeight
-  include JiakResource
-  server   Dog.jiak.uri
-  resource :name => Dog.jiak.name,
-           :data_class => DogWeightData
-end
+DogWeightData = JiakDataHash.create(DogData.schema)
+DogWeightData.readwrite :name, :weight
+DogWeight = Dog.copy(:data_class => DogWeightData)
 
 Dog.activate
 addie = Dog.new(:name => 'adelaide', :weight => 45, :breed => 'heeler')

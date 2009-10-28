@@ -81,10 +81,10 @@ parent_children.keys.each do |p|
   p_children = parent.walk(Child,'child')
   p_children.each do |child| 
     child.link(parent, p[1].to_i.odd? ? 'odd' : 'normal')
-    child.store
+    child.update
     parent.link(child, child.name[1].to_i.odd? ? 'odd' : 'normal')
   end
-  parent.store
+  parent.update
 end
 # refresh parents and children variables
 parents.each {|p| p.get}
