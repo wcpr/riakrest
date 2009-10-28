@@ -40,7 +40,18 @@ module RiakRest
           end
         else
           allowed *args
-        end          
+        end
+
+        # :call-seq:
+        #   DataClass.keygen(*fields)
+        #
+        # The key generation for the data class will be a concatenation of the
+        # to_s result of calling each of the listed data class fields.
+        def self.keygen(*fields)
+          define_method(:keygen) do
+            fields.inject("") {|key,field| key += send("#{field}").to_s}
+          end
+        end
 
         # :call-seq:
         #   data.new({})  -> JiakDataHash
@@ -108,17 +119,36 @@ module RiakRest
           end
         end
 
+
+        # call-seq:
+        #    jiak_data == other -> true or false
+        #
+        # Equality -- Two JiakDataHash objects are equal if they contain the
+        # same values for all attributes.
+        def ==(other)
+          self.class.schema.allowed_fields.reduce(true) do |same,field|
+            same && (other.send("#{field}") == (send("#{field}")))
+          end
+        end
+
         # call-seq:
         #    data.eql?(other) -> true or false
         #
-        # Returns<code>true</code> if <i>data</i> and <i>other</i> contain
-        # the same attribute values for all allowed fields.
+        # Returns <code>true</code> if <code>other</code> is a JiakObject with
+        # the same the same attribute values for all allowed fields.
         def eql?(other)
           other.is_a?(self.class) &&
             self.class.schema.allowed_fields.reduce(true) do |same,field|
             same && other.send("#{field}").eql?(send("#{field}"))
           end
         end
+
+        def hash   # :nodoc:
+          self.class.schema.allowed_fields.inject(0) do |hsh,field|
+            hsh += send("#{field}").hash
+          end
+        end
+
       end
     end
 

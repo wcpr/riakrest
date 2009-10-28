@@ -2,7 +2,7 @@ require File.dirname(__FILE__) + '/../spec_helper.rb'
 
 describe "JiakBucket" do
   before do
-    @name = 'test'
+    @name = 'bucket_name'
     @data_class = JiakDataHash.create(:f1,:f2)
     @params = {:reads => 1, :writes => 2, :durable_writes => 3, :waits => 4}
     @bucket = JiakBucket.new(@name,@data_class)
@@ -10,10 +10,8 @@ describe "JiakBucket" do
 
   it "should respond to" do
     @bucket.should respond_to(:name,:data_class,:params,:schema)
-    @bucket.should respond_to(:data_class=,:params=)
+    @bucket.should respond_to(:name=,:data_class=,:params=)
     @bucket.should respond_to(:eql?)
-
-    @bucket.should_not respond_to(:name=)
   end
 
   it "should initialize with name and data class" do
@@ -23,25 +21,27 @@ describe "JiakBucket" do
   end
 
   it "should initialize with name, data class, and params" do
-    bucket = JiakBucket.new('test',@data_class,@params)
+    bucket = JiakBucket.new(@name,@data_class,@params)
     bucket.name.should eql @name
     bucket.data_class.should eql @data_class
     bucket.params.should have_exactly(4).items
     @params.each {|k,v| bucket.params[k].should == @params[k]}
 
     @params.delete(:writes)
-    bucket = JiakBucket.new('test',@data_class,@params)
+    bucket = JiakBucket.new(@name,@data_class,@params)
     bucket.params.should have_exactly(3).items
     bucket.params[:waits].should == @params[:waits]
   end
 
-  it "should update the data class" do
+  it "should update the name,data class, and params" do
+    # name = 'new_bucket_name'
+    # @bucket.name = name
+    # @bucket.name.should eql name
+
     data_class = JiakDataHash.create(:g1)
     @bucket.data_class = data_class
     @bucket.data_class.should eql data_class
-  end
 
-  it "should update the params" do
     @bucket.params.should be_empty
     @bucket.params = @params
     @bucket.params.should eql @params
@@ -55,7 +55,7 @@ describe "JiakBucket" do
     empty_name.should raise_error(JiakBucketException,/Name.*empty/)
 
     nil_name = lambda {JiakBucket.new(nil,@data_class)}
-    nil_name.should raise_error(JiakBucketException,/Name.*nil/)
+    nil_name.should raise_error(JiakBucketException,/Name.*string/)
 
     bad_data_class = lambda {JiakBucket.new(@name,Hash)}
     bad_data_class.should raise_error(JiakBucketException,/JiakData/)

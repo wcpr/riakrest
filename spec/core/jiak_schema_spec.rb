@@ -24,7 +24,7 @@ describe "JiakSchema" do
     @jiak_schema.should respond_to(:write_mask,:write_mask=)
 
     @jiak_schema.should respond_to(:to_jiak)
-    @jiak_schema.should respond_to(:eql?)
+    @jiak_schema.should respond_to(:==,:eql?)
   end
 
   it "should create using defaults from allowed_fields" do
@@ -70,6 +70,7 @@ describe "JiakSchema" do
     hash = {:schema => @hash}
     jiak_schema = JiakSchema.new(hash)
     jiak_schema.should eql @jiak_schema
+    jiak_schema.should ==  @jiak_schema
 
     @hash['allowed_fields'] = @hash[:allowed_fields]
     @hash.delete(:allowed_fields)

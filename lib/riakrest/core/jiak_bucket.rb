@@ -22,21 +22,21 @@ module RiakRest
   # well as homogenous, data interaction with the Jiak server.
   class JiakBucket
 
-    attr_reader :name, :schema
-    attr_accessor :data_class, :params
+    attr_reader :schema
+    attr_accessor :name, :data_class, :params
 
     # :call-seq:
     #   JiakBucket.new(name,data_class,params={})  -> JiakBucket
     #
     # Create a bucket for use in Jiak interaction.
     #
-    # <code>name</code> and <code>data_class</code> are mandatory. Valid keys
-    # for the optional <code>params</code> hash are <code>:reads, :writes,
-    # :durable_writes, :waits</code>. See JiakClient#store, JiakClient#get, and
-    # JiakClient#delete for discriptions of these parameters.
+    # Valid optional parameters are <code>params</code> hash are <code>:reads,
+    # :writes, :durable_writes, :waits</code>. See JiakClient#store,
+    # JiakClient#get, and JiakClient#delete for discriptions of these
+    # parameters.
     #
     # Raise JiakBucketException if the bucket name is not a non-empty string or
-    # the data class has not included the JiakData module.
+    # the data class has not included JiakData.
     def initialize(name,data_class,params={})
       @name = transform_name(name)
       @data_class = check_data_class(data_class)
@@ -44,11 +44,21 @@ module RiakRest
     end
 
     # :call-seq:
-    #   bucket.data_class = data_class
+    #   name = gname
+    #
+    # Set the name of the Jiak bucket.
+    #
+    # Raise JiakBucketException if not a non-empty string.
+    def name=(gname)
+      @name = transform_name(gname)
+    end
+
+    # :call-seq:
+    #   data_class = klass
     #
     # Set the class for the data to be stored or retrieved from the bucket.
     #
-    # Raise JiakBucketException if the data class is not a JiakData.
+    # Raise JiakBucketException if the data class has not included JiakData.
     def data_class=(data_class)
       @data_class = check_data_class(data_class)
     end
@@ -77,6 +87,17 @@ module RiakRest
     end
 
     # :call-seq:
+    #    bucket == other -> true or false
+    #
+    # Equality -- JiakBuckets are equal if they contain the same attribute
+    # values.
+    def ==(other)
+      (@name == other.name &&
+       @data_class == other.data_class  &&
+       @params == other.params) rescue false
+    end
+
+    # :call-seq:
     #    jiak_bucket.eql?(other) -> true or false
     #
     # Returns <code>true</code> if <i>jiak_bucket</i> and <i>other</i> contain
@@ -87,17 +108,20 @@ module RiakRest
        @params.eql?(other.params)) rescue false
     end
 
-    private
+    def hash    # :nodoc:
+      @name.hash + @data_class.hash + @params.hash
+    end
+
     def transform_name(name)
-      raise JiakBucketException, "Name cannot be nil" if name.nil?
       unless name.is_a?(String)
-        raise JiakBucketException, "Name must be a String"
+        raise JiakBucketException, "Name must be a string"
       end
       b_name = name.dup
       b_name.strip!
       raise JiakBucketException, "Name cannot be empty" if b_name.empty?
       b_name
     end
+    private :transform_name
 
     def check_data_class(data_class)
       unless data_class.include?(JiakData)
@@ -105,6 +129,7 @@ module RiakRest
       end
       data_class
     end
+    private :check_data_class
 
     def check_params(params)
       valid = [:reads,:writes,:durable_writes,:waits]
@@ -114,6 +139,8 @@ module RiakRest
       end
       params
     end
+    private :check_params
+
   end
 
 end

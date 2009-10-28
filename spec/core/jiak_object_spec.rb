@@ -9,8 +9,8 @@ describe "JiakObject" do
     @bucket_name = 'test'
     @bucket = JiakBucket.new(@bucket_name,DataObject)
     @key = 'hey'
-    @l1 = JiakLink.new('l1b')
-    @l2 = JiakLink.new('l2b', 'l2t', 'l2a')
+    @l1 = JiakLink.new('l1b','l1k','l1t')
+    @l2 = JiakLink.new('l2b','l2k','l2t')
     @links = [@l1,@l2]
 
     object = @data.for_jiak
@@ -37,7 +37,8 @@ describe "JiakObject" do
     @object.should respond_to(:data,:data=)
     @object.should respond_to(:links,:links=)
     @object.should respond_to(:<<)
-    @object.should respond_to(:eql?, :to_jiak)
+    @object.should respond_to(:==,:eql?)
+    @object.should respond_to(:to_jiak)
   end
 
   it "should initialize with bucket, key and data" do
@@ -75,9 +76,6 @@ describe "JiakObject" do
       jobj.data.f1.should eql @data.f1
       jobj.data.f2.should eql @data.f2
       jobj.data.f3['f3_1'].should eql @data.f3[:f3_1]
-
-  # arr1.size != arr2.size ? false :
-  #   arr1.reduce(true) {|same,value| same && arr2.include?(value)}
 
       jobj.links.size.should == @object.links.size
       jlinks = jobj.links
@@ -169,6 +167,7 @@ describe "JiakObject" do
     jobj = JiakObject.new(:bucket => @bucket, :key => @key,
                           :data => @data, :links => @links)
     @object.should eql jobj
+    @object.should ==  jobj
   end
 
 end

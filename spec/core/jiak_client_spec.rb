@@ -27,7 +27,7 @@ class FooBarBaz  # :nodoc:
   end
 end
 
-describe "JiakClient init" do
+describe "JiakClient" do
   before do
     @base_uri = 'http://127.0.0.1:8002/jiak/'
     @client = JiakClient.new @base_uri
@@ -36,6 +36,7 @@ describe "JiakClient init" do
   it "should respond to" do
     @client.should respond_to(:set_schema, :schema, :keys)
     @client.should respond_to(:uri)
+    @client.should respond_to(:==,:eql?)
     @client.should respond_to(:get, :store, :delete, :walk)
   end
 
@@ -47,6 +48,12 @@ describe "JiakClient init" do
     base_uri = 'http://localhost:1234/tmp/'
     client = JiakClient.new base_uri
     client.uri.should match base_uri
+  end
+
+  it "should equal another JiakClient with the same URI" do
+    client = JiakClient.new @base_uri
+    client.should eql @client
+    client.should ==  @client
   end
 
 end
@@ -301,8 +308,8 @@ describe "JiakClient links" do
     [c2,c4,c5,c6].each {|c| c.links.should have_exactly(2).items}
 
     # check the links in each p and c
-    p_link = JiakLink.new(@p_bucket,nil,'parent')
-    c_link = JiakLink.new(@c_bucket,nil,'child')
+    p_link = JiakLink.new(@p_bucket,'k','parent')
+    c_link = JiakLink.new(@c_bucket,'k','child')
     parent_children.each do |p_name,children|
       parent = @client.get(@p_bucket,p_name)
       links = parent.links
@@ -317,7 +324,7 @@ describe "JiakClient links" do
     end
     
     # p's should include links to their c's
-    c_link = JiakLink.new(@c_bucket,nil,'child')
+    c_link = QueryLink.new(@c_bucket,'child',nil)
     parent_children.each do |p_name,children|
       @client.walk(@p_bucket,p_name,c_link,Child).each do |c_obj|
         children.should include c_obj.data.name
@@ -325,7 +332,7 @@ describe "JiakClient links" do
     end
 
     # c's should include links to their p's
-    p_link = JiakLink.new(@p_bucket,nil,'parent')
+    p_link = QueryLink.new(@p_bucket,'parent',nil)
     child_parents.each do |c_name,parents|
       @client.walk(@c_bucket,c_name,p_link,Parent).each do |p_obj|
         parents.should include p_obj.data.name

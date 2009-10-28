@@ -151,7 +151,6 @@ module RiakRest
         raise JiakDataException, "#{self} must define jiak_create"
       end
 
-      private
       def create_array(*fields)
         if(fields.size == 1 && fields[0].is_a?(Array))
           array = fields[0]
@@ -161,6 +160,7 @@ module RiakRest
         array.map {|field| field}
         array
       end
+      private :create_array
 
       def check_allowed(fields)
         allowed_fields = @schema.allowed_fields
@@ -170,6 +170,7 @@ module RiakRest
           end
         end
       end
+      private :check_allowed
     end
 
     def self.included(including_class)  # :nodoc:
@@ -181,7 +182,7 @@ module RiakRest
     # ----------------------------------------------------------------------
 
     # :call-seq:
-    #   data.for_jiak
+    #   for_jiak  -> hash
     #
     # Override to return the structure for the data to be written to Jiak. The
     # default implementation throws JiakDataException to force this
@@ -203,7 +204,7 @@ module RiakRest
     end
 
     # :call-seq:
-    #   data.keygen   -> string
+    #   keygen   -> string
     #
     # Generate Jiak key for data. Default implementation returns
     # <code>nil</code> which instructs the Jiak server to generate a random

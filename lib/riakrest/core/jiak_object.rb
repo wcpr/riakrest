@@ -123,10 +123,23 @@ module RiakRest
     end
 
     # call-seq:
+    #    jiak_object == other -> true or false
+    #
+    # Equality -- Two JiakObjects are equal if they contain the same values
+    # for all attributes.
+    def ==(other)
+      (@bucket == other.bucket &&
+       @key == other.key &&
+       @data == other.data &&
+       @links == other.links &&
+       @riak == other.riak) rescue false
+    end
+
+    # call-seq:
     #    jiak_object.eql?(other) -> true or false
     #
-    # Returns <code>true</code> if <i>jiak_object</i> and <i>other</i> contain
-    # the same attribute values.
+    # Returns <code>true</code> if <code>other</code> is a JiakObject with the
+    # same the same attribute values.
     def eql?(other)
       other.is_a?(JiakObject) &&
         @bucket.eql?(other.bucket) &&
@@ -136,7 +149,10 @@ module RiakRest
         @riak.eql?(other.riak)
     end
 
-    private
+    def hash    # :nodoc:
+      @bucket.name.hash + @key.hash + @data.hash + @links.hash + @riak.hash
+    end
+
     def check_opts(opts)
       valid = [:bucket,:key,:data,:links,:vclock,:vtag,:lastmod]
       err = opts.select {|k,v| !valid.include?(k)}
@@ -145,6 +161,7 @@ module RiakRest
       end
       opts
     end
+    private :check_opts
 
     def check_bucket(bucket)
       unless bucket.is_a?(JiakBucket)
@@ -152,6 +169,7 @@ module RiakRest
       end
       bucket
     end
+    private :check_bucket
 
     def transform_key(key)
       # Change nil key to empty
@@ -162,6 +180,7 @@ module RiakRest
       o_key.strip!
       o_key
     end
+    private :transform_key
 
     def check_data(data)
       unless data.is_a?(JiakData)
@@ -169,6 +188,7 @@ module RiakRest
       end
       data
     end
+    private :check_data
 
     def check_links(links)
       unless links.is_a? Array
@@ -179,6 +199,7 @@ module RiakRest
       end
       links
     end
+    private :check_links
 
     def check_link(link)
       unless link.is_a? JiakLink
@@ -186,6 +207,7 @@ module RiakRest
       end
       link
     end
+    private :check_link
 
   end
 

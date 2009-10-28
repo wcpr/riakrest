@@ -236,13 +236,13 @@ module RiakRest
       begin
         start = jiak_uri(bucket,key)
         case walker
-        when JiakLink
+        when QueryLink
           uri = start+'/'+walker.for_uri
         when Array
           uri = walker.inject(start) {|build,link| build+'/'+link.for_uri}
         else
-          raise JiakLinkException, 'failed: walker must be '+
-            'a JiakList or an Array of JiakList objects'
+          raise QueryLinkException, 'failed: walker must be '+
+            'a QueryLink or an Array of QueryLink objects'
         end
         resp = RestClient.get(uri, :accept => APP_JSON)
         # JSON.parse(resp)['results'][0]
@@ -264,7 +264,28 @@ module RiakRest
       @uri
     end
 
-    private
+    # :call-seq:
+    #    client == other -> true or false
+    #
+    # Equality -- JiakClients are equal if they have the same URI
+    def ==(other)
+      (@uri == other.uri) rescue false
+    end
+    
+    # :call-seq:
+    #    eql?(other) -> true or false
+    #
+    # Returns <code>true</code> if <code>other</code> is a JiakClint with the
+    # same URI.
+    def eql?(other)
+      other.is_a?(JiakClient) &&
+        @uri.eql?(other.uri)
+    end
+
+    def hash    # :nodoc:
+      @uri.hash
+    end
+
     # Build the URI for accessing the Jiak server.
     def jiak_uri(bucket,key="",params={})
       uri = "#{@uri}#{URI.encode(bucket.name)}"
@@ -273,6 +294,7 @@ module RiakRest
       uri += "?#{URI.encode(qstring)}"  unless qstring.empty?
       uri
     end
+    private :jiak_uri
     
     # Get either the schema or keys for the bucket.
     def bucket_info(bucket,info)
@@ -286,15 +308,18 @@ module RiakRest
         fail_with_message("get", err)
       end
     end
+    private :bucket_info
 
     def fail_with_response(action,err)
       raise( JiakResourceException,
              "failed #{action}: HTTP code #{err.http_code}: #{err.http_body}")
     end
+    private :fail_with_response
 
     def fail_with_message(action,err)
       raise JiakResourceException, "failed #{action}: #{err.message}"
     end
+    private :fail_with_message
 
   end
 

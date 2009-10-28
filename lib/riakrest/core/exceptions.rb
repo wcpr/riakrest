@@ -66,5 +66,8 @@ module RiakRest
   class JiakSchemaException < RiakRest::Exception
   end
 
+  # Exceptions pertaining to QueryLink usage.
+  class QueryLinkException < RiakRest::Exception
+  end
 
 end

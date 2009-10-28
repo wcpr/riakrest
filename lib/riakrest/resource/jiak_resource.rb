@@ -13,8 +13,10 @@ module RiakRest
     # <code>
     #   class Dog
     #     include JiakResource
-    #     server   'http://localhost:8002/jiak'
-    #     resource :name => 'dog', :data_class => DogData
+    #
+    #     server      'http://localhost:8002/jiak'
+    #     group       'dogs'
+    #     data_class  DogData
     #   end
     # </code>
     # 
@@ -32,45 +34,56 @@ module RiakRest
       end
 
       # :call-seq:
-      #   JiakResource.resource(opts)
+      #   JiakResource.group(gname)
       #
-      # Valid options are:
-      # <code>data_class</code> :: data class for the resource.
-      # <code>name</code> :: Jiak (bucket) name for the resource.
-      # <code>activate</code> :: <code>true> activates this JiakResource at the
-      # time of class creation. <code>false</code> delays activation, allowing
-      # class creation without server access. If <code>false</code>,
-      # Resource.actiavate must be called before first using resources in Jiak
-      # interaction. Default is <code>true</code>.
-      #
-      # <code>data_class</code> is mandatory. For each field in the data class
-      # JiakSchema#allowed_fields accessor methods are added to facilitate
-      # manipulating the data wrapped by a JiakResource.
-      #
-      # If <code>name</code> is not provided the default is to use the name of
-      # the data class as the name for the resource.
-      #
-      # If <code>activate</code> is not provided or set to <code>false</code> a
-      # call to JiakResource#activate must preceed any resource interaction
-      # with the Jiak server.
-      #
-      # Raise JiakResourceException if a valid JiakData class is not provided
-      # for <code>data_class</code>.
-      def resource(opts)
-        unless opts[:data_class]
-          raise JiakResourceException, "data_class required."
+      # Set the Jiak group name for the storage area of a resource.
+      def group(gname)
+        if(jiak.bucket.nil?)
+          unless(jiak.data.nil?)
+            create_jiak_bucket(gname,jiak.data)
+          else
+            jiak.group = gname
+          end
+        else
+          jiak.bucket.name = gname
         end
-        unless opts[:data_class].include?(JiakData)
-          raise JiakResourceException, "data_class must include module JiakData"
+      end
+
+      # :call-seq:
+      #   JiakResource.data_class(klass)
+      #
+      # Set the resource Jiak data class.
+      def data_class(klass)
+        if(jiak.bucket.nil?)
+          unless(jiak.group.nil?)
+            create_jiak_bucket(jiak.group,klass)
+          else
+            jiak.data = klass
+          end
+        else
+          old_klass = jiak.bucket.data_class
+          jiak.bucket.data_class = klass
+          create_field_accessors(klass,old_klass)
+        end
+      end
+        
+      def create_jiak_bucket(gname,klass)   # :nodoc:
+        jiak.bucket = JiakBucket.new(gname,klass)
+        jiak.group = jiak.bucket.name
+        jiak.data = klass
+        create_field_accessors(klass)
+      end
+      private :create_jiak_bucket
+        
+      def create_field_accessors(klass,old_klass=nil)
+        if(old_klass)
+          klass.schema.allowed_fields.each do |field|
+            remove_method(field)
+            remove_method("#{field}=")
+          end
         end
 
-        name = opts[:name] || opts[:data_class].to_s.split(/::/).last
-        jiak.name = name
-        jiak.data = opts[:data_class]
-        jiak.bucket = JiakBucket.new(name,opts[:data_class])
-        jiak.server.set_schema(jiak.bucket) unless(opts[:activate] == false)
-
-        opts[:data_class].schema.allowed_fields.each do |field|
+        klass.schema.allowed_fields.each do |field|
           define_method("#{field}=") do |val|
             @jiak.data.send("#{field}=",val)
           end
@@ -79,7 +92,7 @@ module RiakRest
           end
         end
       end
-      alias bucket resource
+      private :create_jiak_bucket, :create_field_accessors
 
       # :call-seq:
       #   JiakResource.params(opts={})  -> {}
@@ -206,7 +219,8 @@ module RiakRest
       #   JiakResource.post(JiakResource,opts={})  -> JiakResource
       #
       # Put a JiakResource on the Jiak server with a guard to ensure the
-      # resource has not been previously stored. See JiakResource#put for options.
+      # resource has not been previously stored. See JiakResource#put for
+      # options.
       def post(resource,opts={})
         unless(resource.jiak.riak.nil?)
           raise JiakResourceException, "Resource already initially stored"
@@ -215,11 +229,11 @@ module RiakRest
       end
 
       # :call-seq:
-      #   JiakResource.store(JiakResource,opts={})  -> JiakResource
+      #   JiakResource.update(JiakResource,opts={})  -> JiakResource
       #
       # Updates a JiakResource on the Jiak server with a guard to ensure the
       # resource has been previously stored. See JiakResource#put for options.
-      def store(resource,opts={})
+      def update(resource,opts={})
         if(resource.jiak.riak.nil?)
           raise JiakResourceException, "Resource not previously stored"
         end
@@ -264,7 +278,7 @@ module RiakRest
       end
 
       # :call-seq:
-      #   JiakResource.link(from,to,tak)  -> JiakResource
+      #   JiakResource.link(from,to,tag)  -> JiakResource
       #
       # Create a link from a resource to another resource tagged by tag.
       def link(from,to,tag)
@@ -276,33 +290,34 @@ module RiakRest
       end
       
       def walk(from,*steps)
-        unless steps.size.even?
-          raise JiakResource, "walk exspects steps to be resource,tag pairs"
-        end
-
-        links = steps.each_slice(2).map do |pair|
-          JiakLink.new(pair[0].jiak.bucket,pair[1],nil)
+        links = []
+        until steps.empty?
+          begin
+            klass,tag = steps.shift(2)
+            last_klass = klass
+            acc = steps[0].is_a?(String) ? steps.shift : nil
+            links << QueryLink.new(klass.jiak.group,tag,acc)
+          rescue
+            raise(JiakResourceException, 
+                  "each step should be Klass,tag or Klass,tag,acc")
+          end
         end
         links = links[0]  if links.size == 1
-        puts
-        puts links.inspect
-
-        resource_class = steps[steps.size-2]
         jiak.server.walk(from.jiak.bucket, from.jiak.key, links,
-                         resource_class.jiak.bucket.data_class).map do |jobj|
-          resource_class.new(jobj)
+                         last_klass.jiak.bucket.data_class).map do |jobj|
+          last_klass.new(jobj)
         end        
       end
       
       def copy(opts={})
         opts[:server] ||= jiak.server.uri
+        opts[:group] ||= jiak.bucket.name
         opts[:data_class] ||= jiak.bucket.data_class
-        opts[:name] ||= jiak.bucket.name
         Class.new do
           include JiakResource
-          server opts[:server]
-          resource :name => opts[:name],
-                   :data_class => opts[:data_class]
+          server     opts[:server]
+          group      opts[:group]
+          data_class opts[:data_class]
         end
       end
 
@@ -314,9 +329,10 @@ module RiakRest
         def jiak  # :nodoc:
           @jiak
         end
-        @jiak = Struct.new(:server,:uri,:name,:data,:bucket).new
+        @jiak = Struct.new(:server,:uri,:group,:data,:bucket).new
       end
     end
+
 
     # def self.copy(klass)
     #   unless klass.include?(JiakResource)
@@ -375,13 +391,13 @@ module RiakRest
     end
 
     # :call-seq:
-    #   store(opts={})   -> nil
+    #   update(opts={})   -> nil
     #
     # Put this resource on the Jiak server with a guard to ensure the resource
     # has been previously stored. See JiakResource#ClassMethods#put for
     # options.
-    def store(opts={})
-      @jiak = (self.class.store(self,opts)).jiak
+    def update(opts={})
+      @jiak = (self.class.update(self,opts)).jiak
       self
     end
 
@@ -416,13 +432,26 @@ module RiakRest
       self.class.walk(self,*steps)
     end
 
-    def eql?(other)
-      other.is_a?(JiakResource) && other.jiak.eql?(jiak)
+    # call-seq:
+    #    jiak_resource == other -> true or false
+    #
+    # Equality -- Two JiakResources are equal if they wrap the same data.
+    def ==(other)
+      (@jiak == other.jiak)  rescue false
     end
 
-    # def ==(other)
-      
-    # end
+    # call-seq:
+    #    jiak_object.eql?(other) -> true or false
+    #
+    # Returns <code>true</code> if <code>other</code> is a JiakObject with the
+    # same the same attribute values.
+    def eql?(other)
+      other.is_a?(JiakResource) && @jiak.eql?(other.jiak)
+    end
+    
+    def hash  # :nodoc:
+      @jiak.hash
+    end
 
   end
 end

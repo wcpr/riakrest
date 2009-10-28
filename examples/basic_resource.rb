@@ -1,12 +1,36 @@
 require 'lib/riakrest'
 include RiakRest
 
+PersonData = JiakDataHash.create(:name,:age, :keygen => { name.upcase+'-'+age })
+PersonData.keygen {name}
+class PersonData
+  def keygen
+    name
+  end
+end
+
 class Person
   include JiakResource
-  server   'http://localhost:8002/jiak'
-  resource :name => 'person',
-           :data_class => JiakDataHash.create(:name,:age)
+
+  server      'http://localhost:8002/jiak'
+  group       'people'
+  data_class  PersonData
+
 end
+
+class Person
+  def keygen
+    name
+  end
+end
+
+
+# class Person
+#   include JiakResource
+#   server   'http://localhost:8002/jiak'
+#   resource :name => 'person',
+#            :data_class => JiakDataHash.create(:name,:age)
+# end
 
 remy = Person.new(:name => 'remy', :age => 10)
 remy.post

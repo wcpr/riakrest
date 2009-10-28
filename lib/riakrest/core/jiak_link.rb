@@ -14,62 +14,32 @@ module RiakRest
 
     attr_accessor :bucket, :key, :tag
 
-    # Jiak (erlang) wildcard character (atom)
-    ANY = '_'
-
     # :call-seq:
-    #   JiakLink.new(*args)  -> JiakLink
+    #   JiakLink.new(bucket,key,tag)  -> JiakLink
     #
-    # Create a link from argument array. Missing, nil, or empty string values
-    # are set to JiakLink::ANY.
-    #
-    # ====Examples
-    # The following create JiakLinks with the shown equivalent array structure:
-    # <code>
-    #   JiakLink.new                       # => ['_','_','_']
-    #   JiakLink.new 'b'                   # => ['b','_','_']
-    #   JiakLink.new 'b','k'               # => ['b','k','_']
-    #   JiakLink.new 'b','k','t'           # => ['b','k','t']
-    #
-    #   JiakLink.new []                    # => ['_','_','_']
-    #   JiakLink.new ['b']                 # => ['b','_','_']
-    #   JiakLink.new ['b','k']             # => ['b','k','_']
-    #   JiakLink.new ['b','k','t']         # => ['b','k','t']
-    #
-    #   JikaLink.new ['',nil,' ']          # => ['_','_','_']
-    # </code>
-    #
-    # Passing another JiakLink as an argument makes a copy of that
-    # link. Passing a JiakBucket in the first (bucket) position uses the name
-    # field of that JiakBucket.
+    # Create a link to a bucket/key data designated by tag. Bucket can be
+    # either a JiakBucket or a string bucket name; key and tag must both be
+    # strings.
     #
     def initialize(*args)
       case args.size
-      when 0
-        bucket = key = tag = ANY
       when 1
-        if args[0].is_a? String
-          bucket = args[0]
-          key = tag = ANY
+        if args[0].is_a? Array
+          bucket, key, tag = args[0][0], args[0][1], args[0][2]
         elsif args[0].is_a? JiakLink
           bucket, key, tag = args[0].bucket, args[0].key, args[0].tag
-        elsif args[0].is_a? Array
-          bucket, key, tag = args[0][0], args[0][1], args[0][2]
         else
           raise JiakLinkException, "argument error"
         end
-      when 2
-        bucket, key = args[0], args[1]
-        tag = ANY
       when 3
         bucket, key, tag = args[0], args[1], args[2]
       else
-        raise JiakLinkException, "too many arguments, (#{args.size} for 3)"
+        raise JiakLinkException, "argument error"
       end
-      
+
       @bucket, @key, @tag  = transform_args(bucket,key,tag)
     end
-
+      
     # :call-seq
     #   link.bucket = bucket
     #
@@ -104,18 +74,19 @@ module RiakRest
     end
 
     # :call-seq:
-    #    link.for_uri  -> URI encoded string
+    #    link == other -> true or false
     #
-    # URI represent this JiakLink, i.e, a string suitable for inclusion in an
-    # URI.
-    def for_uri
-      URI.encode(for_jiak.join(','))
+    # Equality -- JiakLinks are equal if they contain the same attribute values.
+    def ==(other)
+      (@bucket == other.bucket &&
+       @key    == other.key    &&
+       @tag    == other.tag) rescue false
     end
 
     # :call-seq:
-    #    link.eql?(other) -> true or false
+    #    eql?(other) -> true or false
     #
-    # Returns <code>true</code> if <i>link</i> and <i>other</i> contain the
+    # Returns <code>true</code> if <code>other</code> is a JiakLink with the
     # same attribute values.
     def eql?(other)
       other.is_a?(JiakLink) &&
@@ -124,14 +95,8 @@ module RiakRest
         @tag.eql?(other.tag)
     end
 
-    # :call-seq:
-    #    link == other -> true or false
-    #
-    # Equality -- JiakLinks are equal if they contain the same attribute values
-    def ==(other)
-      (@bucket == other.bucket &&
-       @key    == other.key    &&
-       @tag    == other.tag) rescue false
+    def hash    # :nodoc:
+      @bucket.hash + @key.hash + @tag.hash
     end
 
     # String representation of this JiakLink.
@@ -139,28 +104,24 @@ module RiakRest
       '["'+@bucket+'","'+@key+'","'+@tag+'"]'
     end
 
-    private
     def transform_args(b,k,t)
       b = b.name  if b.is_a? JiakBucket
-      [b,k,t].map do |arg|
-        arg = ANY  if arg.nil?
-        unless arg.is_a? String
-          raise JiakLinkException, "Link elements must be Strings."
-        end
-        value = arg.dup
-        value.strip!
-        value.empty? ? ANY : value
-      end
+      [transform_arg(b),transform_arg(k),transform_arg(t)]
     end
+    private :transform_args
     
     def transform_arg(arg)
-      arg = ANY  if arg.nil?
       unless arg.is_a? String
         raise JiakLinkException, "Link elements must be Strings."
       end
       value = arg.dup
       value.strip!
-      value.empty? ? ANY : value
+      if value.empty?
+        raise JiakLinkException, "Link elements can't be empty."
+      end
+      value
     end
+    private :transform_args
+
   end
 end

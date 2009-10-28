@@ -169,32 +169,34 @@ module RiakRest
       @write_mask = arr
     end
 
-    #
-    # CxTBD Should == be removed?
-
     # call-seq:
     #    schema == other -> true or false
     #
     # Equality -- Two schemas are equal if they contain the same array elements
-    # for all attributes.
+    # for all attributes, irrespective of order.
     def ==(other)
-      (other.allowed_fields == @allowed_fields &&
-       other.required_fields == @required_fields &&
-       other.read_mask == @read_mask &&
-       other.write_mask == @write_mask) rescue false
+      (@allowed_fields.same_fields?(other.allowed_fields) &&
+       @required_fields.same_fields?(other.required_fields) &&
+       @read_mask.same_fields?(other.read_mask) &&
+       @write_mask.same_fields?(other.write_mask)) rescue false
     end
 
     # call-seq:
     #    schema.eql?(other) -> true or false
     #
-    # Returns <code>true</code> if <i>schema</i> and <i>other</i> contain the
-    # same array elements for all attributes.
+    # Returns <code>true</code> if <code>other</code> is a JiakSchema with the
+    # same array elements, irrespective of order.
     def eql?(other)
       other.is_a?(JiakSchema) &&
         @allowed_fields.same_fields?(other.allowed_fields)  &&
         @required_fields.same_fields?(other.required_fields) &&
         @read_mask.same_fields?(other.read_mask) &&
         @write_mask.same_fields?(other.write_mask)
+    end
+
+    def hash    # :nodoc:
+      @allowed_fields.name.hash + @required_fields.hash + 
+        @read_mask.hash + @write_mask.hash
     end
 
     # String representation of this schema.
@@ -205,7 +207,6 @@ module RiakRest
         '",write_mask="'+@write_mask.inspect+'"'
     end
 
-    private
     # Each option must be an array of symbol or string elements.
     def check_arr(desc,arr)
       if(arr.eql?("*"))
@@ -224,6 +225,7 @@ module RiakRest
         raise JiakSchemaException, "#{desc} must have unique elements."
       end
     end
+    private :check_arr
 
   end
 
