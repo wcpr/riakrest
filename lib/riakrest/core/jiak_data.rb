@@ -79,7 +79,7 @@ module RiakRest
     module ClassMethods
 
       # :call-seq:
-      #   allowed :f1, ..., :fn   -> []
+      #   allowed :f1, ..., :fn   -> array
       #
       # Fields allowed in Jiak interactions. Returns an array of the allowed
       # fields.
@@ -92,44 +92,53 @@ module RiakRest
       end
 
       # :call-seq:
-      #   required :f1, ..., :fn  -> []
+      #   required :f1, ..., :fn  -> array
       #
       # Fields required during in Jiak interactions. Returns an array of the
       # required fields.
       #
       def required(*fields)
-        arr_fields = create_array(fields)
-        check_allowed(arr_fields)
-        @schema.required_fields = arr_fields
-        arr_fields
+        set_fields('required_fields',*fields)
       end
 
       # :call-seq:
-      #   readable :f1, ..., :fn  -> []
+      #   readable :f1, ..., :fn  -> array
       #
       # Fields returned by Jiak on retrieval. Returns an array of the fields in
       # the read mask.
       #
       def readable(*fields)
-        arr_fields = create_array(fields)
-        check_allowed(arr_fields)
-        @schema.read_mask = arr_fields
-        arr_fields
+        set_fields('read_mask',*fields)
       end
 
       # :call-seq:
-      #   writable :f1, ..., :fn  -> []
+      #   writable :f1, ..., :fn  -> arry
       #
       # Fields that can be written during Jiak interaction. Returns an array of
       # the fields in the write mask.
       #
       def writable(*fields)
-        arr_fields = create_array(fields)
-        check_allowed(arr_fields)
+        set_fields('write_mask',*fields)
+      end
+
+      # :call-seq:
+      #   readwrite :f1, ..., :fn  -> array
+      #
+      # Set the read and write masks to the same fields. Returns an array of
+      # the fields in the masks.
+      def readwrite(*fields)
+        arr_fields = set_fields('read_mask',*fields)
         @schema.write_mask = arr_fields
         arr_fields
       end
 
+      def set_fields(which,*fields)
+        arr_fields = create_array(fields)
+        check_allowed(arr_fields)
+        @schema.send("#{which}=",arr_fields)
+        arr_fields
+      end
+      private :set_fields
       
       # :call-seq:
       #   JiakData.schema  -> JiakSchema
