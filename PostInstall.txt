@@ -1,2 +1,2 @@
 
-For more information on riakrest, see http://github.gem/dingosky/riakrest
+For more information on riakrest, see http://gemcutter.org/dingosky/riakrest

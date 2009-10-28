@@ -1,9 +1,33 @@
 module RiakRest
-  # A simple JiakData created from a list of fields and initialized by a hash
-  # with those fields as keys. Creates read and write accessors for each
-  # field. Values can also be accessed via [] and []=. Other hash sematics are
-  # not provided. The method JiakDataHash#to_hash does, however, return a hash
-  # of the data fields and values.
+  # JiakDataHash provides a easy-to-use default JiakData implementation. See
+  # JiakData for a discussion on creating user-defined data classes.
+  #
+  # JiakDataHash creates a JiakData from a list of user-data fields. Note
+  # JiakDataHash, like JiakData, is not used to create instances of user data;
+  # rather it is used to create the class for the user data. That class is then
+  # used to create instances of the user data itself.
+  #
+  # The class created by JiakDataHash is anonymous and takes the name of the
+  # constant to which it is assigned. See the example below.
+  #
+  # Object instances of the class created by JiakDataHash have read and write
+  # accessors for each the fields used in creating the class. Instance values
+  # can also be accessed via [] and []=. Other hash sematics are not
+  # provided. The created class does have a <code>to_hash</code> method that
+  # returns a hash of the instance data fields and values.
+  #
+  # The class created by JiakDataHash includes an initialize method that takes
+  # as argument a hash of the field/value pairs for the instance. The instance
+  # still has all of the field attributes, this simply provides a easy way to
+  # initialize some or all of the values for the fields.
+  #
+  # The class created by JiakDataHash also provides a <code>keygen</code> class
+  # method that allows specifying a list of fields for use in generating the
+  # key for instance data. See JiakDataHash#keygen.
+  #
+  # Note the created class has methods provided by JiakData to inspect or
+  # manipulate the structure Jiak interaction for instances of the class. See
+  # JiakData#ClassMethods for those methods.
   #
   # ===Usage
   # <code>

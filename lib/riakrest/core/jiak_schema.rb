@@ -169,6 +169,16 @@ module RiakRest
       @write_mask = arr
     end
 
+    # :call-seq:
+    #   schema.readwrite = [:f1,...,:fn]
+    #
+    # Set the read and write masks for a JiakSchema.
+    def readwrite=(arr)   # :nodoc:
+      check_arr('readwrite',arr)
+      @read_mask = arr
+      @write_mask = arr
+    end
+
     # call-seq:
     #    schema == other -> true or false
     #

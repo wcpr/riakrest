@@ -9,18 +9,19 @@ class Person
   server      'http://localhost:8002/jiak'
   group       'people'
   data_class  PersonData
+  auto_post   true
 end
 
 remy = Person.new(:name => 'remy', :age => 10)
-remy.post
 puts Person.get('remy').name                # => "remy"
 
 remy.name = "Remy"
 remy.update
 puts Person.get('remy').name                # => "Remy"
 
-callie = Person.new(:name => 'Callie', :age => 12).post
-remy.link(callie,'sister').update
+callie = Person.new(:name => 'Callie', :age => 12)
+remy.bi_link(callie,'sister').update
+callie.update
 
 sisters = remy.walk(Person,'sister')
 sisters[0].eql?(callie)                     # => true

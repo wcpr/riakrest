@@ -12,7 +12,7 @@ class Parent
   data_class  PersonData
 end
 
-Child = Parent.copy(:name => 'children')
+Child = Parent.copy(:group => 'children')
 
 # relationships
 parent_children = {
@@ -74,6 +74,21 @@ c3s[0].name                            # => 'c2'
 c3sp = c3.walk(Parent,'parent',Child,'child',Parent,'parent')
 c3p.each {|p| c3sp.delete_if{|sp| p.eql?(sp)}}
 c3sp[0].name                           # => "p1"
+
+# add sibling links
+children.each do |c|
+  siblings = c.walk(Parent,'parent',Child,'child').delete_if{|s| s.eql?(c)}
+  siblings.each {|s| c.link(s,'sibling')}
+  c.update
+end
+c1.walk(Child,'sibling').size          # => 2  
+  
+
+
+
+
+
+
 
 # some folks are odd, and others are normal
 parent_children.keys.each do |p|

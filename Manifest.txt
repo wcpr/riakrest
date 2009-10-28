@@ -3,12 +3,11 @@ Manifest.txt
 PostInstall.txt
 README.rdoc
 Rakefile
+examples/basic_client.rb
 examples/basic_resource.rb
 examples/json_data_resource.rb
-examples/link_resources.rb
 examples/linked_resource.rb
 examples/multiple_resources.rb
-examples/riakrest_core_client.rb
 lib/riakrest.rb
 lib/riakrest/core/exceptions.rb
 lib/riakrest/core/jiak_bucket.rb

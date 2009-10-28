@@ -105,7 +105,7 @@ module RiakRest
 
     # String representation of this JiakLink.
     def to_s
-      '["'+@bucket+'","'+@key+'","'+@tag+'"]'
+      "[#{bucket},#{key},#{tag}]"
     end
 
     def transform_args(b,k,t)

@@ -18,24 +18,24 @@ DogWeightData = JiakDataHash.create(DogData.schema)
 DogWeightData.readwrite :name, :weight
 DogWeight = Dog.copy(:data_class => DogWeightData)
 
-Dog.activate
+Dog.pov
 addie = Dog.new(:name => 'adelaide', :weight => 45, :breed => 'heeler')
 addie.post
 puts addie.name                 # => "adelaide"
 puts addie.breed                # => "heeler"
 puts addie.weight               # => 45
 
-DogBreed.activate
+DogBreed.pov
 addie = DogBreed.get('adelaide')
 addie.breed = "Heeler"
 addie.put
 
-DogWeight.activate
+DogWeight.pov
 addie = DogWeight.get('adelaide')
 addie.weight = 47
 addie.put
 
-Dog.activate
+Dog.pov
 addie = Dog.get('adelaide')
 puts addie.name                 # => "adelaide"
 puts addie.breed                # => "Heeler"

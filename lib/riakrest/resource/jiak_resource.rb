@@ -109,11 +109,32 @@ module RiakRest
       # Request parameters can be set at the JiakResource level using this
       # method, or at the individual call level. The order of precedence for
       # setting each parameter at the time of the Jiak interaction is
-      # individual call : JiakResource : Riak cluster. In general the values
+      # individual call -> JiakResource -> Riak cluster. In general the values
       # set on the Riak cluster should suffice and these parameters aren't
       # necessary for Jiak interaction.
       def params(opts={})
         jiak.bucket.params = opts
+      end
+
+      # :call-seq:
+      #   JiakResource.auto_post(state)  -> true or false
+      #
+      # Set to true to have new instances of the resource auto-posted to the
+      # Jiak server. Default is false.
+      def auto_post(state)
+        state = false  if state.nil?
+        unless (state.is_a?(TrueClass) || state.is_a?(FalseClass))
+          raise JiakResource, "auto_post must be true or false"
+        end
+        jiak.auto_post = state
+      end
+
+      # :call-seq:
+      #   JiakResource.auto_post? -> true or false
+      #
+      # <code>true</code> if JiakResource is set to auto-post new instances.
+      def auto_post?
+        return jiak.auto_post
       end
 
       # :call-seq:
@@ -169,23 +190,36 @@ module RiakRest
       end
 
       # :call-seq:
-      #   JiakResource.activate  -> JiakSchema
+      #   JiakResource.readwrite(:f1,...,:fn)  -> JiakSchema
+      # 
+      # Set the readable and writable fields for the schema of a resource.
       #
-      # Prepare the Jiak server to accept JiakResource. Returns the schema set
-      # on the Jiak server.
-      def activate
+      # Returns the altered JiakSchema
+      def readwrite(*fields)
+        jiak.bucket.schema.readwrite  = *fields
+        jiak.bucket.schema
+      end
+      
+      # :call-seq:
+      #   JiakResource.point_of_view  -> JiakSchema
+      #
+      # Ready the Jiak server point-of-view to accept structured interaction
+      # with a JiakResource. Returns the schema set on the Jiak server.
+      def point_of_view
         jiak.server.set_schema(jiak.bucket)
         jiak.bucket.schema
       end
+      alias :pov :point_of_view
 
       # :call-seq:
-      #   JiakResource.active?  -> true or false
+      #   JiakResource.point_of_view?  -> true or false
       #
-      # Determine if the Jiak server is prepared to accept data for this
+      # Determine if the point-of-view on the Jiak server is that of this
       # JiakResource.
-      def active?
+      def point_of_view?
         jiak.server.schema(jiak.bucket).eql? jiak.bucket.schema
       end
+      alias :pov? :point_of_view?
 
       # :call-seq:
       #   JiakResource.keys   -> array
@@ -281,13 +315,24 @@ module RiakRest
       # :call-seq:
       #   JiakResource.link(from,to,tag)  -> JiakResource
       #
-      # Create a link from a resource to another resource tagged by tag.
+      # Link from a resource to another resource by tag.
       def link(from,to,tag)
         link = JiakLink.new(to.jiak.bucket, to.jiak.key, tag)
         unless from.jiak.links.include?(link)
           from.jiak.links << link
         end
         from
+      end
+
+      # :call-seq:
+      #   JiakResource.bi_link(rscr1,rscr2,tag1_2,tag2_1=nil)  -> JiakResource
+      #
+      # Link from rscr1 to rsrc2 using tag1_2 and from rscr2 to rsrc1 using
+      # tag2_1. tag2_1 defaults to tag1_2 if nil.
+      def bi_link(r1,r2,tag1_2,tag2_1=nil)
+        tag2_1 ||= tag1_2
+        link(r2,r1,tag2_1)
+        link(r1,r2,tag1_2)
       end
       
       # :call-seq:
@@ -328,12 +373,18 @@ module RiakRest
       # :call-seq:
       #   copy(opts={}) -> JiakResource
       #
-      # Copies a JiakResource, resetting those values passed as options. Valid
+      # Copies a JiakResource, resetting values passed as options. Valid
       # options on copy are those mandatory to create a JiakResource:
       # <code>:server</code>, <code>:group</code>, and
       # <code>:data_class</code>.
       #   
       def copy(opts={})
+        valid = [:server,:group,:data_class]
+        err = opts.select {|k,v| !valid.include?(k)}
+        unless err.empty?
+          raise JiakResourceException, "unrecognized options: #{err.keys}"
+        end
+
         opts[:server] ||= jiak.server.uri
         opts[:group] ||= jiak.bucket.name
         opts[:data_class] ||= jiak.bucket.data_class
@@ -353,7 +404,7 @@ module RiakRest
         def jiak  # :nodoc:
           @jiak
         end
-        @jiak = Struct.new(:server,:uri,:group,:data,:bucket).new
+        @jiak = Struct.new(:server,:uri,:group,:data,:bucket,:auto_post).new
       end
     end
 
@@ -377,6 +428,12 @@ module RiakRest
         bucket = self.class.jiak.bucket
         @jiak = JiakObject.new(:bucket => bucket,
                                :data => bucket.data_class.new(*args))
+      end
+
+      if(self.class.auto_post?)
+        self.class.put(self)
+      else
+        self
       end
     end
 
@@ -425,7 +482,7 @@ module RiakRest
     # :call-seq:
     #   delete(opts={})     ->  true or false
     #
-    # Deletes the resource on the Jiak server. The local object is
+    # Delete the resource on the Jiak server. The local object is
     # uneffected. See JiakResource#ClassMethods#delete for options.
     def delete(opts={})
       self.class.delete(self,opts)
@@ -434,9 +491,18 @@ module RiakRest
     # :call-seq:
     #   link(resource,tag)
     #
-    # Create a link to the resource tagged by tag.
+    # Link to the resource by tag.
     def link(resource,tag)
       self.class.link(self,resource,tag)
+    end
+
+    # :call-seq:
+    #   bi_link(resource,tag,reverse_tag=nil)
+    #
+    # Link to a resource by tag and back to this resource by reverse_tag. The
+    # value of the reverse_tag defaults to tag.
+    def bi_link(resource,tag,reverse_tag=nil)
+      self.class.bi_link(self,resource,tag,reverse_tag)
     end
 
     # :call-seq:
