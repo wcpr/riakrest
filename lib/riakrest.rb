@@ -37,6 +37,7 @@ $:.unshift(File.dirname(__FILE__)) unless
 # JiakData :: Class to define user data to be stored on a Jiak server.
 # JiakObject :: Jiak object wrapper that includes the user-defined data.
 # JiakLink :: Jiak link objects for associations between Jiak server data.
+# QueryLink :: Link objects to query Jiak link associations
 #
 # ====Example Usage
 # This example works at the Jiak core layer. See the Resource example below for
@@ -151,6 +152,7 @@ require 'riakrest/core/jiak_data'
 require 'riakrest/core/jiak_link'
 require 'riakrest/core/jiak_object'
 require 'riakrest/core/jiak_schema'
+require 'riakrest/core/query_link'
 
 require 'riakrest/data/jiak_data_hash'
 
