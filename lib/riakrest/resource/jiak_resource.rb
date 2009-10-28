@@ -290,6 +290,21 @@ module RiakRest
         from
       end
       
+      # :call-seq:
+      #   JiakResource.walk(from,*steps)
+      #
+      # Retrieves an array of JiakResource objects by starting with the links
+      # in the <code>from</code> JiakResource and doing the query steps. The
+      # steps are a series of query links designated by a JiakResource and a
+      # string tag, or a JiakResource, a string tag and a string
+      # accumulator. The type of JiakResource returned in the array is
+      # determined by the JiakResource designated in the last step.
+      #
+      # ====Usage
+      # <code>
+      #   JiakResource.walk(resource,Child,'child')
+      #   JiakResource.walk(resource,Parent,'odd',Child,'normal')
+      # </code>
       def walk(from,*steps)
         links = []
         until steps.empty?
@@ -427,12 +442,8 @@ module RiakRest
     # :call-seq:
     #   walk(*steps) -> array
     #
-    # Retrieves an array of JiakResource objects by starting with the links in
-    # this JiakResource and doing the query steps. The steps are a series of
-    # query links designated by a JiakResource and a string tag, or a
-    # JiakResource, a string tag and a string accumulator. The type of
-    # JiakResource returned in the array is determined by the JiakResource
-    # designated in the last step.
+    # Performs a Jiak walk starting at this resource. See
+    # JiakResource#ClassMethods#walk for description.
     #
     # ====Usage
     # <code>
@@ -452,10 +463,10 @@ module RiakRest
     end
 
     # call-seq:
-    #    jiak_object.eql?(other) -> true or false
+    #    eql?(other) -> true or false
     #
-    # Returns <code>true</code> if <code>other</code> is a JiakObject with the
-    # same the same attribute values.
+    # Returns <code>true</code> if <code>other</code> is a JiakResource
+    # representing the same Jiak data.
     def eql?(other)
       other.is_a?(JiakResource) && @jiak.eql?(other.jiak)
     end
