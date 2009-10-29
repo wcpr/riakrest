@@ -86,10 +86,14 @@ module RiakRest
 
         klass.schema.allowed_fields.each do |field|
           define_method("#{field}=") do |val|
-            @jiak.data.send("#{field}=",val)
+            @jiak.obj.data.send("#{field}=",val)
+            if(auto_update? ||
+               ((auto_update? != false) && self.class.auto_update?))
+              self.class.put(self)
+            end
           end
           define_method("#{field}") do
-            @jiak.data.send("#{field}")
+            @jiak.obj.data.send("#{field}")
           end
         end
       end
@@ -119,8 +123,8 @@ module RiakRest
       # :call-seq:
       #   JiakResource.auto_post(state)  -> true or false
       #
-      # Set to true to have new instances of the resource auto-posted to the
-      # Jiak server. Default is false.
+      # Set <code>true</code> to have new instances of the resource auto-posted
+      # to the Jiak server. Default is <code>false</code>.
       def auto_post(state)
         state = false  if state.nil?
         unless (state.is_a?(TrueClass) || state.is_a?(FalseClass))
@@ -138,11 +142,44 @@ module RiakRest
       end
 
       # :call-seq:
+      #   JiakResource.auto_update(state)  -> true or false
+      #
+      # Set <code>true</code> to have changes to resource fields or links
+      # trigger an auto-update to the Jiak server. Default is
+      # <code>false</code>. Interacts with the instance-level resource
+      # setting. See JiakResource#auto_update.
+      def auto_update(state)
+        state = false  if state.nil?
+        unless (state.is_a?(TrueClass) || state.is_a?(FalseClass))
+          raise JiakResource, "auto_update must be true or false"
+        end
+        jiak.auto_update = state
+      end
+
+      # :call-seq:
+      #   JiakResource.auto_update? -> true or false
+      #
+      # <code>true</code> if JiakResource is set to auto-update.
+      def auto_update?
+        return jiak.auto_update
+      end
+
+      # :call-seq:
       #   JiakResource.schema  -> JiakSchema
       #
       # Get the schema for a resource.
       def schema
         jiak.bucket.schema
+      end
+
+      # :call-seq:
+      #   JiakResource.keys   -> array
+      #
+      # Get an array of the current keys for this resource. Since key lists are
+      # updated asynchronously on a Riak cluster the returned array can be out
+      # of synch immediately after new puts or deletes.
+      def keys
+        jiak.server.keys(jiak.bucket)
       end
 
       # :call-seq:
@@ -222,16 +259,6 @@ module RiakRest
       alias :pov? :point_of_view?
 
       # :call-seq:
-      #   JiakResource.keys   -> array
-      #
-      # Get an array of the current keys for this resource. Since key lists are
-      # updated asynchronously on a Riak cluster the returned array can be out
-      # of synch immediately after new puts or deletes.
-      def keys
-        jiak.server.keys(jiak.bucket)
-      end
-
-      # :call-seq:
       #   JiakResource.put(JiakResource,opts={})  -> JiakResource
       #
       # Put a JiakResource on the Jiak server. Valid options are:
@@ -246,7 +273,7 @@ module RiakRest
       # general the values set on the Riak cluster should suffice.
       def put(resource,opts={})
         opts[:object] = true
-        resource.jiak = jiak.server.store(resource.jiak,opts)
+        resource.jiak.obj = jiak.server.store(resource.jiak.obj,opts)
         resource
       end
 
@@ -257,7 +284,7 @@ module RiakRest
       # resource has not been previously stored. See JiakResource#put for
       # options.
       def post(resource,opts={})
-        unless(resource.jiak.riak.nil?)
+        unless(resource.jiak.obj.riak.nil?)
           raise JiakResourceException, "Resource already initially stored"
         end
         put(resource,opts)
@@ -269,7 +296,7 @@ module RiakRest
       # Updates a JiakResource on the Jiak server with a guard to ensure the
       # resource has been previously stored. See JiakResource#put for options.
       def update(resource,opts={})
-        if(resource.jiak.riak.nil?)
+        if(resource.jiak.obj.riak.nil?)
           raise JiakResourceException, "Resource not previously stored"
         end
         put(resource,opts)
@@ -289,13 +316,13 @@ module RiakRest
       end
 
       # :call-seq:
-      #   JiakResource.get!(resource,opts={})  -> JiakResource
+      #   JiakResource.refresh(resource,opts={})  -> JiakResource
       #
       # Updates a JiakResource with the data on the Jiak server. The current
       # data of the JiakResource is overwritten, so use with caution. See
       # JiakResource.get for options.
-      def get!(resource,opts={})
-        resource.jiak = get(resource.jiak.key,opts).jiak
+      def refresh(resource,opts={})
+        resource.jiak.obj = get(resource.jiak.obj.key,opts).jiak.obj
       end
 
       # :call-seq:
@@ -309,7 +336,7 @@ module RiakRest
       # value set for the JiakResource, then to the value set on the Riak
       # cluster. In general the values set on the Riak cluster should suffice.
       def delete(resource,opts={})
-        jiak.server.delete(jiak.bucket,resource.jiak.key,opts)
+        jiak.server.delete(jiak.bucket,resource.jiak.obj.key,opts)
       end
 
       # :call-seq:
@@ -317,9 +344,13 @@ module RiakRest
       #
       # Link from a resource to another resource by tag.
       def link(from,to,tag)
-        link = JiakLink.new(to.jiak.bucket, to.jiak.key, tag)
-        unless from.jiak.links.include?(link)
-          from.jiak.links << link
+        link = JiakLink.new(to.jiak.obj.bucket, to.jiak.obj.key, tag)
+        unless from.jiak.obj.links.include?(link)
+          from.jiak.obj.links << link
+          if(from.auto_update? ||
+             ((from.auto_update? != false) && from.class.auto_update?))
+            put(from)
+          end
         end
         from
       end
@@ -331,8 +362,24 @@ module RiakRest
       # tag2_1. tag2_1 defaults to tag1_2 if nil.
       def bi_link(r1,r2,tag1_2,tag2_1=nil)
         tag2_1 ||= tag1_2
-        link(r2,r1,tag2_1)
         link(r1,r2,tag1_2)
+        link(r2,r1,tag2_1)
+        r1
+      end
+
+      # :call-seq:
+      #   JiakResource.remove_link(from,to,tag) -> true or false
+      def remove_link(from,to,tag)
+        link = JiakLink.new(to.jiak.obj.bucket, to.jiak.obj.key, tag)
+        has_link = from.jiak.obj.links.include?(link)
+        if has_link
+          from.jiak.obj.links.delete(link)
+          if(from.auto_update? ||
+             ((from.auto_update? != false) && from.class.auto_update?))
+            put(from)
+          end
+        end
+        has_link
       end
       
       # :call-seq:
@@ -364,7 +411,7 @@ module RiakRest
           end
         end
         links = links[0]  if links.size == 1
-        jiak.server.walk(from.jiak.bucket, from.jiak.key, links,
+        jiak.server.walk(from.jiak.obj.bucket, from.jiak.obj.key, links,
                          last_klass.jiak.bucket.data_class).map do |jobj|
           last_klass.new(jobj)
         end        
@@ -404,7 +451,10 @@ module RiakRest
         def jiak  # :nodoc:
           @jiak
         end
-        @jiak = Struct.new(:server,:uri,:group,:data,:bucket,:auto_post).new
+        @jiak = Struct.new(:server,:uri,:group,:data,:bucket,
+                           :auto_post,:auto_update).new
+        @jiak.auto_post = false
+        @jiak.auto_update = false
       end
     end
 
@@ -422,19 +472,44 @@ module RiakRest
     # with the JiakResource.
     def initialize(*args)
       # First form is used by JiakResource.get and JiakResource.walk
+      @jiak = Struct.new(:obj,:auto_update).new
       if(args.size == 1 && args[0].is_a?(JiakObject))
-        @jiak = args[0]
+        @jiak.obj = args[0]
       else
         bucket = self.class.jiak.bucket
-        @jiak = JiakObject.new(:bucket => bucket,
-                               :data => bucket.data_class.new(*args))
+        @jiak.obj = JiakObject.new(:bucket => bucket,
+                                   :data => bucket.data_class.new(*args))
+        if(self.class.auto_post?)
+          self.class.post(self)
+        end
       end
+    end
 
-      if(self.class.auto_post?)
-        self.class.put(self)
-      else
-        self
-      end
+    # :call-seq:
+    #   auto_update(true, false, or nil)
+    #
+    # Set to <code>true</code> to have any changes to the fields or links of
+    # a resource trigger an auto-update to the Jiak server. Default is
+    # <code>nil</code>.
+    #
+    # The setting here interacts with the class level setting
+    # JiakResource#ClassMethods#auto_update in the following manner:
+    # <code>true</code>  :: Auto-update regardless of class setting.
+    # <code>false</code> :: No auto-update, regardless of class setting.
+    # <code>nil</code>   :: Defer to the class setting.
+    def auto_update=(state)
+       unless (state.nil? || state.is_a?(TrueClass) || state.is_a?(FalseClass))
+         raise JiakResource, "auto_update must be true, false, or nil"
+       end
+     @jiak.auto_update = state
+    end
+
+    # :call-seq:
+    #   auto_update?  -> true, false, or nil
+    #
+    # Get current auto_update setting. See JiakResource#auto_update for settings.
+    def auto_update?
+      @jiak.auto_update
     end
 
     # :call-seq:
@@ -443,7 +518,7 @@ module RiakRest
     # Put this resource on the Jiak server. See JiakResource#ClassMethods#put
     # for options.
     def put(opts={})
-      @jiak = (self.class.put(self,opts)).jiak
+      @jiak.obj = (self.class.put(self,opts)).jiak.obj
       self
     end
 
@@ -454,7 +529,7 @@ module RiakRest
     # has not been previously stored. See JiakResource#ClassMethods#put for
     # options.
     def post(opts={})
-      @jiak = (self.class.post(self,opts)).jiak
+      @jiak.obj = (self.class.post(self,opts)).jiak.obj
       self
     end
 
@@ -465,18 +540,18 @@ module RiakRest
     # has been previously stored. See JiakResource#ClassMethods#put for
     # options.
     def update(opts={})
-      @jiak = (self.class.update(self,opts)).jiak
+      @jiak.obj = (self.class.update(self,opts)).jiak.obj
       self
     end
 
     # :call-seq:
-    #   get(opts={})   -> nil
+    #   refresh(opts={})   -> nil
     #
     # Get this resource from the Jiak server. The current data of the resource
     # is overwritten, so use with caution. See JiakResource#ClassMethods#get
     # for options.
-    def get(opts={})
-      self.class.get!(self,opts)
+    def refresh(opts={})
+      self.class.refresh!(self,opts)
     end
 
     # :call-seq:
@@ -489,7 +564,7 @@ module RiakRest
     end
 
     # :call-seq:
-    #   link(resource,tag)
+    #   link(resource,tag) -> JiakResource
     #
     # Link to the resource by tag.
     def link(resource,tag)
@@ -497,12 +572,20 @@ module RiakRest
     end
 
     # :call-seq:
-    #   bi_link(resource,tag,reverse_tag=nil)
+    #   bi_link(resource,tag,reverse_tag=nil) -> JiakResource
     #
     # Link to a resource by tag and back to this resource by reverse_tag. The
     # value of the reverse_tag defaults to tag.
     def bi_link(resource,tag,reverse_tag=nil)
       self.class.bi_link(self,resource,tag,reverse_tag)
+    end
+
+    # :call-seq:
+    #   remove_link(resource,tag) -> true or false
+    #
+    # Remove tagged link to resource.
+    def remove_link(resource,tag)
+      self.class.remove_link(self,resource,tag)
     end
 
     # :call-seq:
@@ -525,7 +608,7 @@ module RiakRest
     #
     # Equality -- Two JiakResources are equal if they wrap the same data.
     def ==(other)
-      (@jiak == other.jiak)  rescue false
+      (@jiak.obj == other.jiak.obj)  rescue false
     end
 
     # call-seq:
@@ -534,11 +617,11 @@ module RiakRest
     # Returns <code>true</code> if <code>other</code> is a JiakResource
     # representing the same Jiak data.
     def eql?(other)
-      other.is_a?(JiakResource) && @jiak.eql?(other.jiak)
+      other.is_a?(JiakResource) && @jiak.obj.eql?(other.jiak.obj)
     end
     
     def hash  # :nodoc:
-      @jiak.hash
+      @jiak.obj.hash
     end
 
   end
