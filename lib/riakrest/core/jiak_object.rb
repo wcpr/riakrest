@@ -228,7 +228,7 @@ module RiakRest
 
     private
     VALID_RIAK = [:vclock,:vtag,:lastmod]
-    VALID_OPTS = [:bucket,:key,:data,:links] << VALID_RIAK
+    VALID_OPTS = [:bucket,:key,:data,:links] + VALID_RIAK
   end
 
 end
