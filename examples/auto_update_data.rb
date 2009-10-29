@@ -11,19 +11,14 @@ class Person
   group        'people'
   data_class   PersonData
   auto_post    true
+  auto_update  true
 end
 
 remy = Person.new(:name => 'remy', :age => 10)
 puts Person.get('remy').name                # => "remy"
 
 remy.name = "Remy"
-puts Person.get('remy').name                # => "remy"
-remy.update
 puts Person.get('remy').name                # => "Remy"
-
-Person.auto_update true
-
-puts Person.get('remy').age                 # => 10
 remy.age = 12
 puts Person.get('remy').age                 # => 12
 
@@ -45,6 +40,5 @@ remy.age = 10
 puts Person.get('remy').age                 # => 10
 
 remy.delete
-callie.delete
 
 

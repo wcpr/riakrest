@@ -10,8 +10,9 @@ class Parent
   server      'http://localhost:8002/jiak'
   group       'parents'
   data_class  PersonData
+  auto_post   true
+  auto_update true
 end
-
 Child = Parent.copy(:group => 'children')
 
 # relationships
@@ -31,6 +32,8 @@ child_parents = parent_children.inject({}) do |build, (p,cs)|
 end
 
 # store data and relationships
+Person.auto_post   false
+Person.auto_update false
 parent_children.each do |pname,cnames|
   p = Parent.new(:name => pname)
   cnames.each do |cname|
@@ -45,6 +48,8 @@ parent_children.each do |pname,cnames|
   end
   p.post
 end
+Person.auto_post   true
+Person.auto_update true
 
 # retrieve parents
 parents = parent_children.keys.map {|p| Parent.get(p)}
