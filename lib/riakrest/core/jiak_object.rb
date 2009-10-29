@@ -6,7 +6,7 @@ module RiakRest
     attr_accessor :bucket, :key, :data, :links
     attr_reader :riak
 
-    # call-seq:
+    # :call-seq:
     #   JiakObject.new(opts)  -> JiakObject
     #
     # Create a object for Jiak storage. Valid options:
@@ -41,7 +41,7 @@ module RiakRest
       end
     end
 
-    # call-seq:
+    # :call-seq:
     #    JiakObject.from_jiak(jiak)  -> JiakObject
     #
     # Create a JiakObject from parsed JSON returned by the Jiak server. Calls
@@ -58,7 +58,7 @@ module RiakRest
           end)
     end
 
-    # call-seq:
+    # :call-seq:
     #    jiak_object.to_jiak  -> JSON
     #
     # Create a representation suitable for sending to a Jiak server. Calls the
@@ -79,46 +79,45 @@ module RiakRest
       jiak.to_json
     end
 
-    # call-seq:
+    # :call-seq:
     #   jiak_object.bucket = bucket
     #
-    # Sets the bucket for this JiakObject. Bucket must be a JiakBucket.
+    # Set the bucket for a JiakObject. Bucket must be a JiakBucket.
     def bucket=(bucket)
       @bucket = check_bucket(bucket)
     end
 
-    # call-seq:
+    # :call-seq:
     #   jiak_object.key = string or nil
     #
-    # Sets the key for this JiakObject. Key string is stripped of leading and
+    # Set the key for a JiakObject. Key string is stripped of leading and
     # trailing blanks. A nil key is interpreted as an empty string.
     def key=(key)
       @key = transform_key(key)
     end
 
-    # call-seq:
+    # :call-seq:
     #   jiak_object.data = {}
     #
-    # Sets the data wrapped by this JiakObject. The data must be a JiakData
-    # object.
+    # Set the data wrapped by a JiakObject. The data must be a JiakData object.
     def data=(data)
       @data = check_data(data)
     end
 
-    # call-seq:
+    # :call-seq:
     #   jiak_object.links = []
     #
-    # Sets the links array for this jiak_object. Each array element must be a
+    # Set the links array for JiakObject. Each array element must be a
     # JiakLink.
     def links=(links)
       @links = check_links(links)
     end
 
-    # call-seq:
+    # :call-seq:
     #   jiak_object << JiakLink  -> JiakObject
     #
-    # Convenience method for adding a JiakLink to the links for this
-    # jiak_object. Duplicate links are ignored. Returns the JiakObject for
+    # Convenience method for adding a JiakLink to the links for a
+    # JiakObject. Duplicate links are ignored. Returns the JiakObject for
     # chaining.
     def <<(link)
       link = check_link(link)
@@ -126,7 +125,15 @@ module RiakRest
       self
     end
 
-    # call-seq:
+    # :call-seq:
+    #   jiak_object.riak = riak
+    #
+    # Set the Riak context for a JiakObject.
+    def riak=(riak)
+      @riak = check_riak(riak)
+    end
+
+    # :call-seq:
     #    jiak_object == other -> true or false
     #
     # Equality -- Two JiakObjects are equal if they contain the same values
@@ -135,11 +142,11 @@ module RiakRest
       (@bucket == other.bucket &&
        @key == other.key &&
        @data == other.data &&
-       @links == other.links &&
-       @riak == other.riak) rescue false
+       @links == other.links
+       ) rescue false
     end
 
-    # call-seq:
+    # :call-seq:
     #    jiak_object.eql?(other) -> true or false
     #
     # Returns <code>true</code> if <code>other</code> is a JiakObject with the
@@ -149,8 +156,7 @@ module RiakRest
         @bucket.eql?(other.bucket) &&
         @key.eql?(other.key) &&
         @data.eql?(other.data) &&
-        @links.eql?(other.links) &&
-        @riak.eql?(other.riak)
+        @links.eql?(other.links)
     end
 
     def hash    # :nodoc:
@@ -158,8 +164,7 @@ module RiakRest
     end
 
     def check_opts(opts)
-      valid = [:bucket,:key,:data,:links,:vclock,:vtag,:lastmod]
-      err = opts.select {|k,v| !valid.include?(k)}
+      err = opts.select {|k,v| !VALID_OPTS.include?(k)}
       unless err.empty?
         raise JiakObjectException, "unrecognized options: #{err.keys}"
       end
@@ -196,7 +201,7 @@ module RiakRest
 
     def check_links(links)
       unless links.is_a? Array
-        raise JiakObjectException, "Links must be an Array"
+        raise JiakObjectException, "Links must be an array"
       end
       links.each do |link|
         check_link(link)
@@ -213,6 +218,17 @@ module RiakRest
     end
     private :check_link
 
+    def check_riak(riak)
+      err = opts.select {|k,v| !VALID_RIAK.include?(k)}
+      unless err.empty?
+        raise JiakObjectException, "unrecognized options: #{err.keys}"
+      end
+      riak
+    end
+
+    private
+    VALID_RIAK = [:vclock,:vtag,:lastmod]
+    VALID_OPTS = [:bucket,:key,:data,:links] << VALID_RIAK
   end
 
 end
