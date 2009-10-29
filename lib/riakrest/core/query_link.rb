@@ -132,7 +132,7 @@ module RiakRest
 
     # String representation of this QueryLink.
     def to_s
-      '["'+@bucket+'","'+@tag+'","'+@acc+'"]'
+      "[#{bucket},#{tag},#{acc}]"
     end
 
     def transform_args(b,t,a)
