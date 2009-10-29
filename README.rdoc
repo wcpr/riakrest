@@ -1,6 +1,6 @@
 = riakrest
 
-http://github.com/dingosky/riakrest
+http://github.com/wcpr/riakrest
 
 == DESCRIPTION:
 

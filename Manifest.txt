@@ -3,6 +3,8 @@ Manifest.txt
 PostInstall.txt
 README.rdoc
 Rakefile
+examples/auto_update_data.rb
+examples/auto_update_links.rb
 examples/basic_client.rb
 examples/basic_resource.rb
 examples/json_data_resource.rb
