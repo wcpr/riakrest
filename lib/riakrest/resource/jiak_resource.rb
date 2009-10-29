@@ -577,7 +577,7 @@ module RiakRest
     # is overwritten, so use with caution. See JiakResource#ClassMethods#get
     # for options.
     def refresh(opts={})
-      self.class.refresh!(self,opts)
+      self.class.refresh(self,opts)
     end
     alias :pull :refresh
 
