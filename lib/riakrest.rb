@@ -148,15 +148,17 @@ require 'riakrest/data/jiak_data_hash'
 
 require 'riakrest/resource/jiak_resource'
 
+# Extend Array with convenience methods for comparing array contents.
 class Array
-  # Compare fields for same elements irrespective of whether a string or
-  # symbol and regardless of order.
+  # Compare arrays for same elements regardless of order.
+  def same_elements?(arr)
+    raise ArgumentError unless arr.is_a?(Array)
+    (size == arr.size) && arr.reduce(true){|same,elem| same && include?(elem)}
+  end
+
+  # Compare arrays for same element.to_s values regardless of order.
   def same_fields?(arr)
-    same = size == arr.size
-    arr = arr.map{|f| f.to_s} if same
-    same &&= map{|f| f.to_s}.reduce(true) do |same,value|
-      same && arr.include?(value)
-    end
-    same
+    raise ArgumentError unless arr.is_a?(Array)
+    (size == arr.size) && map{|f| f.to_s}.same_elements?(arr.map{|f| f.to_s})
   end
 end
