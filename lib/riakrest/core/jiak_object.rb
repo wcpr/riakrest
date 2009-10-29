@@ -3,8 +3,7 @@ module RiakRest
   # Wrapper for JiakData.
   class JiakObject
 
-    attr_accessor :bucket, :key, :data, :links
-    attr_reader :riak
+    attr_accessor :bucket, :key, :data, :links, :riak
 
     # :call-seq:
     #   JiakObject.new(opts)  -> JiakObject
@@ -174,7 +173,7 @@ module RiakRest
 
     def check_bucket(bucket)
       unless bucket.is_a?(JiakBucket)
-        raise JiakObjectException, "Data must be a JiakData."
+        raise JiakObjectException, "Bucket must be a JiakBucket."
       end
       bucket
     end
@@ -219,7 +218,7 @@ module RiakRest
     private :check_link
 
     def check_riak(riak)
-      err = opts.select {|k,v| !VALID_RIAK.include?(k)}
+      err = riak.select {|k,v| !VALID_RIAK.include?(k)}
       unless err.empty?
         raise JiakObjectException, "unrecognized options: #{err.keys}"
       end

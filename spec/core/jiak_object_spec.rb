@@ -6,7 +6,7 @@ describe "JiakObject" do
   before do
     @data = 
       DataObject.new(:f1 => 'f1',:f2 => ['a','b'], :f3 => {:f3_1 => 'f3_1'})
-    @bucket_name = 'test'
+    @bucket_name = 'bucket'
     @bucket = JiakBucket.new(@bucket_name,DataObject)
     @key = 'hey'
     @l1 = JiakLink.new('l1b','l1k','l1t')
@@ -36,6 +36,7 @@ describe "JiakObject" do
     @object.should respond_to(:key,:key=)
     @object.should respond_to(:data,:data=)
     @object.should respond_to(:links,:links=)
+    @object.should respond_to(:riak,:riak=)
     @object.should respond_to(:<<)
     @object.should respond_to(:==,:eql?)
     @object.should respond_to(:to_jiak)
@@ -109,7 +110,7 @@ describe "JiakObject" do
     link_not_array = lambda {JiakObject.new(:bucket => @bucket,
                                             :data => @data,
                                             :links =>"l")}
-    link_not_array.should raise_error(JiakObjectException,/Array/)
+    link_not_array.should raise_error(JiakObjectException,/array/)
   end
 
   it "should raise JiakObjectException if each link is not a JiakLink" do
@@ -135,27 +136,63 @@ describe "JiakObject" do
     end
   end
 
-  it "should allow object updates" do
+  it "should allow attribute updates" do
+    bucket_name = 'new bucket'
+    bucket = JiakBucket.new(bucket_name,DataObject)
+    @object.bucket = bucket
+    @object.bucket.should eql bucket
+
+    key = 'new key'
+    @object.key = key
+    @object.key.should eql key
+
     object = DataObject.new(:f1 => 'new f1',:f2 => [], :f3 => 6)
     @object.data.should_not eql object
     @object.data = object
     @object.data.should eql object
+
+    links = [JiakLink.new('c','b','a')]
+    @object.links = links
+    @object.links.should eql links
+    
+    riak = {:vclock => 'VCLOCK', :vtag => 'VTAG', :lastmod => 'LASTMOD'}
+    @object.riak = riak
+    @object.riak.should eql riak
+
+    bad_bucket = lambda {@object.bucket = 'bucket'}
+    bad_bucket.should raise_error(JiakObjectException,/Bucket/)
+
+    bad_key = lambda {@object.key = @bucket}
+    bad_key.should raise_error(JiakObjectException,/Key/)
+
+    bad_object = lambda {@object.data = @bucket}
+    bad_object.should raise_error(JiakObjectException,/Data/)
+    
+    bad_links = lambda {@object.links = @bucket}
+    bad_links.should raise_error(JiakObjectException,/Links/)
   end
 
   it "should add a link" do
-    jiak_link3 = JiakLink.new('a','b','c')
-    @object.links.should_not include jiak_link3
+    jiak_link = JiakLink.new('a','b','c')
+    @object.links.should_not include jiak_link
 
     size = @links.size
-    @object << jiak_link3
+    @object << jiak_link
     @object.links.should have_exactly(size+1).items
-    @object.links.should include jiak_link3
+    @object.links.should include jiak_link
+  end
+  
+  it "should ignore a duplicate link" do
+    size = @object.links.size
+    @object << @l1
+    @object.links.should have_exactly(size).items
+  end
 
-    jiak_link4 = JiakLink.new('d','e','f')
-    @object.links.should_not include jiak_link4
-    @object << jiak_link4
-    @object.links.should have_exactly(size+2).items
-    @object.links.should include jiak_link4
+  it "should chain link adds" do
+    size = @object.links.size
+    jiak_link = JiakLink.new('a','b','c')
+    @object << @l2 << jiak_link
+    @object.links.should have_exactly(size+1).items
   end
 
   it "should raise exception if adding a non-JiakLink" do
