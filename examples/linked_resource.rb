@@ -32,8 +32,10 @@ child_parents = parent_children.inject({}) do |build, (p,cs)|
 end
 
 # store data and relationships
-Person.auto_post   false
-Person.auto_update false
+Parent.auto_post   false
+Parent.auto_update false
+Child.auto_post    false
+Child.auto_update  false
 parent_children.each do |pname,cnames|
   p = Parent.new(:name => pname)
   cnames.each do |cname|
@@ -48,37 +50,39 @@ parent_children.each do |pname,cnames|
   end
   p.post
 end
-Person.auto_post   true
-Person.auto_update true
+Parent.auto_post   true
+Parent.auto_update true
+Child.auto_post    true
+Child.auto_update  true
 
 # retrieve parents
 parents = parent_children.keys.map {|p| Parent.get(p)}
 p0,p1,p2,p3 = parents
-p1.name                                # => 'p1'
+puts p1.name                                # => 'p1'
 
 # retrieve children
 children = child_parents.keys.map {|c| Child.get(c)}
 c0,c1,c2,c3 = children
-c1.name                                # => 'c1'
+puts c1.name                                # => 'c1'
 
 # retrieve parent children
 p0c,p1c,p2c,p3c = parents.map {|p| p.walk(Child,'child')}
-p2c[0].name                            # => 'c2' (not sorted, so could be 'c3')
+puts p2c[0].name                            # => 'c2' (not sorted, could be 'c3')
 
 # retrieve children parents
 c0p,c1p,c2p,c3p = children.map {|c| c.walk(Parent,'parent')}
-c3p[0].name                            # => 'p3'
+puts c3p[0].name                            # => 'p3'
 
 # retrieve children siblings
 c0s,c1s,c2s,c3s = children.map do |c|
   c.walk(Parent,'parent',Child,'child').delete_if{|s| s.eql?(c)}
 end
-c3s[0].name                            # => 'c2'
+puts c3s[0].name                            # => 'c2'
 
 # who is c3's step-sibling's other parent?
 c3sp = c3.walk(Parent,'parent',Child,'child',Parent,'parent')
 c3p.each {|p| c3sp.delete_if{|sp| p.eql?(sp)}}
-c3sp[0].name                           # => "p1"
+puts c3sp[0].name                           # => "p1"
 
 # add sibling links
 children.each do |c|
@@ -86,15 +90,8 @@ children.each do |c|
   siblings.each {|s| c.link(s,'sibling')}
   c.update
 end
-c1.walk(Child,'sibling').size          # => 2  
+puts c1.walk(Child,'sibling').size          # => 2  
   
-
-
-
-
-
-
-
 # some folks are odd, and others are normal
 parent_children.keys.each do |p|
   parent = Parent.get(p)
@@ -107,12 +104,15 @@ parent_children.keys.each do |p|
   parent.update
 end
 # refresh parents and children variables
-parents.each {|p| p.get}
-children.each {|c| c.get}
+parents.each {|p| p.refresh}
+children.each {|c| c.refresh}
 
 # do any odd parents have normal children?
 op = parents.inject([]) do |build,parent|
   build << parent.walk(Child,'normal',Parent,'odd')
   build.flatten.uniq
 end
-op[0].name                            # => 'p1'
+puts op[0].name                            # => 'p1'
+
+parents.each  {|p| p.delete}
+children.each {|c| c.delete}

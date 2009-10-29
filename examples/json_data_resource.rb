@@ -1,3 +1,8 @@
+require 'lib/riakrest'
+include RiakRest
+
+# CxINC Example doesn't do anything useful yet
+
 require 'date'
 class DogData  # :nodoc:
   include JiakData
