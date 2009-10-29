@@ -284,7 +284,7 @@ module RiakRest
       # resource has not been previously stored. See JiakResource#put for
       # options.
       def post(resource,opts={})
-        unless(resource.jiak.obj.riak.nil?)
+        unless(resource.local?)
           raise JiakResourceException, "Resource already initially stored"
         end
         put(resource,opts)
@@ -296,7 +296,7 @@ module RiakRest
       # Updates a JiakResource on the Jiak server with a guard to ensure the
       # resource has been previously stored. See JiakResource#put for options.
       def update(resource,opts={})
-        if(resource.jiak.obj.riak.nil?)
+        if(resource.local?)
           raise JiakResourceException, "Resource not previously stored"
         end
         put(resource,opts)
@@ -311,6 +311,9 @@ module RiakRest
       # <code>:reads</code> --- The number of Riak nodes that must successfully
       # reply with the data. If not set, defaults first to the value set for the
       # JiakResource class, then to the value set on the Riak cluster.
+      #
+      # Raise JiakResourceNotFound if no resource exists on the Jiak server for
+      # the key.
       def get(key,opts={})
         new(jiak.server.get(jiak.bucket,key,opts))
       end
@@ -418,15 +421,29 @@ module RiakRest
       end
       
       # :call-seq:
+      #   JiakResource.exist?(key) -> true or false
+      #
+      # Determine if a resource exists on the Jiak server for a key.
+      def exist?(key)
+        begin
+          get(key)
+          true
+        rescue JiakResourceNotFound
+          false
+        end
+      end
+
+      # :call-seq:
       #   copy(opts={}) -> JiakResource
       #
       # Copies a JiakResource, resetting values passed as options. Valid
       # options on copy are those mandatory to create a JiakResource:
       # <code>:server</code>, <code>:group</code>, and
-      # <code>:data_class</code>.
+      # <code>:data_class</code>, and optional auto flags
+      # <code>auto_post</code> and <code>auto_update</code>.
       #   
       def copy(opts={})
-        valid = [:server,:group,:data_class]
+        valid = [:server,:group,:data_class,:auto_post,:auto_update]
         err = opts.select {|k,v| !valid.include?(k)}
         unless err.empty?
           raise JiakResourceException, "unrecognized options: #{err.keys}"
@@ -435,11 +452,15 @@ module RiakRest
         opts[:server] ||= jiak.server.uri
         opts[:group] ||= jiak.bucket.name
         opts[:data_class] ||= jiak.bucket.data_class
+        opts[:auto_post] ||= auto_post?
+        opts[:auto_update] ||= auto_update?
         Class.new do
           include JiakResource
-          server     opts[:server]
-          group      opts[:group]
-          data_class opts[:data_class]
+          server      opts[:server]
+          group       opts[:group]
+          data_class  opts[:data_class]
+          auto_post   opts[:auto_post]
+          auto_update opts[:auto_update]
         end
       end
 
@@ -480,6 +501,10 @@ module RiakRest
         @jiak.obj = JiakObject.new(:bucket => bucket,
                                    :data => bucket.data_class.new(*args))
         if(self.class.auto_post?)
+          if(!@jiak.obj.key.empty? && self.class.exist?(@jiak.obj.key))
+            raise(JiakResourceException,
+                  "auto-post failed: key='#{@jiak.obj.key}' already exists.")
+          end
           self.class.post(self)
         end
       end
@@ -543,6 +568,7 @@ module RiakRest
       @jiak.obj = (self.class.update(self,opts)).jiak.obj
       self
     end
+    alias :push :update
 
     # :call-seq:
     #   refresh(opts={})   -> nil
@@ -552,6 +578,17 @@ module RiakRest
     # for options.
     def refresh(opts={})
       self.class.refresh!(self,opts)
+    end
+    alias :pull :refresh
+
+    # :call-seq:
+    #   local? -> true or false
+    #
+    # <code>true</code> if a resource is local only, i.e., has not been
+    # post/put to the Jiak server. This test is used in the guards for class
+    # and instance level post/update methods.
+    def local?
+      jiak.obj.riak.nil?
     end
 
     # :call-seq:
@@ -603,15 +640,15 @@ module RiakRest
       self.class.walk(self,*steps)
     end
 
-    # call-seq:
-    #    jiak_resource == other -> true or false
+    # :call-seq:
+    #   jiak_resource == other -> true or false
     #
     # Equality -- Two JiakResources are equal if they wrap the same data.
     def ==(other)
       (@jiak.obj == other.jiak.obj)  rescue false
     end
 
-    # call-seq:
+    # :call-seq:
     #    eql?(other) -> true or false
     #
     # Returns <code>true</code> if <code>other</code> is a JiakResource
