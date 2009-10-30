@@ -84,7 +84,7 @@ $:.unshift(File.dirname(__FILE__)) unless
 # </code>
 # Now we can get callie as the sister of remy:
 # <code>
-#   sisters = client.walk(bucket,remy.key,QueryLink.new(bucket,'sister'),Person)
+#   sisters = client.query(bucket,remy.key,QueryLink.new(bucket,'sister'),Person)
 #   sisters[0].eql?(callie)                           # => true
 # </code>
 # Finally, we'll delete the objects on the way out the door.
@@ -110,20 +110,20 @@ $:.unshift(File.dirname(__FILE__)) unless
 #     server      'http://localhost:8002/jiak'
 #     group       'people'
 #     data_class  PersonData
+#     auto_post   true
+#     auto_update true
 #   end
 #   
 #   remy = Person.new(:name => 'remy', :age => 10)
-#   remy.post
 #   puts Person.get('remy').name                # => "remy"
 #   
 #   remy.name = "Remy"
-#   remy.update
 #   puts Person.get('remy').name                # => "Remy"
 #   
-#   callie = Person.new(:name => 'Callie', :age => 12).post
-#   remy.link(callie,'sister').update
+#   callie = Person.new(:name => 'Callie', :age => 12)
+#   remy.link(callie,'sister')
 #   
-#   sisters = remy.walk(Person,'sister')
+#   sisters = remy.query(Person,'sister')
 #   sisters[0].eql?(callie)                     # => true
 #   
 #   remy.delete
