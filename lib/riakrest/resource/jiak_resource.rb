@@ -397,7 +397,7 @@ module RiakRest
       end
       
       # :call-seq:
-      #   JiakResource.walk(from,*steps)
+      #   JiakResource.query(from,*steps)
       #
       # Retrieves an array of JiakResource objects by starting with the links
       # in the <code>from</code> JiakResource and doing the query steps. The
@@ -408,10 +408,10 @@ module RiakRest
       #
       # ====Usage
       # <code>
-      #   JiakResource.walk(resource,Child,'child')
-      #   JiakResource.walk(resource,Parent,'odd',Child,'normal')
+      #   JiakResource.query(resource,Child,'child')
+      #   JiakResource.query(resource,Parent,'odd',Child,'normal')
       # </code>
-      def walk(from,*steps)
+      def query(from,*steps)
         links = []
         until steps.empty?
           begin
@@ -430,6 +430,7 @@ module RiakRest
           last_klass.new(jobj)
         end        
       end
+      alias :walk :query
       
       # :call-seq:
       #   JiakResource.exist?(key) -> true or false
@@ -518,7 +519,7 @@ module RiakRest
     # is passed to the <code>new</code> method of the JiakData associated
     # with the JiakResource.
     def initialize(*args)
-      # First form is used by JiakResource.get and JiakResource.walk
+      # First form is used by JiakResource.get and JiakResource.query
       @jiak = Struct.new(:obj,:auto_update).new
       if(args.size == 1 && args[0].is_a?(JiakObject))
         @jiak.obj = args[0]
@@ -654,19 +655,20 @@ module RiakRest
     end
 
     # :call-seq:
-    #   walk(*steps) -> array
+    #   query(*steps) -> array
     #
-    # Performs a Jiak walk starting at this resource. See
-    # JiakResource#ClassMethods#walk for description.
+    # Performs a Jiak query starting at this resource. See
+    # JiakResource#ClassMethods#query for description.
     #
     # ====Usage
     # <code>
-    #   walk(Child,'child')
-    #   walk(Parent,'odd',Child,'normal')
+    #   query(Child,'child')
+    #   query(Parent,'odd',Child,'normal')
     # </code>
-    def walk(*steps)
-      self.class.walk(self,*steps)
+    def query(*steps)
+      self.class.query(self,*steps)
     end
+    alias :walk :query
 
     # :call-seq:
     #   jiak_resource == other -> true or false
