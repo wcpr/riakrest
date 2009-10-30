@@ -25,7 +25,7 @@ callie = Person.new(:name => 'Callie', :age => 12)
 remy.bi_link(callie,'sister').update
 callie.update
 
-sisters = remy.walk(Person,'sister')
+sisters = remy.query(Person,'sister')
 puts sisters[0].eql?(callie)                # => true
 
 remy.delete

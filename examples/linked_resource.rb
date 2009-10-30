@@ -37,7 +37,7 @@ Parent.auto_update false
 Child.auto_post    false
 Child.auto_update  false
 parent_children.each do |pname,cnames|
-  p = Parent.new(:name => pname)
+  p = Parent.new(:name => pname).post
   cnames.each do |cname|
     begin
       c = Child.get(cname)
@@ -48,7 +48,7 @@ parent_children.each do |pname,cnames|
     c.put
     p.link(c,'child')
   end
-  p.post
+  p.update
 end
 Parent.auto_post   true
 Parent.auto_update true
@@ -66,36 +66,36 @@ c0,c1,c2,c3 = children
 puts c1.name                                # => 'c1'
 
 # retrieve parent children
-p0c,p1c,p2c,p3c = parents.map {|p| p.walk(Child,'child')}
+p0c,p1c,p2c,p3c = parents.map {|p| p.query(Child,'child')}
 puts p2c[0].name                            # => 'c2' (not sorted, could be 'c3')
 
 # retrieve children parents
-c0p,c1p,c2p,c3p = children.map {|c| c.walk(Parent,'parent')}
+c0p,c1p,c2p,c3p = children.map {|c| c.query(Parent,'parent')}
 puts c3p[0].name                            # => 'p3'
 
 # retrieve children siblings
 c0s,c1s,c2s,c3s = children.map do |c|
-  c.walk(Parent,'parent',Child,'child').delete_if{|s| s.eql?(c)}
+  c.query(Parent,'parent',Child,'child').delete_if{|s| s.eql?(c)}
 end
 puts c3s[0].name                            # => 'c2'
 
 # who is c3's step-sibling's other parent?
-c3sp = c3.walk(Parent,'parent',Child,'child',Parent,'parent')
+c3sp = c3.query(Parent,'parent',Child,'child',Parent,'parent')
 c3p.each {|p| c3sp.delete_if{|sp| p.eql?(sp)}}
 puts c3sp[0].name                           # => "p1"
 
 # add sibling links
 children.each do |c|
-  siblings = c.walk(Parent,'parent',Child,'child').delete_if{|s| s.eql?(c)}
+  siblings = c.query(Parent,'parent',Child,'child').delete_if{|s| s.eql?(c)}
   siblings.each {|s| c.link(s,'sibling')}
   c.update
 end
-puts c1.walk(Child,'sibling').size          # => 2  
+puts c1.query(Child,'sibling').size          # => 2  
   
 # some folks are odd, and others are normal
 parent_children.keys.each do |p|
   parent = Parent.get(p)
-  p_children = parent.walk(Child,'child')
+  p_children = parent.query(Child,'child')
   p_children.each do |child| 
     child.link(parent, p[1].to_i.odd? ? 'odd' : 'normal')
     child.update
@@ -109,7 +109,7 @@ children.each {|c| c.refresh}
 
 # do any odd parents have normal children?
 op = parents.inject([]) do |build,parent|
-  build << parent.walk(Child,'normal',Parent,'odd')
+  build << parent.query(Child,'normal',Parent,'odd')
   build.flatten.uniq
 end
 puts op[0].name                            # => 'p1'

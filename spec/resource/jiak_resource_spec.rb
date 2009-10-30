@@ -23,7 +23,7 @@ describe "JiakResource default" do
       Rsrc.should respond_to(:point_of_view,:pov,:point_of_view?,:pov?)
       Rsrc.should respond_to(:post,:put,:get,:delete)
       Rsrc.should respond_to(:refresh,:update,:exist?)
-      Rsrc.should respond_to(:link,:bi_link,:walk)
+      Rsrc.should respond_to(:link,:bi_link,:query,:walk)
       Rsrc.should respond_to(:new,:copy)
       Rsrc.should respond_to(:auto_post,:auto_update,:auto_post?,:auto_update?)
 
@@ -78,7 +78,7 @@ describe "JiakResource default" do
       @rsrc.should respond_to(:post,:put,:delete)
       @rsrc.should respond_to(:update,:push,:refresh,:pull)
       @rsrc.should respond_to(:local?)
-      @rsrc.should respond_to(:link,:bi_link,:walk)
+      @rsrc.should respond_to(:link,:bi_link,:query,:walk)
       @rsrc.should respond_to(:eql?,:==)
 
       @rsrc.should respond_to(:f1,:f2)
@@ -194,7 +194,7 @@ describe "JiakResource class auto-post" do
       p.local?.should be false
       p.age.should be 12
       Person.get(@name).age.should be 12
-      p.walk(Person,'link')[0].should eql q
+      p.query(Person,'link')[0].should eql q
       
       p.age = 10
       Person.get(@name).age.should be 10
@@ -264,13 +264,13 @@ describe "JiakResource class auto-update" do
     @p.name = @pname.upcase
     Dog.get(@pname).name.should eql @pname.upcase
 
-    @p.walk(Dog,'pup').size.should eql 0
+    @p.query(Dog,'pup').size.should eql 0
     @p.link(@c1,'pup')
-    @p.walk(Dog,'pup').size.should eql 1
+    @p.query(Dog,'pup').size.should eql 1
 
-    [@c1,@c2].each {|c| c.walk(Dog,'sibling').size.should eql 0}
+    [@c1,@c2].each {|c| c.query(Dog,'sibling').size.should eql 0}
     @c1.bi_link(@c2,'sibling')
-    [@c1,@c2].each {|c| c.walk(Dog,'sibling').size.should eql 1}
+    [@c1,@c2].each {|c| c.query(Dog,'sibling').size.should eql 1}
   end
 
   it "should allow instance level override of class level auto-update true" do
@@ -284,11 +284,11 @@ describe "JiakResource class auto-update" do
     @p.update
     Dog.get(@pname).age.should eql 12
     
-    [@c1,@c2].each {|c| c.walk(Dog,'sibling').size.should eql 0}
+    [@c1,@c2].each {|c| c.query(Dog,'sibling').size.should eql 0}
     @c2.auto_update = false
     @c1.bi_link(@c2,'sibling')
-    @c1.walk(Dog,'sibling').size.should eql 1
-    @c2.walk(Dog,'sibling').size.should eql 0
+    @c1.query(Dog,'sibling').size.should eql 1
+    @c2.query(Dog,'sibling').size.should eql 0
   end
 
   it "should allow instance level override of class level auto-update false" do
@@ -300,11 +300,11 @@ describe "JiakResource class auto-update" do
     @p.age = 12
     Dog.get(@pname).age.should eql 12
     
-    [@c1,@c2].each {|c| c.walk(Dog,'sibling').size.should eql 0}
+    [@c1,@c2].each {|c| c.query(Dog,'sibling').size.should eql 0}
     @c2.auto_update = true
     @c1.bi_link(@c2,'sibling')
-    @c1.walk(Dog,'sibling').size.should eql 0
-    @c2.walk(Dog,'sibling').size.should eql 1
+    @c1.query(Dog,'sibling').size.should eql 0
+    @c2.query(Dog,'sibling').size.should eql 1
   end
 
   it "should allow instance level deferring back to class level" do
@@ -362,26 +362,26 @@ describe "JiakResource simple" do
     @p.age.should eql 11
 
     [@c1,@c2].each {|c| @p.link(c,'pup')}
-    pups = @p.walk(Dog,'pup')
+    pups = @p.query(Dog,'pup')
     pups.size.should eql 2
     same_elements = pups.map {|c| c.name}.same_elements?([@c1.name,@c2.name])
     same_elements.should be true
 
     @c1.bi_link(@c2,'sibling')
-    [@c1,@c2].each {|c| c.walk(Dog,'sibling').size.should eql 1}
-    @c1.walk(Dog,'sibling')[0].should eql @c2
-    @c2.walk(Dog,'sibling')[0].should eql @c1
+    [@c1,@c2].each {|c| c.query(Dog,'sibling').size.should eql 1}
+    @c1.query(Dog,'sibling')[0].should eql @c2
+    @c2.query(Dog,'sibling')[0].should eql @c1
 
     @c1.remove_link(@c2,'sibling')
-    @c1.walk(Dog,'sibling').size.should eql 0
-    @c2.walk(Dog,'sibling').size.should eql 1
+    @c1.query(Dog,'sibling').size.should eql 0
+    @c2.query(Dog,'sibling').size.should eql 1
 
     [@c1,@c2].each {|c| c.link(@p,'parent')}
 
-    @c1.walk(Dog).size.should eql 1
-    @c2.walk(Dog).size.should eql 2
-    @c2.walk(Dog,'sibling').size.should eql 1
-    @c2.walk(Dog,'parent').size.should eql 1
+    @c1.query(Dog).size.should eql 1
+    @c2.query(Dog).size.should eql 2
+    @c2.query(Dog,'sibling').size.should eql 1
+    @c2.query(Dog,'parent').size.should eql 1
   end
 end
 
@@ -437,7 +437,7 @@ describe "JiakResource complex" do
 
     # siblings
     c0s,c1s,c2s,c3s,c4s = children.map do |c|
-      c.walk(Parent,'parent',Child,'child').delete_if{|s| s.eql?(c)}
+      c.query(Parent,'parent',Child,'child').delete_if{|s| s.eql?(c)}
     end
     c0s.size.should eql 2
     c1s.size.should eql 2
@@ -451,21 +451,21 @@ describe "JiakResource complex" do
     same_elements.should be true
 
     # c3's step-sibling's other parent?
-    c3sp = c3.walk(Parent,'parent',Child,'child',Parent,'parent')
-    c3.walk(Parent,'parent').each {|p| c3sp.delete_if{|sp| p.eql?(sp)}}
+    c3sp = c3.query(Parent,'parent',Child,'child',Parent,'parent')
+    c3.query(Parent,'parent').each {|p| c3sp.delete_if{|sp| p.eql?(sp)}}
     c3sp[0].name.should eql parents[1].name
 
     # add sibling links
     Child.auto_update true
     children.each do |c|
-      siblings = c.walk(Parent,'parent',Child,'child').delete_if{|s| s.eql?(c)}
+      siblings = c.query(Parent,'parent',Child,'child').delete_if{|s| s.eql?(c)}
       siblings.each {|s| c.link(s,'sibling')}
     end
-    c0.walk(Child,'sibling').size.should eql 2
-    c1.walk(Child,'sibling').size.should eql 2
-    c2.walk(Child,'sibling').size.should eql 3
-    c3.walk(Child,'sibling').size.should eql 1
-    c4.walk(Child,'sibling').size.should eql 0
+    c0.query(Child,'sibling').size.should eql 2
+    c1.query(Child,'sibling').size.should eql 2
+    c2.query(Child,'sibling').size.should eql 3
+    c3.query(Child,'sibling').size.should eql 1
+    c4.query(Child,'sibling').size.should eql 0
 
     parents.each {|p| p.delete}
     children.each {|c| c.delete}
