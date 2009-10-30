@@ -417,7 +417,7 @@ describe "JiakResource complex" do
 
     # store data and relationships
     parent_children.each do |pname,cnames|
-      p = Parent.new(:name => pname)
+      p = Parent.new(:name => pname).post
       cnames.each do |cname|
         begin
           c = Child.get(cname)
@@ -428,7 +428,7 @@ describe "JiakResource complex" do
         c.put
         p.link(c,'child')
       end
-      p.post
+      p.update
     end
 
     parents  = parent_children.keys.map {|p| Parent.get(p)}
