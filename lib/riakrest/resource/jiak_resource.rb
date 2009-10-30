@@ -344,7 +344,23 @@ module RiakRest
       #   JiakResource.link(from,to,tag)  -> JiakResource
       #
       # Link from a resource to another resource by tag.
+      #
+      # Note the resource being linked to cannot be a local object since the
+      # created link needs to include the Jiak server key. Even if a local
+      # object has a local key intended for use as the Jiak server key, there
+      # is no guarentee that key will not already be in use on the Jiak
+      # server. Only after a resource is stored on the Jiak server is the key
+      # assignment guarenteed.
+      #
+      # This restriction is not necessary for the resource being linked from,
+      # since it's Jiak server key is not in play. This does allow for
+      # establishing links to existing Jiak resources locally and storing with
+      # the initial store of the local Jiak resource.
       def link(from,to,tag)
+        if(to.local?)
+          raise JiakResourceException, "Can't link to a local resource"
+        end
+
         link = JiakLink.new(to.jiak.obj.bucket, to.jiak.obj.key, tag)
         unless from.jiak.obj.links.include?(link)
           from.jiak.obj.links << link
@@ -613,7 +629,9 @@ module RiakRest
     # :call-seq:
     #   link(resource,tag) -> JiakResource
     #
-    # Link to the resource by tag.
+    # Link to the resource by tag. Note the resource being linked to cannot be
+    # local. The object creating this link can be local. See JiakResource#link
+    # for a discussion.
     def link(resource,tag)
       self.class.link(self,resource,tag)
     end

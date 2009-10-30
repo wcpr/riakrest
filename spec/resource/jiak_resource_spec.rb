@@ -179,6 +179,9 @@ describe "JiakResource class auto-post" do
       p.local?.should be true
 
       q = Person.new(:name => 'q', :age => 20)
+
+      link_to_local = lambda {p.link(q,'link')}
+      link_to_local.should raise_error(JiakResourceException,/local/)
       q.post
 
       q.local?.should be false
