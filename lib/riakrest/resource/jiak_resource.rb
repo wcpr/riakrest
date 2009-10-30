@@ -87,9 +87,10 @@ module RiakRest
         klass.schema.allowed_fields.each do |field|
           define_method("#{field}=") do |val|
             @jiak.obj.data.send("#{field}=",val)
-            if(auto_update? ||
-               ((auto_update? != false) && self.class.auto_update?))
-              self.class.put(self)
+            if(!local? &&
+               (auto_update? ||
+               ((auto_update? != false) && self.class.auto_update?)))
+              self.class.update(self)
             end
           end
           define_method("#{field}") do

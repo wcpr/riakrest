@@ -146,10 +146,9 @@ describe "JiakResource default class-level auto-post/auto-update" do
 
     p.delete
   end
-
 end
 
-describe "JiakResource class-level auto-post true" do
+describe "JiakResource class auto-post" do
   PersonData = JiakDataHash.create(:name,:age)
   PersonData.keygen :name
   class Person
@@ -157,29 +156,64 @@ describe "JiakResource class-level auto-post true" do
     server       'http://localhost:8002/jiak'
     group        'people'
     data_class   PersonData
-    auto_post    true
   end
 
-  it "should auto-post a new instance" do
-    Person.auto_post?.should be true
-    
-    name = 'p auto-post'
-    Person.exist?(name).should be false
-    p = Person.new(:name => name, :age => 10)
-    Person.get(name).name.should eql name
-    p.delete
+  before do
+    @name = 'p auto-post'
   end
 
-  it "should reject auto-post of a new instance with an existing key" do
-    name = 'person'
-    p = Person.new(:name => name, :age => 10)
-    duplicate_key = lambda {Person.new(:name => p.name, :age => 0)}
-    duplicate_key.should raise_error(JiakResourceException,/exist/)
-    p.delete
+  describe "false" do
+    before do
+      Person.auto_post false
+    end
+
+    it "should not auto-post, or auto-update a local object" do
+      Person.auto_post?.should be false
+
+      Person.exist?(@name).should be false
+
+      Person.auto_update true
+      p = Person.new(:name => @name, :age => 10)
+      p.local?.should be true
+      p.age = 12
+      p.local?.should be true
+
+      p.post
+      p.local?.should be false
+      p.age.should be 12
+      Person.get(@name).age.should be 12
+      
+      p.age = 10
+      Person.get(@name).age.should be 10
+
+      p.delete
+    end
+  end
+
+  describe "true" do
+    before do
+      Person.auto_post true
+    end
+
+    it "should auto-post a new instance" do
+      Person.auto_post?.should be true
+      
+      Person.exist?(@name).should be false
+      p = Person.new(:name => @name, :age => 10)
+      Person.get(@name).name.should eql @name
+      p.delete
+    end
+
+    it "should reject auto-post of a new instance with an existing key" do
+      p = Person.new(:name => @name, :age => 10)
+      duplicate_key = lambda {Person.new(:name => p.name, :age => 0)}
+      duplicate_key.should raise_error(JiakResourceException,/exist/)
+      p.delete
+    end
   end
 end
 
-describe "JiakResource auto-update" do
+describe "JiakResource class auto-update" do
   DogData = JiakDataHash.create(:name,:age)
   DogData.keygen :name
   class Dog
