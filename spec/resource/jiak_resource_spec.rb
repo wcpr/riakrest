@@ -178,15 +178,26 @@ describe "JiakResource class auto-post" do
       p.age = 12
       p.local?.should be true
 
+      q = Person.new(:name => 'q', :age => 20)
+      q.post
+
+      q.local?.should be false
+
+      p.link(q,'link')
+      p.local?.should be true
+      p.jiak.obj.links.size.should be 1
+
       p.post
       p.local?.should be false
       p.age.should be 12
       Person.get(@name).age.should be 12
+      p.walk(Person,'link')[0].should eql q
       
       p.age = 10
       Person.get(@name).age.should be 10
 
       p.delete
+      q.delete
     end
   end
 

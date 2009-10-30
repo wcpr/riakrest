@@ -87,11 +87,8 @@ module RiakRest
         klass.schema.allowed_fields.each do |field|
           define_method("#{field}=") do |val|
             @jiak.obj.data.send("#{field}=",val)
-            if(!local? &&
-               (auto_update? ||
-               ((auto_update? != false) && self.class.auto_update?)))
-              self.class.update(self)
-            end
+            self.class.do_auto_update(self)
+            val
           end
           define_method("#{field}") do
             @jiak.obj.data.send("#{field}")
@@ -351,10 +348,7 @@ module RiakRest
         link = JiakLink.new(to.jiak.obj.bucket, to.jiak.obj.key, tag)
         unless from.jiak.obj.links.include?(link)
           from.jiak.obj.links << link
-          if(from.auto_update? ||
-             ((from.auto_update? != false) && from.class.auto_update?))
-            put(from)
-          end
+          do_auto_update(from)
         end
         from
       end
@@ -462,6 +456,21 @@ module RiakRest
           data_class  opts[:data_class]
           auto_post   opts[:auto_post]
           auto_update opts[:auto_update]
+        end
+      end
+
+      # :call-seq:
+      #   JiakResource.do_auto_update(resource)  -> JiakResource or nil
+      #
+      # Determine if an auto update should be done on the resource and perform
+      # an update if so.
+      #
+      # Public method as a by-product of implementation.
+      def do_auto_update(rsrc)  # :no-doc:
+        if(!rsrc.local? &&
+           (rsrc.auto_update? ||
+            ((rsrc.auto_update? != false) && rsrc.class.auto_update?)))
+          update(rsrc)
         end
       end
 
