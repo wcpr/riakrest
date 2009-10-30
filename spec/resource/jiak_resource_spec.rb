@@ -2,7 +2,7 @@ require File.dirname(__FILE__) + '/../spec_helper.rb'
 
 describe "JiakResource default" do
   F1F2 = JiakDataHash.create(:f1,:f2)
-  class Rsrc
+  class Rsrc           # :nodoc:
     include JiakResource
     server       'http://localhost:8002/jiak/'
     group        'group'
@@ -101,7 +101,7 @@ end
 describe "JiakResource default class-level auto-post/auto-update" do
   PersonData = JiakDataHash.create(:name,:age)
   PersonData.keygen :name
-  class Person
+  class Person           # :nodoc:
     include JiakResource
     server       'http://localhost:8002/jiak'
     group        'people'
@@ -151,7 +151,7 @@ end
 describe "JiakResource class auto-post" do
   PersonData = JiakDataHash.create(:name,:age)
   PersonData.keygen :name
-  class Person
+  class Person           # :nodoc:
     include JiakResource
     server       'http://localhost:8002/jiak'
     group        'people'
@@ -230,7 +230,7 @@ end
 describe "JiakResource class auto-update" do
   DogData = JiakDataHash.create(:name,:age)
   DogData.keygen :name
-  class Dog
+  class Dog           # :nodoc:
     include JiakResource
     server       'http://localhost:8002/jiak'
     group        'dogs'
@@ -326,7 +326,7 @@ end
 describe "JiakResource simple" do
   DogData = JiakDataHash.create(:name,:age)
   DogData.keygen :name
-  class Dog
+  class Dog           # :nodoc:
     include JiakResource
     server       'http://localhost:8002/jiak'
     group        'dogs'
@@ -389,7 +389,7 @@ describe "JiakResource complex" do
   PersonData = JiakDataHash.create(:name)
   PersonData.keygen :name
 
-  class Parent
+  class Parent           # :nodoc:
     include JiakResource
     
     server      'http://localhost:8002/jiak'

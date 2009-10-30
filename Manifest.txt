@@ -1,7 +1,6 @@
 History.txt
 Manifest.txt
-PostInstall.txt
-README.rdoc
+README.txt
 Rakefile
 examples/auto_update_data.rb
 examples/auto_update_links.rb
@@ -22,10 +21,6 @@ lib/riakrest/core/query_link.rb
 lib/riakrest/data/jiak_data_hash.rb
 lib/riakrest/resource/jiak_resource.rb
 lib/riakrest/version.rb
-riakrest.gemspec
-script/console
-script/destroy
-script/generate
 spec/core/exceptions_spec.rb
 spec/core/jiak_bucket_spec.rb
 spec/core/jiak_client_spec.rb
@@ -38,4 +33,3 @@ spec/resource/jiak_resource_spec.rb
 spec/riakrest_spec.rb
 spec/spec.opts
 spec/spec_helper.rb
-tasks/rspec.rake

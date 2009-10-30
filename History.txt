@@ -1,4 +1,7 @@
+=== 0.0.2 2009-10-30
+
+* Clean-up:
+
 === 0.0.1 2009-10-20
 
 * Initial release:
-  * Still pre-alpha

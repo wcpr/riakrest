@@ -1,2 +1,0 @@
-
-For more information on riakrest, see http://gemcutter.org/dingosky/riakrest
