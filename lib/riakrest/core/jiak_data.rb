@@ -93,7 +93,13 @@ module RiakRest
       # Fields allowed in Jiak interactions. Returns an array of the allowed
       # fields.
       #
+      # The field <code>jiak</code> is reserved for RiakRest.
+      #
+      # Raise JiakDataException if the fields include <code>jiak</code>.
       def allowed(*fields)
+        if(fields.include?(:jiak) || fields.include?('jiak'))
+          raise JiakDataException, "jiak field name reserved for RiakRest"
+        end
         arr_fields = create_array(fields)
         fields.each {|field| attr_accessor field}
         @schema = JiakSchema.new(arr_fields)
