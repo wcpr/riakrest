@@ -9,6 +9,7 @@ TAGS
 ## gem
 pkg/*
 rdoc/*
+*.gemspec
 
 ##
 doc/*
