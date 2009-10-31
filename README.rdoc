@@ -1,4 +1,4 @@
-= riakrest
+= RiakRest
 
 http://github.com/wcpr/riakrest
 
@@ -15,9 +15,6 @@ key-value store, a flexible map/reduce engine, and a friendly HTTP/JSON query
 interface to provide a database ideally suited for Web applications. RiakRest
 interacts with the HTTP/JSON query interface, which is called Jiak.
 
-== FEATURES/PROBLEMS:
-
-
 == SYNOPSIS:
 
 RiakRest provides structured, RESTful interaction with the HTTP/JSON interface
@@ -28,16 +25,18 @@ of the Core Client that gives a true RESTful feel.
 
 == REQUIREMENTS:
 
-RestClient is used for REST server interaction.<br/>
-JSON is used for data exchange.<br/>
-Riak[http://riak.basho.com] provides the HTTP/JSON Jiak interface and data store.
+RestClient is used for REST server interaction
+
+JSON is used for data exchange.
+
+Riak[http://riak.basho.com] provides the HTTP/JSON Jiak interface and data
+store.
 
 == INSTALL:
 
 sudo gem install riakrest
 
 == EXAMPLE
-<code>
   require 'riakrest'
   include RiakRest
 
@@ -70,7 +69,6 @@ sudo gem install riakrest
 
   remy.delete
   callie.delete
-</code>
 
 Go forth and Riak!
 
