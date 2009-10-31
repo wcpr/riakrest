@@ -89,6 +89,7 @@ module RiakRest
 
       # :call-seq:
       #   allowed :f1, ..., :fn   -> array
+      #   allowed [:f1, ..., :fn]   -> array
       #
       # Fields allowed in Jiak interactions. Returns an array of the allowed
       # fields.
@@ -100,14 +101,15 @@ module RiakRest
         if(fields.include?(:jiak) || fields.include?('jiak'))
           raise JiakDataException, "jiak field name reserved for RiakRest"
         end
-        arr_fields = create_array(fields)
-        fields.each {|field| attr_accessor field}
+        arr_fields = transform_fields(*fields)
+        arr_fields.each {|field| attr_accessor field}
         @schema = JiakSchema.new(arr_fields)
         arr_fields
       end
 
       # :call-seq:
       #   required :f1, ..., :fn  -> array
+      #   required [:f1, ..., :fn]   -> array
       #
       # Fields required during in Jiak interactions. Returns an array of the
       # required fields.
@@ -118,6 +120,7 @@ module RiakRest
 
       # :call-seq:
       #   readable :f1, ..., :fn  -> array
+      #   readable [:f1, ..., :fn]  -> array
       #
       # Fields returned by Jiak on retrieval. Returns an array of the fields in
       # the read mask.
@@ -128,6 +131,7 @@ module RiakRest
 
       # :call-seq:
       #   writable :f1, ..., :fn  -> arry
+      #   writable [:f1, ..., :fn]  -> arry
       #
       # Fields that can be written during Jiak interaction. Returns an array of
       # the fields in the write mask.
@@ -138,6 +142,7 @@ module RiakRest
 
       # :call-seq:
       #   readwrite :f1, ..., :fn  -> array
+      #   readwrite [:f1, ..., :fn]  -> array
       #
       # Set the read and write masks to the same fields. Returns an array of
       # the fields in the masks.
@@ -147,7 +152,7 @@ module RiakRest
       end
 
       def set_fields(which,*fields)
-        arr_fields = create_array(fields)
+        arr_fields = transform_fields(*fields)
         check_allowed(arr_fields)
         @schema.send("#{which}=",arr_fields)
         arr_fields
@@ -187,21 +192,16 @@ module RiakRest
       #    end
       # </code>
       #
-      # Raise JiakDataException if not explicitly defined by user-defined data class.
+      # Raise JiakDataException if not explicitly defined by user-data class.
       def jiak_create(json)
         raise JiakDataException, "#{self} must define jiak_create"
       end
 
-      def create_array(*fields)
-        if(fields.size == 1 && fields[0].is_a?(Array))
-          array = fields[0]
-        else
-          array = fields
-        end
-        array.map {|field| field}
-        array
+      def transform_fields(*fields)
+        fields = fields[0] if(fields[0].is_a?(Array))
+        fields.map {|f| f.to_sym}
       end
-      private :create_array
+      private :transform_fields
 
       def check_allowed(fields)
         allowed_fields = @schema.allowed_fields
