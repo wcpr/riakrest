@@ -86,12 +86,19 @@ describe "JiakResource default" do
     
     it "should have default settings" do
       @rsrc.jiak.should be_a Struct
-      @rsrc.jiak.should respond_to(:obj,:auto_update)
+      @rsrc.jiak.should respond_to(:object)
+      @rsrc.jiak.should respond_to(:bucket,:key,:data,:links)
+      @rsrc.jiak.should respond_to(:auto_update)
+
+      @rsrc.jiak.bucket.should == @rsrc.jiak.object.bucket
+      @rsrc.jiak.key.should    == @rsrc.jiak.object.key
+      @rsrc.jiak.data.should   == @rsrc.jiak.object.data
+      @rsrc.jiak.links.should  == @rsrc.jiak.object.links
       
-      @rsrc.jiak.obj.should be_a JiakObject
-      @rsrc.jiak.obj.bucket.should be_a JiakBucket
-      @rsrc.jiak.obj.bucket.name.should eql @group
-      @rsrc.jiak.obj.bucket.data_class.should == F1F2
+      @rsrc.jiak.object.should be_a JiakObject
+      @rsrc.jiak.object.bucket.should be_a JiakBucket
+      @rsrc.jiak.object.bucket.name.should eql @group
+      @rsrc.jiak.object.bucket.data_class.should == F1F2
       
       @rsrc.jiak.auto_update.should be_nil
     end
@@ -188,7 +195,7 @@ describe "JiakResource class auto-post" do
 
       p.link(q,'link')
       p.local?.should be true
-      p.jiak.obj.links.size.should be 1
+      p.jiak.object.links.size.should be 1
 
       p.post
       p.local?.should be false
