@@ -1,22 +1,17 @@
+## OS X
 .DS_Store
-doc/*
-log/*
-tmp/*
+
+## emacs
 TAGS
 *~
 .#*
-schema/schema.rb
-schema/*_structure.sql
-schema/*.sqlite3
-schema/*.sqlite
-schema/*.db
-*.sqlite
-*.sqlite3
-*.db
-src/*
-.hgignore
-.hg/*
-.svn/*
-gems/gems/*
-gems/specifications/*
-merb_profile_results
+
+## gem
+pkg/*
+rdoc/*
+
+##
+doc/*
+log/*
+tmp/*
+
