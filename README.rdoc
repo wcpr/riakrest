@@ -70,8 +70,8 @@ sudo gem install riakrest
   remy.delete
   callie.delete
 
-Go forth and Riak!
-
 == LICENSE:
 
 Copyright (c) 2009 Paul Rogers, DingoSky. See LICENCE for details.
+
+===Go forth and Riak!
