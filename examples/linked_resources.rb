@@ -10,8 +10,6 @@ class Parent
   server      'http://localhost:8002/jiak'
   group       'parents'
   data_class  PersonData
-  auto_post   true
-  auto_update true
 end
 Child = Parent.copy(:group => 'children')
 
@@ -32,10 +30,6 @@ child_parents = parent_children.inject({}) do |build, (p,cs)|
 end
 
 # store data and relationships
-Parent.auto_post   false
-Parent.auto_update false
-Child.auto_post    false
-Child.auto_update  false
 parent_children.each do |pname,cnames|
   p = Parent.new(:name => pname).post
   cnames.each do |cname|
@@ -50,10 +44,6 @@ parent_children.each do |pname,cnames|
   end
   p.update
 end
-Parent.auto_post   true
-Parent.auto_update true
-Child.auto_post    true
-Child.auto_update  true
 
 # retrieve parents
 parents = parent_children.keys.map {|p| Parent.get(p)}
@@ -83,6 +73,10 @@ puts c3s[0].name                            # => 'c2'
 c3sp = c3.query(Parent,'parent',Child,'child',Parent,'parent')
 c3p.each {|p| c3sp.delete_if{|sp| p.eql?(sp)}}
 puts c3sp[0].name                           # => "p1"
+
+# turn on auto-update at class level
+Parent.auto_update true
+Child.auto_update  true
 
 # add sibling links
 children.each do |c|
@@ -114,5 +108,6 @@ op = parents.inject([]) do |build,parent|
 end
 puts op[0].name                            # => 'p1'
 
+# clean-up by deleting everybody
 parents.each  {|p| p.delete}
 children.each {|c| c.delete}
