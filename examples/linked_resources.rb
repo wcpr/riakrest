@@ -1,4 +1,4 @@
-require 'lib/riakrest'
+require 'riakrest'
 include RiakRest
 
 PersonData = JiakDataHash.create(:name)

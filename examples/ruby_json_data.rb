@@ -1,4 +1,4 @@
-require 'lib/riakrest'
+require 'riakrest'
 include RiakRest
 
 # CxINC Example doesn't do anything useful yet
