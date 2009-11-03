@@ -1,7 +1,27 @@
+=== 0.0.3 2009-11-03
+
+* Mods:
+   - Switched to jeweler for managing gem
+   - Allow passing an array for specifying schema fields/masks
+   - Added convenience accessors to rsrc.jiak
+   - Allow setting proxy on core client
+
+  Clean-up:
+   - More examples futzing.
+
 === 0.0.2 2009-10-30
 
+* Mods:
+   - Fixed corner case for auto_post false / auto_update true.
+   - Explicitly reserve jiak field in user data classes.
+   - Changed walk to query. Kept walk as an alias.
+
 * Clean-up:
+   - DRY'd some code
+   - Examples
+
 
 === 0.0.1 2009-10-20
 
 * Initial release:
+    - To github, anyway. git log shows the prior activity.
