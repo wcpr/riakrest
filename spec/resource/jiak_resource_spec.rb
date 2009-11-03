@@ -8,6 +8,7 @@ describe "JiakResource default" do
     group        'group'
     data_class   F1F2
   end
+  Rsrc.pov
 
   before do
     @server = 'http://localhost:8002/jiak/'
@@ -114,6 +115,7 @@ describe "JiakResource default class-level auto-post/auto-update" do
     group        'people'
     data_class   PersonData
   end
+  Person.pov
 
   before do
     @name = 'p default'
@@ -164,6 +166,7 @@ describe "JiakResource class auto-post" do
     group        'people'
     data_class   PersonData
   end
+  Person.pov
 
   before do
     @name = 'p auto-post'
@@ -245,6 +248,7 @@ describe "JiakResource class auto-update" do
     auto_post    true
     auto_update  true
   end
+  Dog.pov
 
   before do
     @pname = 'p auto-update'
@@ -341,6 +345,7 @@ describe "JiakResource simple" do
     auto_post    true
     auto_update  true
   end
+  Dog.pov
 
   before do
     @pname = 'p'
@@ -403,6 +408,8 @@ describe "JiakResource complex" do
     group       'parents'
     data_class  PersonData
   end
+  Parent.pov
+
   Child = Parent.copy(:group => 'children')
 
   it "should do multi-step relationships" do
