@@ -41,3 +41,4 @@ puts addie.name                 # => "adelaide"
 puts addie.breed                # => "Heeler"
 puts addie.weight               # => 47
 
+addie.delete
