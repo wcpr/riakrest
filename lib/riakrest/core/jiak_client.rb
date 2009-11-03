@@ -19,20 +19,48 @@ module RiakRest
     # :startdoc:
 
     # :call-seq:
-    #   JiakClient.new(uri)  -> uri
+    #   JiakClient.new(uri,opts={})  -> uri
     #
     # Create a new client for Riak RESTful (Jiak) interaction with the server at
-    # the specified URI.
+    # the specified URI. Go through a proxy if proxy option specified.
     #
-    # Raise JiakClientException if the server URI is not a string.
+    # Valid options:
+    #  <code>:proxy</code> Proxy server URI
     #
-    def initialize(uri='http://127.0.0.1:8002/jiak/')
+    # Raise JiakClientException if server or proxy (if exists) URI are not strings.
+    #
+    def initialize(uri='http://127.0.0.1:8002/jiak/', opts={})
+      server(uri)
+      proxy(opts[:proxy])   if(opts[:proxy])
+    end
+
+    # :call-seq:
+    #   server(uri)  -> string
+    #
+    # Set the Jiak server URI for the client.
+    #
+    # Raise JiakClientException if server URI is not string.
+    def server(uri)
       unless uri.is_a?(String)
-        raise JiakClientException, "Jiak server URI shoud be a String."
+        raise JiakClientException, "Jiak server URI should be a string."
       end
       @uri = uri
       @uri += '/' unless @uri.end_with?('/')
       @uri
+    end
+
+    # :call-seq:
+    #   proxy(uri)  -> string
+    #
+    # Set Jiak interaction to go through a proxy.
+    #
+    # Raise JiakClientException if proxy URI is not string.
+    def proxy(uri)
+      unless uri.is_a?(String)
+        raise JiakClientException, "Proxy URI should be a string."
+      end
+      @proxy = uri
+      RestClient.proxy = uri
     end
 
     # :call-seq:

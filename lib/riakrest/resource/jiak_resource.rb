@@ -25,12 +25,16 @@ module RiakRest
     module ClassMethods
 
       # :call-seq:
-      #   JiakServer.server(uri)
+      #   JiakServer.server(uri,opts={})
       #
-      # Set the URI for Jiak server interaction.
-      def server(uri)
+      # Set the URI for Jiak server interaction. Go through a proxy if proxy
+      # option specified.
+      #
+      # Valid options:
+      #  <code>:proxy</code> Proxy server URI.
+      def server(uri,opts={})
         jiak.uri = uri
-        jiak.server = JiakClient.new(uri)
+        jiak.server = JiakClient.new(uri,opts)
         uri
       end
 
