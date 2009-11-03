@@ -4,11 +4,11 @@ describe "JiakResource default" do
   F1F2 = JiakDataHash.create(:f1,:f2)
   class Rsrc           # :nodoc:
     include JiakResource
-    server       'http://localhost:8002/jiak/'
-    group        'group'
-    data_class   F1F2
+    server        'http://localhost:8002/jiak/'
+    group         'group'
+    data_class    F1F2
+    point_of_view
   end
-  Rsrc.pov
 
   before do
     @server = 'http://localhost:8002/jiak/'
@@ -111,11 +111,11 @@ describe "JiakResource default class-level auto-post/auto-update" do
   PersonData.keygen :name
   class Person           # :nodoc:
     include JiakResource
-    server       'http://localhost:8002/jiak'
-    group        'people'
-    data_class   PersonData
+    server         'http://localhost:8002/jiak'
+    group          'people'
+    data_class     PersonData
+    point_of_view
   end
-  Person.pov
 
   before do
     @name = 'p default'
@@ -162,11 +162,11 @@ describe "JiakResource class auto-post" do
   PersonData.keygen :name
   class Person           # :nodoc:
     include JiakResource
-    server       'http://localhost:8002/jiak'
-    group        'people'
-    data_class   PersonData
+    server         'http://localhost:8002/jiak'
+    group          'people'
+    data_class     PersonData
+    point_of_view
   end
-  Person.pov
 
   before do
     @name = 'p auto-post'
@@ -242,13 +242,13 @@ describe "JiakResource class auto-update" do
   DogData.keygen :name
   class Dog           # :nodoc:
     include JiakResource
-    server       'http://localhost:8002/jiak'
-    group        'dogs'
-    data_class   DogData
-    auto_post    true
-    auto_update  true
+    server         'http://localhost:8002/jiak'
+    group          'dogs'
+    data_class     DogData
+    point_of_view
+    auto_post      true
+    auto_update    true
   end
-  Dog.pov
 
   before do
     @pname = 'p auto-update'
@@ -339,13 +339,13 @@ describe "JiakResource simple" do
   DogData.keygen :name
   class Dog           # :nodoc:
     include JiakResource
-    server       'http://localhost:8002/jiak'
-    group        'dogs'
-    data_class   DogData
-    auto_post    true
-    auto_update  true
+    server         'http://localhost:8002/jiak'
+    group          'dogs'
+    data_class     DogData
+    point_of_view
+    auto_post      true
+    auto_update    true
   end
-  Dog.pov
 
   before do
     @pname = 'p'
@@ -404,11 +404,11 @@ describe "JiakResource complex" do
   class Parent           # :nodoc:
     include JiakResource
     
-    server      'http://localhost:8002/jiak'
-    group       'parents'
-    data_class  PersonData
+    server        'http://localhost:8002/jiak'
+    group         'parents'
+    data_class    PersonData
+    point_of_view
   end
-  Parent.pov
 
   Child = Parent.copy(:group => 'children')
 
