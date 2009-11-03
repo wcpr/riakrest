@@ -1,25 +1,25 @@
 # See README.rdoc for the RiakRest license.
-
 begin
   require 'json'
 rescue LoadError
   raise "RiakRest requires json for REST JSON messaging."
 end
+
 begin
   require 'restclient'
 rescue LoadError
   raise <<EOM
 RiakRest requires the restclient gem for making REST calls.
   gem install rest-client
-
 EOM
 end
 
 require 'uri'
 
-$:.unshift(File.dirname(__FILE__)) unless
-  $:.include?(File.dirname(__FILE__)) || 
-  $:.include?(File.expand_path(File.dirname(__FILE__)))
+dirname = File.dirname(__FILE__)
+$:.unshift(dirname) unless
+  $:.include?(dirname) || 
+  $:.include?(File.expand_path(dirname))
 
 # RiakRest provides structured, RESTful interaction with a Riak document
 # store. In Riak parlance, this JSON data exchange is called Jiak. RiakRest
@@ -134,9 +134,9 @@ $:.unshift(File.dirname(__FILE__)) unless
 # </code>
 # Ah, that feels better. Go forth and Riak!
 module RiakRest
+  version_file = File.join(File.dirname(__FILE__),"..","VERSION")
+  VERSION = IO.read(version_file).chomp
 end
-
-require 'riakrest/version'
 
 require 'riakrest/core/exceptions'
 require 'riakrest/core/jiak_bucket'
@@ -148,7 +148,6 @@ require 'riakrest/core/jiak_schema'
 require 'riakrest/core/query_link'
 
 require 'riakrest/data/jiak_data_hash'
-
 require 'riakrest/resource/jiak_resource'
 
 # Extend Array with convenience methods for comparing array contents.
