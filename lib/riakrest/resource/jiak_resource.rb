@@ -633,7 +633,7 @@ module RiakRest
     # post/put to the Jiak server. This test is used in the guards for class
     # and instance level post/update methods.
     def local?
-      jiak.object.riak.nil?
+      jiak.object.local?
     end
 
     # :call-seq:

@@ -127,9 +127,20 @@ module RiakRest
     # :call-seq:
     #   jiak_object.riak = riak
     #
-    # Set the Riak context for a JiakObject.
+    # Set the Riak context for a JiakObject. This is a public method due to
+    # implementation needs, but in general should not be called by library
+    # clients.
     def riak=(riak)
       @riak = check_riak(riak)
+    end
+
+    # :call-seq:
+    #   local? -> true or false
+    #
+    # <code>true</code> if a JiakObject is local only, i.e., has not been
+    # stored via the Jiak server.
+    def local?
+      @riak.nil?
     end
 
     # :call-seq:
