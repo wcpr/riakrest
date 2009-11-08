@@ -37,6 +37,7 @@ describe "JiakObject" do
     @object.should respond_to(:data,:data=)
     @object.should respond_to(:links,:links=)
     @object.should respond_to(:riak,:riak=)
+    @object.should respond_to(:local?)
     @object.should respond_to(:<<)
     @object.should respond_to(:==,:eql?)
     @object.should respond_to(:to_jiak)
@@ -53,6 +54,7 @@ describe "JiakObject" do
     jobj = JiakObject.new(:bucket => @bucket, :key => @key, :data => @data)
     jobj.bucket.should eql @bucket
     jobj.links.should be_empty
+    jobj.local?.should be true
   end
 
   it "should allow nil, missing, blank or empty key" do

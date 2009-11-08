@@ -159,10 +159,14 @@ describe "JiakClient processing" do
         resp.data.should be_a FooBarBaz
 
         jobj = JiakObject.new(:bucket => @bucket, :data => @data)
+        jobj.local?.should be true
         resp = @client.store(jobj,{:object => true})
         resp.should be_a JiakObject
         resp.key.should_not be_nil
         resp.data.should be_a FooBarBaz
+
+        jobj.local?.should be true
+        resp.local?.should be false
       end
       
       it "should handle odd key values" do
