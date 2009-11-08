@@ -131,7 +131,7 @@ module RiakRest
     # implementation needs, but in general should not be called by library
     # clients.
     def riak=(riak)
-      @riak = check_riak(riak)
+      @riak = riak.nil? ? nil : check_riak(riak)
     end
 
     # :call-seq:

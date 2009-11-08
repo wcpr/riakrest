@@ -161,6 +161,9 @@ describe "JiakObject" do
     @object.riak = riak
     @object.riak.should eql riak
 
+    @object.riak = nil
+    @object.riak.should be nil
+
     bad_bucket = lambda {@object.bucket = 'bucket'}
     bad_bucket.should raise_error(JiakObjectException,/Bucket/)
 
