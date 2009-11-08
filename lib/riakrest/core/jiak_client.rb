@@ -78,7 +78,6 @@ module RiakRest
       resp = RestClient.put(jiak_uri(bucket),
                             bucket.schema.to_jiak,
                             :content_type => APP_JSON,
-                            :data_type => JSON_DATA,
                             :accept => APP_JSON)
     end
 
@@ -141,7 +140,6 @@ module RiakRest
         payload = jobj.to_jiak
         headers = { 
           :content_type => APP_JSON,
-          :data_type => JSON_DATA,
           :accept => APP_JSON }
         # Decision tree:
         #   If key empty POST
