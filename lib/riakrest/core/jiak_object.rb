@@ -152,7 +152,8 @@ module RiakRest
       (@bucket == other.bucket &&
        @key == other.key &&
        @data == other.data &&
-       @links == other.links
+       @links == other.links &&
+       @riak.nil? == other.riak.nil?
        ) rescue false
     end
 
@@ -166,7 +167,8 @@ module RiakRest
         @bucket.eql?(other.bucket) &&
         @key.eql?(other.key) &&
         @data.eql?(other.data) &&
-        @links.eql?(other.links)
+        @links.eql?(other.links) &&
+        @riak.nil?.eql?(other.riak.nil?)
     end
 
     def hash    # :nodoc:
