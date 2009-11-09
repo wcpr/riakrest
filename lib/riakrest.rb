@@ -136,6 +136,17 @@ $:.unshift(dirname) unless
 module RiakRest
   version_file = File.join(File.dirname(__FILE__),"..","VERSION")
   VERSION = IO.read(version_file).chomp
+
+  # Convenience method for checking validity of method options. If any of the
+  # options in opt are not in valid, raise the exception with the invalid
+  # options in the message.
+  def check_opts(opts,valid,exception)
+    err = opts.select {|k,v| !valid.include?(k)}
+    unless err.empty?
+      raise exception, "unrecognized options: #{err.keys}"
+    end
+    opts
+  end
 end
 
 require 'riakrest/core/exceptions'

@@ -30,6 +30,7 @@ module RiakRest
     # Raise JiakClientException if server or proxy (if exists) URI are not strings.
     #
     def initialize(uri='http://127.0.0.1:8002/jiak/', opts={})
+      check_opts(opts,[:proxy],JiakClientException)
       server(uri)
       proxy(opts[:proxy])   if(opts[:proxy])
     end
@@ -127,6 +128,8 @@ module RiakRest
     # Raise JiakResourceException on RESTful HTTP errors.
     #
     def store(jobj,opts={})
+      check_opts(opts,[:return,:reads,:writes,:durable_writes],
+                 JiakClientException)
       params = jobj.bucket.params
       req_params = {
         WRITES => opts[:writes] || params[:writes], 
@@ -199,6 +202,7 @@ module RiakRest
       unless bucket.is_a?(JiakBucket)
         raise JiakClientException, "Bucket must be a JiakBucket."
       end
+      check_opts(opts,[:reads],JiakClientException)
       req_params = {READS => opts[:reads] || bucket.params[:reads]}
 
       begin
@@ -227,6 +231,7 @@ module RiakRest
     # Raise JiakResourceException on RESTful HTTP errors.
     #
     def delete(bucket,key,opts={})
+      check_opts(opts,[:waits],JiakClientException)
       begin
         req_params = {RESPONSE_WAITS => opts[:waits] || bucket.params[:waits]}
         uri = jiak_uri(bucket,key,req_params)

@@ -27,7 +27,7 @@ module RiakRest
     # altered and are purposely not described here.
     def initialize(opts)
       opts[:links] ||= []
-      check_opts(opts)
+      check_opts(opts,VALID_OPTS,JiakObjectException)
 
       @bucket = check_bucket(opts[:bucket])
       @data = check_data(opts[:data])
@@ -131,7 +131,7 @@ module RiakRest
     # implementation needs, but in general should not be called by library
     # clients.
     def riak=(riak)
-      @riak = riak.nil? ? nil : check_riak(riak)
+      @riak = riak.nil? ? nil : check_opts(riak,VALID_RIAK,JiakObjectException)
     end
 
     # :call-seq:
@@ -174,15 +174,6 @@ module RiakRest
     def hash    # :nodoc:
       @bucket.name.hash + @key.hash + @data.hash + @links.hash + @riak.hash
     end
-
-    def check_opts(opts)
-      err = opts.select {|k,v| !VALID_OPTS.include?(k)}
-      unless err.empty?
-        raise JiakObjectException, "unrecognized options: #{err.keys}"
-      end
-      opts
-    end
-    private :check_opts
 
     def check_bucket(bucket)
       unless bucket.is_a?(JiakBucket)
@@ -229,14 +220,6 @@ module RiakRest
       link
     end
     private :check_link
-
-    def check_riak(riak)
-      err = riak.select {|k,v| !VALID_RIAK.include?(k)}
-      unless err.empty?
-        raise JiakObjectException, "unrecognized options: #{err.keys}"
-      end
-      riak
-    end
 
     private
     VALID_RIAK = [:vclock,:vtag,:lastmod]
