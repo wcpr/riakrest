@@ -112,7 +112,7 @@ module RiakRest
     # stored JiakObject depending on the option <code>key</code>. The object
     # for storage must be JiakObject. Valid options are:
     #
-    # <code>:object</code> :: If <code>true</code>, on success return the stored JiakObject (which includes Jiak metadata); otherwise return just the key. Default is <code>false</code>, which returns the key.
+    # <code>:return</code> :: If <code>:key</code>, return the key under which the data was stored. If <code>:object</code> return the stored JiakObject (which includes Riak context). Defaults to <code>:key</code>.
     # <code>:writes</code> :: The number of Riak nodes that must successfully store the data.
     # <code>:durable_writes</code> :: The number of Riak nodes (<code>< writes</code>) that must successfully store the data in a durable manner.
     # <code>:reads</code> :: The number of Riak nodes that must successfully read data if a JiakObject is being returned.
@@ -133,7 +133,7 @@ module RiakRest
         DURABLE_WRITES => opts[:durable_writes] || params[:durable_writes],
         READS => opts[:reads] || params[:reads]
       }
-      req_params[RETURN_BODY] = opts[:object]  if opts[:object]
+      req_params[RETURN_BODY] = (opts[:return] == :object)
 
       begin
         uri = jiak_uri(jobj.bucket,jobj.key,req_params)

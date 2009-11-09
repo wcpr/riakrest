@@ -10,11 +10,11 @@ client.set_schema(bucket)
 remy = client.store(JiakObject.new(:bucket => bucket,
                                     :data => Person.new(:name => "remy",
                                                         :age => 10)),
-                     :object => true)
+                     :return => :object)
 callie = client.store(JiakObject.new(:bucket => bucket,
                                      :data => Person.new(:name => "Callie",
                                                          :age => 12)),
-                      :object => true)
+                      :return => :object)
 
 puts client.get(bucket,remy.key).data.name         # => "remy"
 

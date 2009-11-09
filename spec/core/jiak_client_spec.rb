@@ -152,7 +152,7 @@ describe "JiakClient processing" do
       it "should return a JiakObject at time of storage" do
         key = 'store_key_2'
         jobj = JiakObject.new(:bucket => @bucket, :key => key, :data => @data)
-        resp = @client.store(jobj,{:object => true})
+        resp = @client.store(jobj,{:return => :object})
         resp.should be_a JiakObject
         resp.bucket.should eql @bucket
         resp.key.should eql key
@@ -160,7 +160,7 @@ describe "JiakClient processing" do
 
         jobj = JiakObject.new(:bucket => @bucket, :data => @data)
         jobj.local?.should be true
-        resp = @client.store(jobj,{:object => true})
+        resp = @client.store(jobj,{:return => :object})
         resp.should be_a JiakObject
         resp.key.should_not be_nil
         resp.data.should be_a FooBarBaz
@@ -205,7 +205,7 @@ describe "JiakClient processing" do
       it "should update a previously stored JiakObject" do
         jobj =
           @client.store(JiakObject.new(:bucket => @bucket, :data => @data),
-                        {:object => true})
+                        {:return => :object})
         
         jobj.data.should eql @data
         [:vclock,:vtag,:lastmod].each do |field|
@@ -217,7 +217,7 @@ describe "JiakClient processing" do
         updated_data = FooBarBaz.new(:foo => 'new val')
         jobj.data = updated_data
         updated_object = 
-          @client.store(jobj,{:object => true})
+          @client.store(jobj,{:return => :object})
         updated_data = updated_object.data
         updated_data.should_not eql @data
         updated_data.foo.should eql 'new val'
@@ -280,7 +280,7 @@ describe "JiakClient links" do
       p_obj = JiakObject.new(:bucket => @p_bucket,
                              :key => p_name,
                              :data => p_data)
-      parent = @client.store(p_obj,:object => true)
+      parent = @client.store(p_obj,:return => :object)
       p_link = JiakLink.new(@p_bucket,parent.key,'parent')
       c_names.each do |c_name|
         begin
@@ -290,7 +290,7 @@ describe "JiakClient links" do
           c_obj = JiakObject.new(:bucket => @c_bucket,
                                  :key => c_name,
                                  :data => c_data)
-          child = @client.store(c_obj, :object => true)
+          child = @client.store(c_obj, :return => :object)
         end
         c_link = JiakLink.new(@c_bucket,child.key,'child')
         child << p_link

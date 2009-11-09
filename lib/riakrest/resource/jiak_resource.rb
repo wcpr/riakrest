@@ -274,7 +274,7 @@ module RiakRest
       # JiakResource class, then to the value set on the Riak cluster. In
       # general the values set on the Riak cluster should suffice.
       def put(resource,opts={})
-        opts[:object] = true
+        opts[:return] = :object
         resource.jiak.object = jiak.server.store(resource.jiak.object,opts)
         resource.convenient_jiak
         resource
