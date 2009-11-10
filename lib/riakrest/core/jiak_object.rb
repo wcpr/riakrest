@@ -36,7 +36,7 @@ module RiakRest
 
       # The Riak context for the object if provided.
       if opts[:vclock]
-        @riak = opts.select {|k,v| [:vclock,:vtag,:lastmod].include?(k)}
+        @riak = {}.merge(opts)
       end
     end
 
