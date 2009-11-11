@@ -16,7 +16,7 @@ class FooBarBaz  # :nodoc:
     new(jiak)
   end
 
-  def for_jiak
+  def to_jiak
     { :foo => @foo,
       :bar => @bar
     }.reject {|k,v| v.nil?}

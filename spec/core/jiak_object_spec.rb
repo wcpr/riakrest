@@ -13,8 +13,8 @@ describe "JiakObject" do
     @l2 = JiakLink.new('l2b','l2k','l2t')
     @links = [@l1,@l2]
 
-    object = @data.for_jiak
-    links = @links.map {|link| link.for_jiak}
+    object = @data.to_jiak
+    links = @links.map {|link| link.to_jiak}
 
     core = {
       :bucket => @bucket_name, :key => @key,
@@ -124,7 +124,7 @@ describe "JiakObject" do
   end
   
   it "should convert to JSON" do
-    json = @object.to_jiak
+    json = @object.to_jiak.to_json
     json.should eql @core_json
 
     parsed = JSON.parse(json)
@@ -134,7 +134,7 @@ describe "JiakObject" do
     parsed['object']['f2'].should eql @data.f2
     parsed['object']['f3']['f3_1'].should eql @data.f3[:f3_1]
     @links.each_with_index do |link,ndx|
-      parsed['links'][ndx].should eql link.for_jiak
+      parsed['links'][ndx].should eql link.to_jiak
     end
   end
 

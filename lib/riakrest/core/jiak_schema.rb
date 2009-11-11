@@ -123,10 +123,10 @@ module RiakRest
         raise JiakSchemaException, "Initialize arg must be either hash or array"
       end
 
-      @allowed_fields =  opts[:allowed_fields]
-      @required_fields = opts[:required_fields]
-      @read_mask =       opts[:read_mask]
-      @write_mask =      opts[:write_mask]
+      @allowed_fields  = Array.new(opts[:allowed_fields])
+      @required_fields = Array.new(opts[:required_fields])
+      @read_mask       = Array.new(opts[:read_mask])
+      @write_mask      = Array.new(opts[:write_mask])
     end
 
     # call-seq:
@@ -138,10 +138,10 @@ module RiakRest
     end
 
     # call-seq:
-    #    schema.to_jiak  -> JSON
+    #    to_jiak  -> JSON
     #
-    # Create a representation suitable for sending to a Jiak server. Called by
-    # JiakClient when transporting a schema to Jiak.
+    # Create a hash representation suitable for sending to a Jiak
+    # server. Called by JiakClient when transporting a schema to Jiak.
     def to_jiak
       { :schema =>
         { :allowed_fields  => @allowed_fields,
@@ -149,7 +149,7 @@ module RiakRest
           :read_mask       => @read_mask,
           :write_mask      => @write_mask
         }
-      }.to_json
+      }
     end
 
     def allowed_fields=(arr)  # :nodoc:

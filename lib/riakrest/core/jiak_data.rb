@@ -15,7 +15,7 @@ module RiakRest
   #
   # User-defined data classes must override JiakData#ClassMethods#jiak_create
   # (creating your user-defined data from the information returned by Jiak) and
-  # JiakData#for_jiak (providing the information to be sent to Jiak). The
+  # JiakData#to_jiak (providing the information to be sent to Jiak). The
   # default implementations of these methods throw JiakDataException to
   # enforce this override.
   #
@@ -45,7 +45,7 @@ module RiakRest
   #       new(jiak['foo'],jiak['bar'])
   #     end
   # 
-  #     def for_jiak
+  #     def to_jiak
   #       { :foo => @foo,
   #         :baz => @baz
   #       }
@@ -59,7 +59,7 @@ module RiakRest
   #
   # Note that FooBarBaz <code>bar</code> is readable but not writable and
   # <code>baz</code> is writable but not readable. Also note
-  # <code>for_jiak</code> only provides the <code>writable</code> fields for
+  # <code>to_jiak</code> only provides the <code>writable</code> fields for
   # writing to the Jiak server and <code>jiak_create</code> only initializes
   # from the <code>readable</code> fields returned by the Jiak server. The
   # above definition means a user of FooBarBaz could change <code>baz</code>
@@ -223,7 +223,7 @@ module RiakRest
     # ----------------------------------------------------------------------
 
     # :call-seq:
-    #   for_jiak  -> hash
+    #   to_jiak  -> hash
     #
     # Provide a hash structure of the data to write to Jiak. The fields for
     # this structure should come from the write mask of the structured Jiak
@@ -236,7 +236,7 @@ module RiakRest
     #
     # ====Example
     # <code>
-    #    def for_jiak
+    #    def to_jiak
     #      { :writable_f1 => @writable_f1,
     #        :writable_f2 => @writable_f2
     #      }
@@ -244,8 +244,8 @@ module RiakRest
     # </code>
     #
     # Raise JiakDataException if not explicitly defined by user-defined data class.
-    def for_jiak
-      raise JiakDataException, "#{self} must define for_jiak"
+    def to_jiak
+      raise JiakDataException, "#{self} must define to_jiak"
     end
 
     # :call-seq:

@@ -13,12 +13,10 @@ module RiakRest
     #
     # ===Usage
     # <code>
-    #   class Dog
+    #   class Users
     #     include JiakResource
-    #
     #     server      'http://localhost:8002/jiak'
-    #     group       'dogs'
-    #     data_class  DogData
+    #     jattr_accessor :login, :name
     #   end
     # </code>
     # 

@@ -158,7 +158,7 @@ describe "JiakSchema" do
   end
 
   it "should convert to json" do
-    @jiak_schema.to_jiak.should eql ({:schema => @hash}.to_json)
+    @jiak_schema.to_jiak.should eql ({:schema => @hash})
   end
 
   it "should equal an equal JiakSchema" do

@@ -12,7 +12,7 @@ describe "JiakLink" do
     @jiak_link.should respond_to(:bucket,:key,:tag)
     @jiak_link.should respond_to(:bucket=,:key=,:tag=)
 
-    @jiak_link.should respond_to(:for_jiak)
+    @jiak_link.should respond_to(:to_jiak)
 
     @jiak_link.should respond_to(:eql?,:==)
   end
@@ -60,7 +60,7 @@ describe "JiakLink" do
   end
 
   it "should convert for Jiak" do
-    @jiak_link.for_jiak.should eql [@bucket,@key,@tag]
+    @jiak_link.to_jiak.should eql [@bucket,@key,@tag]
   end
   
   it "should compare to another JiakLink via eql?" do

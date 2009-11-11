@@ -121,11 +121,11 @@ module RiakRest
         end
 
         # :call-seq:
-        #   data.for_jiak  -> hash
+        #   data.to_jiak  -> hash
         #
         # Return a hash of the writable fields and their values. Used by
         # RiakRest to prepare the data for transport to the Jiak server.
-        def for_jiak
+        def to_jiak
           self.class.schema.write_mask.inject({}) do |build,field|
             val = send("#{field}")
             build[field] = val  unless val.nil?

@@ -70,10 +70,10 @@ module RiakRest
     end
 
     # :call-seq:
-    #   link.for_jiak  -> JSON
+    #   link.to_jiak  -> JSON
     #
     # Representation of this JiakLink for transport to Jiak.
-    def for_jiak
+    def to_jiak
       [@bucket, @key, @tag]
     end
 

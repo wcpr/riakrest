@@ -77,7 +77,7 @@ module RiakRest
         raise JiakClientException, "Bucket must be a JiakBucket."
       end
       resp = RestClient.put(jiak_uri(bucket),
-                            bucket.schema.to_jiak,
+                            bucket.schema.to_jiak.to_json,
                             :content_type => APP_JSON,
                             :accept => APP_JSON)
     end
@@ -108,10 +108,10 @@ module RiakRest
     # Stores user-defined data (wrapped in a JiakObject) on the Jiak
     # server. JiakData#to_jiak is used to prepare user-defined data for JSON
     # transport to Jiak. That call is expected to return a Ruby hash
-    # representation of the writable JiakData fields that are JSONized for HTTP
-    # transport. Successful server writes return either the storage key or the
-    # stored JiakObject depending on the option <code>key</code>. The object
-    # for storage must be JiakObject. Valid options are:
+    # representation of the writable JiakData fields that can be JSONized for
+    # HTTP transport. Successful server writes return either the storage key or
+    # the stored JiakObject depending on the option <code>key</code>. The
+    # object for storage must be JiakObject. Valid options are:
     #
     # <code>:return</code> :: If <code>:key</code>, return the key under which the data was stored. If <code>:object</code> return the stored JiakObject (which includes Riak context). Defaults to <code>:key</code>.
     # <code>:writes</code> :: The number of Riak nodes that must successfully store the data.
@@ -140,7 +140,7 @@ module RiakRest
 
       begin
         uri = jiak_uri(jobj.bucket,jobj.key,req_params)
-        payload = jobj.to_jiak
+        payload = jobj.to_jiak.to_json
         headers = { 
           :content_type => APP_JSON,
           :accept => APP_JSON }

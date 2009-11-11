@@ -58,24 +58,24 @@ module RiakRest
     end
 
     # :call-seq:
-    #    jiak_object.to_jiak  -> JSON
+    #    to_jiak  -> hash
     #
-    # Create a representation suitable for sending to a Jiak server. Calls the
-    # <code>for_jiak</code> method of the wrapped JiakData. Called by
+    # Create a hash representation suitable for sending to a Jiak server. Calls
+    # the <code>to_jiak</code> method of the wrapped JiakData. Called by
     # JiakClient when transporting an object to Jiak.
     def to_jiak
       jiak = {
         :bucket => @bucket.name,
         :key => @key,
-        :object => @data.for_jiak,
-        :links => @links.map {|link| link.for_jiak}
+        :object => @data.to_jiak,
+        :links => @links.map {|link| link.to_jiak}
       }
       if(@riak)
         jiak[:vclock] = @riak[:vclock]
         jiak[:vtag] = @riak[:vtag]
         jiak[:lastmod] = @riak[:lastmod]
       end
-      jiak.to_json
+      jiak
     end
 
     # :call-seq:
