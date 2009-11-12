@@ -98,10 +98,10 @@ describe "JiakClient processing" do
       @client.set_schema(JiakBucket.new(@bucket_name,FooBarBazBuz))
       
       resp_schema = @client.schema(@bucket)
-      resp_schema.allowed_fields.should include 'buz'
+      resp_schema.allowed_fields.should include :buz
       resp_schema.required_fields.should be_empty
-      resp_schema.read_mask.should include 'baz'
-      resp_schema.write_mask.should include 'baz'
+      resp_schema.read_mask.should include :baz
+      resp_schema.write_mask.should include :baz
 
     end
 

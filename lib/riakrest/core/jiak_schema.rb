@@ -24,30 +24,20 @@ module RiakRest
   #
   # Since Jiak interaction is JSON, duplicate fields names within an array are
   # not meaningful, including a symbol that "equals" a string. Duplicates
-  # raise an exception.
+  # fields are ignored.
   #
   # ===Usage
   # <pre>
-  #   schema = JiakSchema.new({:allowed_fields => [:foo,:bar,:baz],
-  #                            :required_fields => [:foo,:bar],
-  #                            :read_mask => [:foo,:baz],
-  #                            :write_mask => [:foo,:bar] })
+  #   schema = JiakSchema.new([:foo,:bar])
+  #   schema.allowed_fields                          # => [:foo,:bar]
+  #   schema.required_fields                         # => []
+  #   schema.read_mask                               # => [:foo,:bar]
+  #   schema.write_mask                              # => [:foo,:bar]
   #
-  #   schema.required_fields                         # => [:foo,:bar]
-  #
-  #
-  #   schema = JiakSchema.new({:allowed_fields => [:foo,:bar,:baz],
-  #                            :required_fields => [:foo,:bar]})
-  #
-  #   schema.read_mask                               # => [:foo,:bar,:baz]
-  #   schema.required_fields                         # => [:foo,:bar]
-  #   schema.required_fields = [:foo,:bar,:baz]
-  #   schema.required_fields                         # => [:foo,:bar,:baz]
-  #
-  #
-  #   schema = JiakSchema.new([:foo,:bar,:baz])
-  #
-  #   schema.write_mask                              # => [:foo,:bar,:baz)
+  #   schema.write :baz
+  #   schema.allowed_fields                          # => [:foo,:bar,:baz]
+  #   schema.read_mask                               # => [:foo,:bar]
+  #   schema.write_mask                              # => [:foo,:bar,:baz]
   #
   # </pre>
   class JiakSchema
@@ -97,22 +87,24 @@ module RiakRest
         opts = arg[:schema] || arg['schema'] || arg
 
         opts[:allowed_fields] ||= opts['allowed_fields']
-        check_arr("allowed_fields",opts[:allowed_fields])
+        opts[:allowed_fields] = transform_fields("allowed_fields",
+                                                 opts[:allowed_fields])
 
         # Use required if provided, otherwise set to empty array
         opts[:required_fields] ||= opts['required_fields'] || []
-        check_arr("required_fields",opts[:required_fields])
+        opts[:required_fields] = transform_fields("required_fields",
+                                                  opts[:required_fields])
         
         # Use masks if provided, otherwise set to allowed_fields
         [:read_mask,:write_mask].each do |key|
           opts[key] ||= opts[key.to_s] || opts[:allowed_fields]
-          check_arr(key.to_s,opts[key])
+          opts[key] = transform_fields(key.to_s,opts[key])
         end
       when Array
         # An array arg must be a single-element array of the allowed
         # fields. Required fields is set to an empty array and the masks are
         # set to the allowed fields array.
-        check_arr("allowed_fields",arg)
+        arg = transform_fields("allowed_fields",arg)
         opts = {
           :allowed_fields  => arg,
           :required_fields => [],
@@ -123,10 +115,10 @@ module RiakRest
         raise JiakSchemaException, "Initialize arg must be either hash or array"
       end
 
-      @allowed_fields  = Array.new(opts[:allowed_fields])
-      @required_fields = Array.new(opts[:required_fields])
-      @read_mask       = Array.new(opts[:read_mask])
-      @write_mask      = Array.new(opts[:write_mask])
+      @allowed_fields  = opts[:allowed_fields].dup
+      @required_fields = opts[:required_fields].dup
+      @read_mask       = opts[:read_mask].dup
+      @write_mask      = opts[:write_mask].dup
     end
 
     # call-seq:
@@ -137,7 +129,7 @@ module RiakRest
       new(jiak)
     end
 
-    # call-seq:
+    # :call-seq:
     #    to_jiak  -> JSON
     #
     # Create a hash representation suitable for sending to a Jiak
@@ -152,21 +144,40 @@ module RiakRest
       }
     end
 
+    # :call-seq:
+    #   allowed_fields = array
+    #
+    # Set the allowed fields array. Overrides whatever fields were in the array.
+    # Use JiakSchema#allow to add fields to the array.
     def allowed_fields=(arr)  # :nodoc:
-      check_arr('allowed_fields',arr)
-      @allowed_fields = arr
+      @allowed_fields = transform_fields('allowed_fields',arr)
     end
+
+    # :call-seq:
+    #   required_fields = array
+    #
+    # Set the required fields array. Overrides whatever fields were in the
+    # array.  Use JiakSchema#require to add fields to the array.
     def required_fields=(arr)  # :nodoc:
-      check_arr('required_fields',arr)
-      @required_fields = arr
+      @required_fields = transform_fields('required_fields',arr)
     end
+
+    # :call-seq:
+    #   read_mask = array
+    #
+    # Set the read mask array. Overrides whatever fields were in the array.
+    # Use JiakSchema#readable to add fields to the array.
     def read_mask=(arr)  # :nodoc:
-      check_arr('read_mask',arr)
-      @read_mask = arr
+      @read_mask = transform_fields('read_mask',arr)
     end
+
+    # :call-seq:
+    #   write_mask = array
+    #
+    # Set the write mask array. Overrides whatever fields were in the array.
+    # Use JiakSchema#writable to add fields to the array.
     def write_mask=(arr)  # :nodoc:
-      check_arr('write_mask',arr)
-      @write_mask = arr
+      @write_mask = transform_fields('write_mask',arr)
     end
 
     # :call-seq:
@@ -174,9 +185,119 @@ module RiakRest
     #
     # Set the read and write masks for a JiakSchema.
     def readwrite=(arr)   # :nodoc:
-      check_arr('readwrite',arr)
-      @read_mask = arr
-      @write_mask = arr
+      mask = transform_fields('readwrite',arr)
+      @read_mask = mask
+      @write_mask = mask
+    end
+
+    # :call-seq:
+    #   allow(:f1,...,:fn) -> array
+    #
+    # Add to the allowed fields array. Returns the new allowed fields array.
+    def allow(*fields)
+      add_fields(@allowed_fields,"allow",fields)
+      allowed_fields
+    end
+
+    # :call-seq:
+    #   require(:f1,...,:fn) -> array
+    #
+    # Add fields to the required fields array.  Adds the fields to the allowed
+    # fields as well.
+    #
+    # Returns the new required fields array.
+    def require(*fields)
+      add_fields(@required_fields,"require",fields)
+      allow(*fields)
+      required_fields
+    end
+
+    # :call-seq:
+    #   readable(:f1,...,:fn) -> array
+    #
+    # Add fields to the read mask array.  Adds the fields to the allowed
+    # fields as well.
+    #
+    # Returns the new read mask.
+    def readable(*fields)
+      add_fields(@read_mask,"readable",fields)
+      allow(*fields)
+      read_mask
+    end
+
+    # :call-seq:
+    #   writable(:f1,...,:fn) -> array
+    #
+    # Add fields to the write mask array.  Adds the fields to the allowed
+    # fields as well.
+    #
+    # Returns the new write mask.
+    def writable(*fields)
+      add_fields(@write_mask,"writable",fields)
+      allow(*fields)
+      write_mask
+    end
+
+    # :call-seq:
+    #   readwrite(:f1,...,:fn) -> nil
+    #
+    # Add fields to the read and write mask arrays. Adds the fields to the
+    # allowed fields as well.
+    #
+    # Returns nil.
+    def readwrite(*fields)
+      readable(*fields)
+      writable(*fields)
+      allow(*fields)
+      read_mask
+    end
+
+    def add_fields(arr,descr,fields)
+      scrubbed = transform_fields(descr,fields)
+      scrubbed.each do |field|
+        arr << field  unless arr.include?(field)
+      end
+    end
+    private :add_fields
+
+    # :call-seq:
+    #   allowed_fields -> array
+    #
+    # Return an array of the allowed fields. This array is a copy and cannot
+    # be used to update the allowed_fields array itself. Use JiakSchema#allow
+    # to add fields or JiakSchema#allowed_fields= to set the array.
+    def allowed_fields
+      @allowed_fields.dup
+    end
+
+    # :call-seq:
+    #   required_fields -> array
+    #
+    # Return an array of the allowed fields. This array is a copy and cannot
+    # be used to update the required_fields array itself. Use JiakSchema#require
+    # to add fields or JiakSchema#required_fields= to set the array.
+    def required_fields
+      @required_fields.dup
+    end
+
+    # :call-seq:
+    #   read_mask -> array
+    #
+    # Returns an array of the allowed fields. This array is a copy and cannot
+    # be used to update the read_mask array itself. Use JiakSchema#readable
+    # to add fields or JiakSchema#read_mask= to set the array.
+    def read_mask
+      @read_mask.dup
+    end
+
+    # :call-seq:
+    #   write_mask -> array
+    #
+    # Returns an array of the allowed fields. This array is a copy and cannot
+    # be used to update the write_mask array itself. Use JiakSchema#writable
+    # to add fields or JiakSchema#write_mask= to set the array.
+    def write_mask
+      @write_mask.dup
     end
 
     # call-seq:
@@ -217,8 +338,8 @@ module RiakRest
         '",write_mask="'+@write_mask.inspect+'"'
     end
 
-    # Each option must be an array of symbol or string elements.
-    def check_arr(desc,arr)
+    # Check for array of symbol or string elements.
+    def transform_fields(desc,arr)
       if(arr.eql?("*"))
         raise(JiakSchemaException,
               "RiakRest does not support wildcard schemas at this time.")
@@ -231,11 +352,12 @@ module RiakRest
           raise JiakSchemaException, "#{desc} must be strings or symbols"
         end
       end
-      unless arr.map{|f| f.to_s}.uniq.size == arr.size
-        raise JiakSchemaException, "#{desc} must have unique elements."
-      end
+      # unless arr.map{|f| f.to_s}.uniq.size == arr.size
+      #   raise JiakSchemaException, "#{desc} must have unique elements."
+      # end
+      arr.map{|f| f.to_sym}.uniq
     end
-    private :check_arr
+    private :transform_fields
 
   end
 

@@ -22,6 +22,7 @@ describe "JiakSchema" do
     @jiak_schema.should respond_to(:required_fields,:required_fields=)
     @jiak_schema.should respond_to(:read_mask,:read_mask=)
     @jiak_schema.should respond_to(:write_mask,:write_mask=)
+    @jiak_schema.should respond_to(:allow,:require,:readable,:writable)
 
     @jiak_schema.should respond_to(:to_jiak)
     @jiak_schema.should respond_to(:==,:eql?)
@@ -121,27 +122,83 @@ describe "JiakSchema" do
     bad = lambda {JiakSchema.new(hash)}
     bad.should raise_error(JiakSchemaException,/write_mask.*strings/)
 
+  end
+  
+  it "should ignore duplicate fields" do
     hash = @hash.clone
     hash[:allowed_fields] << @allowed_fields[0].to_s
-    bad = lambda {JiakSchema.new(hash)}
-    bad.should raise_error(JiakSchemaException,/unique/)
+    jiak_schema = JiakSchema.new(hash)
+    jiak_schema.should eql @jiak_schema
 
-    hash = @hash.clone
-    hash[:allowed_fields] << @allowed_fields[0].to_sym
-    bad = lambda {JiakSchema.new(hash)}
-    bad.should raise_error(JiakSchemaException,/unique/)
+    jiak_schema.allowed_fields = hash[:allowed_fields]
+    jiak_schema.allowed_fields.should eql @jiak_schema.allowed_fields
+
+    hash[:read_mask] << @read_mask[0]
+    jiak_schema.read_mask = hash[:read_mask]
+    jiak_schema.read_mask.should eql @hash[:read_mask]
+
+    hash[:write_mask] << @write_mask[0]
+    jiak_schema.write_mask = hash[:write_mask]
+    jiak_schema.write_mask.should eql @hash[:write_mask]
+
+    jiak_schema.readwrite = hash[:read_mask]
+    jiak_schema.read_mask.should eql @hash[:read_mask]
+    jiak_schema.write_mask.should eql @hash[:read_mask]
   end
 
-  it "should update with validation" do
+  it "should update with individual arrays" do
+    arr1    = [:f1]
+    arr12   = [:f1,:f2]
+    arr13   = [:f1,:f3]
+    arr14   = [:f1,:f4]
+    arr123  = [:f1,:f2,:f3]
+    arr1234 = [:f1,:f2,:f3,:f4]
+
+    jiak_schema = JiakSchema.new(arr1)
+    jiak_schema.allow :f2
+    jiak_schema.allowed_fields.should eql arr12
+    jiak_schema.read_mask.should eql arr1
+    jiak_schema.write_mask.should eql arr1
+    jiak_schema.required_fields.should be_empty
+    jiak_schema.readable :f3
+    jiak_schema.read_mask.should eql arr13
+    jiak_schema.write_mask.should eql arr1
+    jiak_schema.allowed_fields.should eql arr123
+    jiak_schema.required_fields.should be_empty
+    jiak_schema.writable :f4
+    jiak_schema.write_mask.should eql arr14
+    jiak_schema.read_mask.should eql arr13
+    jiak_schema.allowed_fields.should eql arr1234
+    jiak_schema.required_fields.should be_empty
+
+    jiak_schema = JiakSchema.new(arr1)
+    jiak_schema.readwrite :f2
+    jiak_schema.read_mask.should eql arr12
+    jiak_schema.write_mask.should eql arr12
+    jiak_schema.allowed_fields.should eql arr12
+    jiak_schema.required_fields.should be_empty
+
+    jiak_schema.require :f3
+    jiak_schema.required_fields.should eql [:f3]
+    jiak_schema.allowed_fields.should eql arr123
+    jiak_schema.read_mask.should eql arr12
+    jiak_schema.write_mask.should eql arr12
+  end
+
+  it "should set arrays with validation" do
     arr = [:f1,'f2']
     @jiak_schema.allowed_fields = arr
-    @jiak_schema.allowed_fields.should eql arr
+    @jiak_schema.allowed_fields.should_not eql arr
+    @jiak_schema.allowed_fields.same_fields?(arr).should eql true
     @jiak_schema.required_fields = arr
-    @jiak_schema.required_fields.should eql arr
+    @jiak_schema.required_fields.should_not eql arr
+    @jiak_schema.required_fields.same_fields?(arr).should eql true
     @jiak_schema.read_mask = arr
-    @jiak_schema.read_mask.should eql arr
+    @jiak_schema.read_mask.should_not eql arr
+    @jiak_schema.read_mask.same_fields?(arr).should eql true
     @jiak_schema.write_mask = arr
-    @jiak_schema.write_mask.should eql arr
+    @jiak_schema.write_mask.should_not eql arr
+    @jiak_schema.write_mask.same_fields?(arr).should eql true
 
     bad = lambda {@jiak_schema.allowed_fields = nil}
     bad.should raise_error(JiakSchemaException,/allowed_fields.*array/)
@@ -151,10 +208,35 @@ describe "JiakSchema" do
 
     bad = lambda {@jiak_schema.read_mask = [:f,1]}
     bad.should raise_error(JiakSchemaException,/read_mask.*symbol/)
-    
-    arr << :f1
-    bad = lambda {@jiak_schema.write_mask = arr}
-    bad.should raise_error(JiakSchemaException,/unique/)
+  end
+
+  it "should ignore duplicates on setting of arrays" do
+    arr    = [:f1,:f2,:f1,:f3]
+    arr123 = [:f1,:f2,:f3]
+
+    @jiak_schema.allowed_fields = arr
+    @jiak_schema.allowed_fields.should eql arr123
+
+    @jiak_schema.required_fields = arr
+    @jiak_schema.required_fields.should eql arr123
+
+    @jiak_schema.read_mask = arr
+    @jiak_schema.read_mask.should eql arr123
+
+    @jiak_schema.write_mask = arr
+    @jiak_schema.write_mask.should eql arr123
+
+    @jiak_schema.allow :f1
+    @jiak_schema.allowed_fields.should eql arr123
+
+    @jiak_schema.readable :f2
+    @jiak_schema.read_mask.should eql arr123
+
+    @jiak_schema.writable :f3
+    @jiak_schema.read_mask.should eql arr123
+
+    @jiak_schema.require :f2
+    @jiak_schema.required_fields.should eql arr123
   end
 
   it "should convert to json" do
