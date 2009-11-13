@@ -78,7 +78,7 @@ module RiakRest
     # * the method argument is not either a hash or array
     # * The fields are not either symbols or strings
     # * The fields elements are not unique
-    def initialize(arg)
+    def initialize(arg=nil)
       case arg
       when Hash
         # Jiak returns a JSON structure with a single key 'schema' whose value
@@ -110,6 +110,14 @@ module RiakRest
           :required_fields => [],
           :read_mask       => arg,
           :write_mask      => arg
+        }
+      when nil
+        arr = []
+        opts = {
+          :allowed_fields  => arr,
+          :required_fields => arr,
+          :read_mask       => arr,
+          :write_mask      => arr
         }
       else
         raise JiakSchemaException, "Initialize arg must be either hash or array"

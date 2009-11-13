@@ -84,6 +84,14 @@ describe "JiakSchema" do
     jiak_schema.write_mask.should eql @write_mask
   end
 
+  it "should create an empty schema" do
+    jiak_schema = JiakSchema.new
+    jiak_schema.allowed_fields.should be_empty
+    jiak_schema.required_fields.should be_empty
+    jiak_schema.read_mask.should be_empty
+    jiak_schema.write_mask.should be_empty
+  end
+
   it "should create from json" do
     schema = JiakSchema.from_jiak(JSON.parse(@hash.to_json))
     @allowed_fields.same_fields?(schema.allowed_fields).should be true
