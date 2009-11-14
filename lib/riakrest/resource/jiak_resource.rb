@@ -31,9 +31,8 @@ module RiakRest
       # Valid options:
       #  <code>:proxy</code> Proxy server URI.
       def server(uri,opts={})
-        jiak.uri = uri
         jiak.server = JiakClient.new(uri,opts)
-        uri
+        jiak.uri = uri
       end
 
       # :call-seq:
@@ -41,63 +40,34 @@ module RiakRest
       #
       # Set the Jiak group name for the storage area of a resource.
       def group(gname)
-        if(jiak.bucket.nil?)
-          unless(jiak.data.nil?)
-            create_jiak_bucket(gname,jiak.data)
-          else
-            jiak.group = gname
-          end
-        else
-          jiak.bucket.name = gname
-        end
+        jiak.group = gname
+        jiak.bucket.name = gname
       end
 
-      # :call-seq:
-      #   JiakResource.data_class(klass)
-      #
-      # Set the resource Jiak data class.
-      def data_class(klass)
-        if(jiak.bucket.nil?)
-          unless(jiak.group.nil?)
-            create_jiak_bucket(jiak.group,klass)
-          else
-            jiak.data = klass
-          end
-        else
-          old_klass = jiak.bucket.data_class
-          jiak.bucket.data_class = klass
-          create_field_accessors(klass,old_klass)
-        end
-      end
-        
-      def create_jiak_bucket(gname,klass)   # :nodoc:
-        jiak.bucket = JiakBucket.new(gname,klass)
-        jiak.group = jiak.bucket.name
-        jiak.data = klass
-        create_field_accessors(klass)
-      end
-      private :create_jiak_bucket
-        
-      def create_field_accessors(klass,old_klass=nil)
-        if(old_klass)
-          klass.schema.allowed_fields.each do |field|
-            remove_method(field)
-            remove_method("#{field}=")
-          end
-        end
-
-        klass.schema.allowed_fields.each do |field|
-          define_method("#{field}=") do |val|
-            @jiak.object.data.send("#{field}=",val)
-            self.class.do_auto_update(self)
-            val
-          end
+      def jattr_reader(*fields)
+        added_fields = jiak.data.readable(*fields)
+        added_fields.each do |field|
           define_method("#{field}") do
-            @jiak.object.data.send("#{field}")
+            @jiak.data.send("#{field}")
           end
         end
       end
-      private :create_jiak_bucket, :create_field_accessors
+      alias :jattr :jattr_reader
+
+      def jattr_writer(*fields)
+        added_fields = jiak.data.writable(*fields)
+        added_fields.each do |field|
+          define_method("#{field}=") do |val|
+            @jiak.data.send("#{field}=",val)
+            self.class.do_auto_update(self)
+          end
+        end
+      end
+
+      def jattr_accessor(*fields)
+        jattr_reader *fields
+        jattr_writer *fields
+      end
 
       # :call-seq:
       #   JiakResource.params(opts={})  -> hash
@@ -169,7 +139,7 @@ module RiakRest
       #
       # Get the schema for a resource.
       def schema
-        jiak.bucket.schema
+        jiak.data.schema
       end
 
       # :call-seq:
@@ -189,8 +159,8 @@ module RiakRest
       #
       # Returns the altered JiakSchema.
       def allowed(*fields)
-        jiak.bucket.schema.allowed_fields = *fields
-        jiak.bucket.schema
+        jiak.data.schema.allowed_fields = *fields
+        jiak.data.schema
       end
 
       # :call-seq:
@@ -200,8 +170,8 @@ module RiakRest
       #
       # Returns the altered JiakSchema.
       def required(*fields)
-        jiak.bucket.schema.required_fields = *fields
-        jiak.bucket.schema
+        jiak.data.schema.required_fields = *fields
+        jiak.data.schema
       end
 
       # :call-seq:
@@ -211,8 +181,8 @@ module RiakRest
       #
       # Returns the altered JiakSchema.
       def readable(*fields)
-        jiak.bucket.schema.read_mask = *fields
-        jiak.bucket.schema
+        jiak.data.schema.read_mask = *fields
+        jiak.data.schema
       end
 
       # :call-seq:
@@ -222,8 +192,8 @@ module RiakRest
       #
       # Returns the altered JiakSchema.
       def writable(*fields)
-        jiak.bucket.schema.write_mask = *fields
-        jiak.bucket.schema
+        jiak.data.schema.write_mask = *fields
+        jiak.data.schema
       end
 
       # :call-seq:
@@ -233,8 +203,8 @@ module RiakRest
       #
       # Returns the altered JiakSchema
       def readwrite(*fields)
-        jiak.bucket.schema.readwrite  = *fields
-        jiak.bucket.schema
+        jiak.data.schema.readwrite  = *fields
+        jiak.data.schema
       end
       
       # :call-seq:
@@ -274,7 +244,7 @@ module RiakRest
       def put(resource,opts={})
         opts[:return] = :object
         resource.jiak.object = jiak.server.store(resource.jiak.object,opts)
-        resource.convenient_jiak
+        resource.jiak_convenience
         resource
       end
 
@@ -448,36 +418,36 @@ module RiakRest
         end
       end
 
-      # :call-seq:
-      #   copy(opts={}) -> JiakResource
-      #
-      # Copies a JiakResource, resetting values passed as options. Valid
-      # options on copy are those mandatory to create a JiakResource:
-      # <code>:server</code>, <code>:group</code>, and
-      # <code>:data_class</code>, and optional auto flags
-      # <code>auto_post</code> and <code>auto_update</code>.
-      #   
-      def copy(opts={})
-        valid = [:server,:group,:data_class,:auto_post,:auto_update]
-        err = opts.select {|k,v| !valid.include?(k)}
-        unless err.empty?
-          raise JiakResourceException, "unrecognized options: #{err.keys}"
-        end
+      # # :call-seq:
+      # #   copy(opts={}) -> JiakResource
+      # #
+      # # Copies a JiakResource, resetting values passed as options. Valid
+      # # options on copy are those mandatory to create a JiakResource:
+      # # <code>:server</code>, <code>:group</code>, and
+      # # <code>:data_class</code>, and optional auto flags
+      # # <code>auto_post</code> and <code>auto_update</code>.
+      # #   
+      # def copy(opts={})
+      #   valid = [:server,:group,:data_class,:auto_post,:auto_update]
+      #   err = opts.select {|k,v| !valid.include?(k)}
+      #   unless err.empty?
+      #     raise JiakResourceException, "unrecognized options: #{err.keys}"
+      #   end
 
-        opts[:server] ||= jiak.server.uri
-        opts[:group] ||= jiak.bucket.name
-        opts[:data_class] ||= jiak.bucket.data_class
-        opts[:auto_post] ||= auto_post?
-        opts[:auto_update] ||= auto_update?
-        Class.new do
-          include JiakResource
-          server      opts[:server]
-          group       opts[:group]
-          data_class  opts[:data_class]
-          auto_post   opts[:auto_post]
-          auto_update opts[:auto_update]
-        end
-      end
+      #   opts[:server] ||= jiak.server.uri
+      #   opts[:group] ||= jiak.bucket.name
+      #   opts[:data_class] ||= jiak.bucket.data_class
+      #   opts[:auto_post] ||= auto_post?
+      #   opts[:auto_update] ||= auto_update?
+      #   Class.new do
+      #     include JiakResource
+      #     server      opts[:server]
+      #     group       opts[:group]
+      #     data_class  opts[:data_class]
+      #     auto_post   opts[:auto_post]
+      #     auto_update opts[:auto_update]
+      #   end
+      # end
 
       # :call-seq:
       #   JiakResource.do_auto_update(resource)  -> JiakResource or nil
@@ -504,6 +474,10 @@ module RiakRest
         end
         @jiak = Struct.new(:server,:uri,:group,:data,:bucket,
                            :auto_post,:auto_update).new
+        @jiak.data = JiakDataHash.create
+        @jiak.group = self.name.split('::').last.downcase
+        @jiak.bucket = JiakBucket.new(@jiak.group,@jiak.data)
+        
         @jiak.auto_post = false
         @jiak.auto_update = false
       end
@@ -538,12 +512,12 @@ module RiakRest
           self.class.post(self)
         end
       end
-      convenient_jiak
+      jiak_convenience
     end
 
     # Public method as a by-product of implementation. No harm done in calling
     # this method, as it will just repeat assignments already done.
-    def convenient_jiak     # :nodoc:
+    def jiak_convenience     # :nodoc:
       @jiak.bucket = @jiak.object.bucket
       @jiak.key    = @jiak.object.key
       @jiak.data   = @jiak.object.data
@@ -584,7 +558,7 @@ module RiakRest
     # for options.
     def put(opts={})
       @jiak.object = (self.class.put(self,opts)).jiak.object
-      convenient_jiak
+      jiak_convenience
       self
     end
 
@@ -596,7 +570,7 @@ module RiakRest
     # options.
     def post(opts={})
       @jiak.object = (self.class.post(self,opts)).jiak.object
-      convenient_jiak
+      jiak_convenience
       self
     end
 
@@ -608,7 +582,7 @@ module RiakRest
     # options.
     def update(opts={})
       @jiak.object = (self.class.update(self,opts)).jiak.object
-      convenient_jiak
+      jiak_convenience
       self
     end
     alias :push :update
