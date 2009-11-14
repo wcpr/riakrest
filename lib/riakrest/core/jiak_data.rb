@@ -90,10 +90,11 @@ module RiakRest
       #   allow :f1, ..., :fn   -> array
       #   allow [:f1, ..., :fn]   -> array
       #
-      # Fields allowed in Jiak interactions. Returns an array of the allowed
-      # fields.
+      # Adds to the fields allowed in Jiak interactions.
       #
       # The field <code>jiak</code> is reserved for RiakRest.
+      # 
+      # Returns an array of added fields.
       #
       # Raise JiakDataException if the fields include <code>jiak</code>.
       def allow(*fields)
@@ -104,9 +105,9 @@ module RiakRest
       #   require :f1, ..., :fn  -> array
       #   require [:f1, ..., :fn]   -> array
       #
-      # Fields required during in Jiak interactions. Returns an array of the
-      # required fields.
+      # Adds to the fields required during in Jiak interactions.
       #
+      # Returns an array of added fields.
       def require(*fields)
         delegate_schema("require",*fields)
       end
@@ -115,9 +116,9 @@ module RiakRest
       #   readable :f1, ..., :fn  -> array
       #   readable [:f1, ..., :fn]  -> array
       #
-      # Fields returned by Jiak on retrieval. Returns an array of the fields in
-      # the read mask.
+      # Adds to the fields that can be read from Jiak.
       #
+      # Returns an array of added fields.
       def readable(*fields)
         delegate_schema("readable",*fields)
       end
@@ -126,33 +127,39 @@ module RiakRest
       #   writable :f1, ..., :fn  -> arry
       #   writable [:f1, ..., :fn]  -> arry
       #
-      # Fields that can be written during Jiak interaction. Returns an array of
-      # the fields in the write mask.
+      # Adds to the fields that can be written to Jiak.
       #
+      # Returns an array of added fields.
       def writable(*fields)
         delegate_schema("writable",*fields)
       end
 
       # :call-seq:
-      #   readwrite :f1, ..., :fn  -> array
-      #   readwrite [:f1, ..., :fn]  -> array
+      #   readwrite :f1, ..., :fn  -> nil
+      #   readwrite [:f1, ..., :fn]  -> nil
       #
-      # Set the read and write masks to the same fields. Returns an array of
-      # the fields in the masks.
+      # Adds to the fields that can be read and written.
+      #
+      # Returns nil
       def readwrite(*fields)
         delegate_schema("readwrite",*fields)
       end
 
+      # Delegates adding fields to the schema, then creates attr accessors for
+      # each field added.
       def delegate_schema(method,*fields)
+        @schema ||= JiakSchema.new
+
+        # CxINC Move this restriction to JiakResource
         if(fields.include?(:jiak) || fields.include?('jiak'))
           raise JiakDataException, "field 'jiak' reserved for RiakRest"
         end
-        @schema ||= JiakSchema.new
-        @schema.send(method,*fields)
-        unless method.eql?("require")
-          fields.each {|field| attr_accessor field}
-        end
-        schema
+
+        prev_allowed = @schema.allowed_fields
+        added_fields = @schema.send(method,*fields)
+        added_allowed = @schema.allowed_fields - prev_allowed
+        added_allowed.each {|field| attr_accessor field}
+        added_fields
       end
       private :delegate_schema
       
