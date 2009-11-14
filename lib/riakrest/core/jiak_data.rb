@@ -149,12 +149,6 @@ module RiakRest
       # each field added.
       def delegate_schema(method,*fields)
         @schema ||= JiakSchema.new
-
-        # CxINC Move this restriction to JiakResource
-        if(fields.include?(:jiak) || fields.include?('jiak'))
-          raise JiakDataException, "field 'jiak' reserved for RiakRest"
-        end
-
         prev_allowed = @schema.allowed_fields
         added_fields = @schema.send(method,*fields)
         added_allowed = @schema.allowed_fields - prev_allowed
