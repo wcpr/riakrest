@@ -23,10 +23,9 @@ describe "JiakResource default" do
       Rsrc.should respond_to(:post,:put,:get,:delete)
       Rsrc.should respond_to(:refresh,:update,:exist?)
       Rsrc.should respond_to(:link,:bi_link,:query,:walk)
-      # Rsrc.should respond_to(:copy)
-      Rsrc.should respond_to(:auto_post,:auto_update,:auto_post?,:auto_update?)
-
-      Rsrc.jiak.should respond_to(:server,:uri,:group,:data,:bucket,:auto_update)
+      Rsrc.should respond_to(:auto_post,:auto_update,:auto_manage)
+      Rsrc.should respond_to(:auto_post,:auto_update,:auto_manage?)
+      Rsrc.jiak.should respond_to(:server,:uri,:group,:data,:bucket)
     end
     
     it "should have specified settings" do
@@ -77,7 +76,6 @@ describe "JiakResource default" do
       @rsrc.jiak.object.should be_a JiakObject
       @rsrc.jiak.object.bucket.should be_a JiakBucket
       @rsrc.jiak.object.bucket.name.should eql @group
-      # @rsrc.jiak.object.bucket.data_class.should == F1F2
       
       @rsrc.jiak.auto_update.should be_nil
     end
@@ -220,8 +218,7 @@ describe "JiakResource class auto-update" do
     group          'dogs'
     jattr_accessor  :name, :age
     point_of_view
-    auto_post      true
-    auto_update    true
+    auto_manage
   end
   Dogs.jiak.data.keygen :name
 
@@ -316,8 +313,7 @@ describe "JiakResource simple" do
     group          'dogs'
     jattr_accessor  :name, :age
     point_of_view
-    auto_post      true
-    auto_update    true
+    auto_manage
   end
   Dogs.jiak.data.keygen :name
 

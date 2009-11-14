@@ -44,6 +44,10 @@ module RiakRest
         jiak.bucket.name = gname
       end
 
+      # :call-seq:
+      #   jattr_reader :f1,...,:fn
+      #
+      # Add read accessible fields.
       def jattr_reader(*fields)
         check_fields(fields)
         added_fields = jiak.data.readable(*fields)
@@ -52,9 +56,14 @@ module RiakRest
             @jiak.data.send("#{field}")
           end
         end
+        nil
       end
       alias :jattr :jattr_reader
 
+      # :call-seq:
+      #   jattr_writer :f1,...,:fn
+      #
+      # Add write accessible fields.
       def jattr_writer(*fields)
         check_fields(fields)
         added_fields = jiak.data.writable(*fields)
@@ -64,8 +73,13 @@ module RiakRest
             self.class.do_auto_update(self)
           end
         end
+        nil
       end
 
+      # :call-seq:
+      #   jattr_accessor :f1,...,:fn
+      #
+      # Add read/write accessible fields.
       def jattr_accessor(*fields)
         jattr_reader *fields
         jattr_writer *fields
@@ -104,9 +118,11 @@ module RiakRest
       #   JiakResource.auto_post(state)  -> true or false
       #
       # Set <code>true</code> to have new instances of the resource auto-posted
-      # to the Jiak server. Default is <code>false</code>.
-      def auto_post(state)
-        state = false  if state.nil?
+      # to the Jiak server.
+      #
+      # Default value for state is <code>true</code>. Note the default behavior
+      # for JiakResource is auto-post false.
+      def auto_post(state=true)
         unless (state.is_a?(TrueClass) || state.is_a?(FalseClass))
           raise JiakResource, "auto_post must be true or false"
         end
@@ -125,10 +141,12 @@ module RiakRest
       #   JiakResource.auto_update(state)  -> true or false
       #
       # Set <code>true</code> to have changes to resource fields or links
-      # trigger an auto-update to the Jiak server. Default is
-      # <code>false</code>. Interacts with the instance-level resource
-      # setting. See JiakResource#auto_update.
-      def auto_update(state)
+      # trigger an auto-update to the Jiak server. Interacts with the
+      # instance-level resource setting. See JiakResource#auto_update.
+      #
+      # Default value for state is <code>true</code>. Note the default behavior
+      # for JiakResource is auto-update false.
+      def auto_update(state=true)
         state = false  if state.nil?
         unless (state.is_a?(TrueClass) || state.is_a?(FalseClass))
           raise JiakResource, "auto_update must be true or false"
@@ -142,6 +160,23 @@ module RiakRest
       # <code>true</code> if JiakResource is set to auto-update.
       def auto_update?
         return jiak.auto_update
+      end
+
+      # :call-seq:
+      #   JiakResource.auto_manage(state)  -> true or false
+      #
+      # Set auto-post and auto-manage simultaneously.
+      def auto_manage(state=true)
+        auto_post state
+        auto_update state
+      end
+
+      # :call-seq:
+      #   JiakResource.auto_update? -> true or false
+      #
+      # <code>true</code> if JiakResource is set to auto-update.
+      def auto_manage?
+        return auto_post? && auto_update?
       end
 
       # :call-seq:
