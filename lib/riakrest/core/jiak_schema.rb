@@ -50,16 +50,13 @@ module RiakRest
     # New schema from either a hash or an single-element array.
     # 
     # ====Hash structure
-    # <em>required</em>
     # <code>allowed_fields</code>:: Fields that can be stored.
-    # <em>optional</em> 
     # <code>required_fields</code>:: Fields that must be provided on storage.
     # <code>read_mask</code>:: Fields returned on retrieval.
     # <code>write_mask</code>:: Fields that can be changed and stored.
-    # The value for key must be an array.
     #
     # =====OR
-    # <code>schema</code>: A hash whose value is the above hash structure.
+    # <code>schema</code>: A hash whose value is in the above hash structure.
     #
     # Notes
     # * Keys can either be symbols or strings.
@@ -200,54 +197,60 @@ module RiakRest
 
     # :call-seq:
     #   allow(:f1,...,:fn) -> array
+    #   allow([:f1,...,:fn]) -> array
     #
-    # Add to the allowed fields array. Returns the new allowed fields array.
+    # Add to the allowed fields array.
+    #
+    # Returns fields added to allowed fields.
     def allow(*fields)
       add_fields(@allowed_fields,"allow",fields)
-      allowed_fields
     end
 
     # :call-seq:
     #   require(:f1,...,:fn) -> array
+    #   require([:f1,...,:fn]) -> array
     #
     # Add fields to the required fields array.  Adds the fields to the allowed
     # fields as well.
     #
-    # Returns the new required fields array.
+    # Returns fields added to required_fields.
     def require(*fields)
-      add_fields(@required_fields,"require",fields)
-      allow(*fields)
-      required_fields
+      added_fields = add_fields(@required_fields,"require",fields)
+      readwrite(*fields)
+      added_fields
     end
 
     # :call-seq:
     #   readable(:f1,...,:fn) -> array
+    #   readable([:f1,...,:fn]) -> array
     #
     # Add fields to the read mask array.  Adds the fields to the allowed
     # fields as well.
     #
-    # Returns the new read mask.
+    # Returns fields added to read_mask
     def readable(*fields)
-      add_fields(@read_mask,"readable",fields)
+      added_fields = add_fields(@read_mask,"readable",fields)
       allow(*fields)
-      read_mask
+      added_fields
     end
 
     # :call-seq:
     #   writable(:f1,...,:fn) -> array
+    #   writable([:f1,...,:fn]) -> array
     #
     # Add fields to the write mask array.  Adds the fields to the allowed
     # fields as well.
     #
-    # Returns the new write mask.
+    # Returns fields added to write_mask
     def writable(*fields)
-      add_fields(@write_mask,"writable",fields)
+      added_fields = add_fields(@write_mask,"writable",fields)
       allow(*fields)
-      write_mask
+      added_fields
     end
 
     # :call-seq:
     #   readwrite(:f1,...,:fn) -> nil
+    #   readwrite([:f1,...,:fn]) -> nil
     #
     # Add fields to the read and write mask arrays. Adds the fields to the
     # allowed fields as well.
@@ -257,14 +260,15 @@ module RiakRest
       readable(*fields)
       writable(*fields)
       allow(*fields)
-      read_mask
+      nil
     end
 
+    # Scrub the fields by changing strings to symbols and removing any dups,
+    # then add new fields to arr and return added fields.
     def add_fields(arr,descr,fields)
+      fields = fields[0] if(fields.size == 1 && fields[0].is_a?(Array))
       scrubbed = transform_fields(descr,fields)
-      scrubbed.each do |field|
-        arr << field  unless arr.include?(field)
-      end
+      (scrubbed - arr).each {|f| arr << f}
     end
     private :add_fields
 

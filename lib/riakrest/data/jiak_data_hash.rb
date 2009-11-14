@@ -57,15 +57,15 @@ module RiakRest
         if(args.size == 1)
           case args[0]
           when Symbol, Array
-            allowed *args[0]
+            readwrite *args[0]
           when JiakSchema
-            allowed  *args[0].allowed_fields
-            required *args[0].required_fields
+            allow    *args[0].allowed_fields
+            require  *args[0].required_fields
             readable *args[0].read_mask
             writable *args[0].write_mask
           end
         else
-          allowed *args
+          readwrite *args
         end
 
         # :call-seq:

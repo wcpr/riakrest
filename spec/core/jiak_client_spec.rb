@@ -3,8 +3,8 @@ require File.dirname(__FILE__) + '/../spec_helper.rb'
 class FooBarBaz  # :nodoc:
   include JiakData
 
-  allowed  :foo, :bar, :baz
-  required :foo
+  allow    :foo, :bar, :baz
+  require  :foo
   readable :foo, :bar
   writable :foo, :bar
 

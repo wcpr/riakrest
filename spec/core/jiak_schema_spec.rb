@@ -85,11 +85,12 @@ describe "JiakSchema" do
   end
 
   it "should create an empty schema" do
-    jiak_schema = JiakSchema.new
-    jiak_schema.allowed_fields.should be_empty
-    jiak_schema.required_fields.should be_empty
-    jiak_schema.read_mask.should be_empty
-    jiak_schema.write_mask.should be_empty
+    [JiakSchema.new, JiakSchema.new {}].each do |schema|
+      schema.allowed_fields.should be_empty
+      schema.required_fields.should be_empty
+      schema.read_mask.should be_empty
+      schema.write_mask.should be_empty
+    end
   end
 
   it "should create from json" do
@@ -154,7 +155,7 @@ describe "JiakSchema" do
     jiak_schema.write_mask.should eql @hash[:read_mask]
   end
 
-  it "should update with individual arrays" do
+  it "should update individual arrays" do
     arr1    = [:f1]
     arr12   = [:f1,:f2]
     arr13   = [:f1,:f3]
@@ -189,8 +190,21 @@ describe "JiakSchema" do
     jiak_schema.require :f3
     jiak_schema.required_fields.should eql [:f3]
     jiak_schema.allowed_fields.should eql arr123
-    jiak_schema.read_mask.should eql arr12
-    jiak_schema.write_mask.should eql arr12
+    jiak_schema.read_mask.should eql arr123
+    jiak_schema.write_mask.should eql arr123
+  end
+
+  it "should return added fields when updating individual arrays" do
+    arr12 = [:f1,:f2]
+    arr23 = [:f2,:f3]
+    jiak_schema = JiakSchema.new
+    added = jiak_schema.allow arr12
+    added.should eql arr12
+    added = jiak_schema.allow arr23
+    added.should eql [:f3]
+
+    # other add methods call same internal method. previous test checks this is
+    # true so don't need more tests here
   end
 
   it "should set arrays with validation" do

@@ -7,9 +7,9 @@ module RiakRest
   # user-data instances, rather it facilitates creating the class you use to
   # create user-data instances.
   #
-  # The four class methods <code>allowed, required, readable, writable</code>
+  # The four class methods <code>allow, require, readable, writable</code>
   # defined in JiakData#ClassMethods are used to declare the schema for
-  # structured Jiak interaction with user-defined data. The <code>allowed</code>
+  # structured Jiak interaction with user-defined data. The <code>allow</code>
   # method is mandatory; the other methods take the defaults as described in
   # JiakSchema. See JiakSchema for discussion on structured data interaction.
   #
@@ -30,8 +30,8 @@ module RiakRest
   #   class FooBarBaz
   #     include JiakData
   #
-  #     allowed  :foo, :bar, :baz
-  #     required :foo
+  #     allow    :foo, :bar, :baz
+  #     require  :foo
   #     readable :foo, :bar
   #     writable :foo, :baz
   # 
@@ -72,8 +72,8 @@ module RiakRest
   #
   # If only one JiakData will be used for a particular type of data on the Jiak
   # server it is desirable to have the <code>readable</code> and
-  # <code>writable</code> fields be the same as <code>allowed</code>. Setting
-  # only <code>allowed</code> fields provide this reasonable default, hence only
+  # <code>writable</code> fields be the same as <code>allow</code>. Setting
+  # only <code>allow</code> fields provide this reasonable default, hence only
   # that call is mandatory.
   module JiakData
 
@@ -82,14 +82,13 @@ module RiakRest
     # ----------------------------------------------------------------------
     
     # Class methods for use in creating a user-defined JiakData. The methods
-    # <code>allowed, required, readable, writable</code> define the JiakSchema
-    # for this JiakData. See JiakSchema for discussion on the use of schemas in
-    # Riak.
+    # <code>allow, require, readable, writable</code> delegate to JiakSchema. 
+    # See JiakSchema for discussion on the use of schemas in Riak.
     module ClassMethods
 
       # :call-seq:
-      #   allowed :f1, ..., :fn   -> array
-      #   allowed [:f1, ..., :fn]   -> array
+      #   allow :f1, ..., :fn   -> array
+      #   allow [:f1, ..., :fn]   -> array
       #
       # Fields allowed in Jiak interactions. Returns an array of the allowed
       # fields.
@@ -97,25 +96,19 @@ module RiakRest
       # The field <code>jiak</code> is reserved for RiakRest.
       #
       # Raise JiakDataException if the fields include <code>jiak</code>.
-      def allowed(*fields)
-        if(fields.include?(:jiak) || fields.include?('jiak'))
-          raise JiakDataException, "jiak field name reserved for RiakRest"
-        end
-        arr_fields = transform_fields(*fields)
-        arr_fields.each {|field| attr_accessor field}
-        @schema = JiakSchema.new(arr_fields)
-        arr_fields
+      def allow(*fields)
+        delegate_schema("allow",*fields)
       end
 
       # :call-seq:
-      #   required :f1, ..., :fn  -> array
-      #   required [:f1, ..., :fn]   -> array
+      #   require :f1, ..., :fn  -> array
+      #   require [:f1, ..., :fn]   -> array
       #
       # Fields required during in Jiak interactions. Returns an array of the
       # required fields.
       #
-      def required(*fields)
-        set_fields('required_fields',*fields)
+      def require(*fields)
+        delegate_schema("require",*fields)
       end
 
       # :call-seq:
@@ -126,7 +119,7 @@ module RiakRest
       # the read mask.
       #
       def readable(*fields)
-        set_fields('read_mask',*fields)
+        delegate_schema("readable",*fields)
       end
 
       # :call-seq:
@@ -137,7 +130,7 @@ module RiakRest
       # the fields in the write mask.
       #
       def writable(*fields)
-        set_fields('write_mask',*fields)
+        delegate_schema("writable",*fields)
       end
 
       # :call-seq:
@@ -147,26 +140,29 @@ module RiakRest
       # Set the read and write masks to the same fields. Returns an array of
       # the fields in the masks.
       def readwrite(*fields)
-        arr_fields = set_fields('readwrite',*fields)
-        arr_fields
+        delegate_schema("readwrite",*fields)
       end
 
-      def set_fields(which,*fields)
-        arr_fields = transform_fields(*fields)
-        check_allowed(arr_fields)
-        @schema.send("#{which}=",arr_fields)
-        arr_fields
+      def delegate_schema(method,*fields)
+        if(fields.include?(:jiak) || fields.include?('jiak'))
+          raise JiakDataException, "field 'jiak' reserved for RiakRest"
+        end
+        @schema ||= JiakSchema.new
+        @schema.send(method,*fields)
+        unless method.eql?("require")
+          fields.each {|field| attr_accessor field}
+        end
+        schema
       end
-      private :set_fields
+      private :delegate_schema
       
       # :call-seq:
       #   JiakData.schema  -> JiakSchema
       #
-      # Get a JiakSchema representation determined by
-      # <code>allowed, required, readable, writable</code>.
-      #
+      # Get a JiakSchema representation this data.
       def schema
-        @schema
+        @schema ||= JiakSchema.new
+        @schema.dup
       end
 
       # :call-seq:
@@ -197,21 +193,21 @@ module RiakRest
         raise JiakDataException, "#{self} must define jiak_create"
       end
 
-      def transform_fields(*fields)
-        fields = fields[0] if(fields[0].is_a?(Array))
-        fields.map {|f| f.to_sym}
-      end
-      private :transform_fields
+    #   def transform_fields(*fields)
+    #     fields = fields[0] if(fields[0].is_a?(Array))
+    #     fields.map {|f| f.to_sym}
+    #   end
+    #   private :transform_fields
 
-      def check_allowed(fields)
-        allowed_fields = @schema.allowed_fields
-        fields.each do |field|
-          unless allowed_fields.include?(field)
-            raise JiakDataException, "field '#{field}' not allowed"
-          end
-        end
-      end
-      private :check_allowed
+    #   def check_allowed(fields)
+    #     allowed_fields = @schema.allowed_fields
+    #     fields.each do |field|
+    #       unless allowed_fields.include?(field)
+    #         raise JiakDataException, "field '#{field}' not allowed"
+    #       end
+    #     end
+    #   end
+    #   private :check_allowed
     end
 
     def self.included(including_class)  # :nodoc:
@@ -268,4 +264,3 @@ module RiakRest
 
   end
 end
-
