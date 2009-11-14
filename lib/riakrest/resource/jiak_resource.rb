@@ -373,37 +373,6 @@ module RiakRest
         end
       end
 
-      # # :call-seq:
-      # #   copy(opts={}) -> JiakResource
-      # #
-      # # Copies a JiakResource, resetting values passed as options. Valid
-      # # options on copy are those mandatory to create a JiakResource:
-      # # <code>:server</code>, <code>:group</code>, and
-      # # <code>:data_class</code>, and optional auto flags
-      # # <code>auto_post</code> and <code>auto_update</code>.
-      # #   
-      # def copy(opts={})
-      #   valid = [:server,:group,:data_class,:auto_post,:auto_update]
-      #   err = opts.select {|k,v| !valid.include?(k)}
-      #   unless err.empty?
-      #     raise JiakResourceException, "unrecognized options: #{err.keys}"
-      #   end
-
-      #   opts[:server] ||= jiak.server.uri
-      #   opts[:group] ||= jiak.bucket.name
-      #   opts[:data_class] ||= jiak.bucket.data_class
-      #   opts[:auto_post] ||= auto_post?
-      #   opts[:auto_update] ||= auto_update?
-      #   Class.new do
-      #     include JiakResource
-      #     server      opts[:server]
-      #     group       opts[:group]
-      #     data_class  opts[:data_class]
-      #     auto_post   opts[:auto_post]
-      #     auto_update opts[:auto_update]
-      #   end
-      # end
-
       # :call-seq:
       #   JiakResource.do_auto_update(resource)  -> JiakResource or nil
       #

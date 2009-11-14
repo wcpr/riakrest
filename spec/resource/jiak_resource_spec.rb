@@ -39,31 +39,11 @@ describe "JiakResource default" do
       Rsrc.jiak.uri.should eql @server
       Rsrc.jiak.group.should eql @group
       Rsrc.jiak.data.should include JiakData
-      # Rsrc.jiak.data.should == F1F2
       Rsrc.jiak.bucket.should be_a JiakBucket
       Rsrc.jiak.bucket.name.should eql @group
-      # Rsrc.jiak.bucket.data_class.should == F1F2
+      Rsrc.jiak.auto_post.should be false
       Rsrc.jiak.auto_update.should be false
     end
-
-    # it "should copy with defaults and overrides" do
-    #   Rsrc_default = Rsrc.copy
-    #   Rsrc_default.jiak.uri.should eql @server
-    #   Rsrc_default.jiak.group.should eql @group
-    #   Rsrc_default.jiak.data.should == F1F2
-    #   Rsrc_default.auto_post?.should == Rsrc.auto_post?
-    #   Rsrc_default.auto_update?.should == Rsrc.auto_update?
-
-    #   DiffData = JiakDataHash.create
-    #   Rsrc_diff = Rsrc.copy(:server => 'scopy', :group => 'gcopy',
-    #                         :data_class => DiffData,
-    #                         :auto_post => true, :auto_update => true)
-    #   Rsrc_diff.jiak.uri.should eql 'scopy'
-    #   Rsrc_diff.jiak.group.should eql 'gcopy'
-    #   Rsrc_diff.jiak.data.should == DiffData
-    #   Rsrc_diff.auto_post?.should be true
-    #   Rsrc_diff.auto_update?.should be true
-    # end
   end
 
   describe "instance creation" do
@@ -400,13 +380,8 @@ describe "JiakResource complex" do
   end
   Parents.jiak.data.keygen :name
 
-  # Children = Parents.copy(:group => 'children')
-  class Children           # :nodoc:
-    include JiakResource
-    server        'http://localhost:8002/jiak'
-    jattr_accessor :name
-  end
-  Children.jiak.data.keygen :name
+  Children = Parents.dup
+  Children.group 'children'
 
   it "should do multi-step relationships" do
     # relationships
