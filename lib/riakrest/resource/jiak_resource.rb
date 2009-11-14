@@ -45,6 +45,7 @@ module RiakRest
       end
 
       def jattr_reader(*fields)
+        check_fields(fields)
         added_fields = jiak.data.readable(*fields)
         added_fields.each do |field|
           define_method("#{field}") do
@@ -55,6 +56,7 @@ module RiakRest
       alias :jattr :jattr_reader
 
       def jattr_writer(*fields)
+        check_fields(fields)
         added_fields = jiak.data.writable(*fields)
         added_fields.each do |field|
           define_method("#{field}=") do |val|
@@ -68,6 +70,14 @@ module RiakRest
         jattr_reader *fields
         jattr_writer *fields
       end
+
+      def check_fields(fields)
+        if(fields.include?(:jiak) || fields.include?('jiak'))
+          raise(JiakResourceException,
+                "'jiak' reserved for RiakRest Resource usage")
+        end
+      end
+      private :check_fields
 
       # :call-seq:
       #   JiakResource.params(opts={})  -> hash
@@ -152,61 +162,6 @@ module RiakRest
         jiak.server.keys(jiak.bucket)
       end
 
-      # :call-seq:
-      #   JiakResource.allowed(:f1,...,:fn)  -> JiakSchema
-      #
-      # Set the allowed fields for the schema of a resource.
-      #
-      # Returns the altered JiakSchema.
-      def allowed(*fields)
-        jiak.data.schema.allowed_fields = *fields
-        jiak.data.schema
-      end
-
-      # :call-seq:
-      #   JiakResource.required(:f1,...,:fn)  -> JiakSchema
-      #
-      # Sets the required fields for the schema of a resource.
-      #
-      # Returns the altered JiakSchema.
-      def required(*fields)
-        jiak.data.schema.required_fields = *fields
-        jiak.data.schema
-      end
-
-      # :call-seq:
-      #   JiakResource.readable(:f1,...,:fn)  -> JiakSchema
-      #
-      # Sets the readable fields for the schema of a resource.
-      #
-      # Returns the altered JiakSchema.
-      def readable(*fields)
-        jiak.data.schema.read_mask = *fields
-        jiak.data.schema
-      end
-
-      # :call-seq:
-      #   JiakResource.writable(:f1,...,:fn)  -> JiakSchema
-      #
-      # Sets the writable fields for the schema of a resource.
-      #
-      # Returns the altered JiakSchema.
-      def writable(*fields)
-        jiak.data.schema.write_mask = *fields
-        jiak.data.schema
-      end
-
-      # :call-seq:
-      #   JiakResource.readwrite(:f1,...,:fn)  -> JiakSchema
-      # 
-      # Set the readable and writable fields for the schema of a resource.
-      #
-      # Returns the altered JiakSchema
-      def readwrite(*fields)
-        jiak.data.schema.readwrite  = *fields
-        jiak.data.schema
-      end
-      
       # :call-seq:
       #   JiakResource.point_of_view  -> JiakSchema
       #

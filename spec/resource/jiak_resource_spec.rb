@@ -19,7 +19,6 @@ describe "JiakResource default" do
       Rsrc.should respond_to(:server,:group)
       Rsrc.should respond_to(:jattr_reader,:jattr,:jattr_writer,:jattr_accessor)
       Rsrc.should respond_to(:params,:auto_update,:schema,:keys)
-      Rsrc.should respond_to(:allowed,:required,:readable,:writable,:readwrite)
       Rsrc.should respond_to(:point_of_view,:pov,:point_of_view?,:pov?)
       Rsrc.should respond_to(:post,:put,:get,:delete)
       Rsrc.should respond_to(:refresh,:update,:exist?)
