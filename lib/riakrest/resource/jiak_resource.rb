@@ -93,6 +93,12 @@ module RiakRest
       end
       private :check_fields
 
+      def keygen(&block)
+        jiak.data.class_eval <<-EOS
+          define_method(:keygen,&block)
+        EOS
+      end
+
       # :call-seq:
       #   JiakResource.params(opts={})  -> hash
       #
