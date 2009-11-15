@@ -21,9 +21,10 @@ module RiakRest
   #
   # JiakData provides a default data key generator that returns nil, which
   # instructs the Jiak server to generate a random key on first data
-  # storage. To explicitly set the key override JiakData#keygen to return
-  # whatever string you want to use for the key. Keys need to be unique within
-  # each bucket on the Jiak server but can be the same across distinct buckets.
+  # storage. To explicitly set the key use either JiakData#keygen to specify a
+  # block or define a keygen method which returns whatever string you want to
+  # use for the key. Keys need to be unique within each bucket on the Jiak
+  # server but can be the same across distinct buckets.
   #
   # ===Example
   # <code>
@@ -34,6 +35,8 @@ module RiakRest
   #     require  :foo
   #     readable :foo, :bar
   #     writable :foo, :baz
+  #  
+  #     keygen { foo.to_s.downcase }
   # 
   #     def initialize(foo,bar,baz)
   #       @foo = foo
@@ -51,9 +54,6 @@ module RiakRest
   #       }
   #     end
   #
-  #     def keygen
-  #       "#{foo}"
-  #     end
   #   end
   # </code>
   #
@@ -85,6 +85,48 @@ module RiakRest
     # <code>allow, require, readable, writable</code> delegate to JiakSchema. 
     # See JiakSchema for discussion on the use of schemas in Riak.
     module ClassMethods
+
+      # :call-seq:
+      #   jattr_reader :f1,...,:fn
+      #
+      # Add read accessible fields.
+      def jattr_reader(*fields)
+        added_fields = readable(*fields)
+        added_fields.each do |field|
+          class_eval <<-EOS
+            def #{field}
+              @#{field}
+            end
+          EOS
+        end
+        nil
+      end
+      alias :jattr :jattr_reader
+
+      # :call-seq:
+      #   jattr_writer :f1,...,:fn
+      #
+      # Add write accessible fields.
+      def jattr_writer(*fields)
+        added_fields = writable(*fields)
+        added_fields.each do |field|
+          class_eval <<-EOS
+            def #{field}=(val)
+              @#{field} = val
+            end
+          EOS
+        end
+        nil
+      end
+
+      # :call-seq:
+      #   jattr_accessor :f1,...,:fn
+      #
+      # Add read/write accessible fields.
+      def jattr_accessor(*fields)
+        jattr_reader *fields
+        jattr_writer *fields
+      end
 
       # :call-seq:
       #   allow :f1, ..., :fn   -> array
@@ -120,7 +162,13 @@ module RiakRest
       #
       # Returns an array of added fields.
       def readable(*fields)
-        delegate_schema("readable",*fields)
+        added_fields = delegate_schema("readable",*fields)
+        unless added_fields.empty?
+          def jiak_create(jiak)
+            new(jiak)
+          end
+        end
+        added_fields
       end
 
       # :call-seq:
@@ -131,7 +179,17 @@ module RiakRest
       #
       # Returns an array of added fields.
       def writable(*fields)
-        delegate_schema("writable",*fields)
+        added_fields = delegate_schema("writable",*fields)
+        unless added_fields.empty?
+          define_method(:to_jiak) do
+            self.class.schema.write_mask.inject({}) do |build,field|
+              val = send("#{field}")
+              build[field] = val
+              build
+            end
+          end
+        end
+        added_fields
       end
 
       # :call-seq:
@@ -164,6 +222,14 @@ module RiakRest
       def schema
         @schema ||= JiakSchema.new
         @schema.dup
+      end
+
+      # :call-seq:
+      #   JiakData.keygen(&block)  -> nil
+      #
+      # Define the key generation for an instance of the created JiakData class.
+      def keygen(&block)
+        define_method(:keygen,&block)
       end
 
       # :call-seq:
@@ -213,6 +279,29 @@ module RiakRest
 
     def self.included(including_class)  # :nodoc:
       including_class.extend(ClassMethods)
+
+      define_method(:initialize) do |hash|
+        hash.each {|k,v| instance_variable_set(:"@#{k}", v)}
+      end
+
+      define_method(:eql?) do |other|
+        other.is_a?(self.class) &&
+          self.class.schema.allowed_fields.reduce(true) do |same,field|
+          same && other.send("#{field}").eql?(send("#{field}"))
+        end
+      end
+
+      define_method(:==) do |other|
+        self.class.schema.allowed_fields.reduce(true) do |same,field|
+          same && (other.send("#{field}") == (send("#{field}")))
+        end
+      end
+
+      define_method(:hash) do
+        self.class.schema.allowed_fields.inject(0) do |hsh,field|
+          hsh += send("#{field}").hash
+        end
+      end
     end
     
     # ----------------------------------------------------------------------
@@ -223,8 +312,8 @@ module RiakRest
     #   to_jiak  -> hash
     #
     # Provide a hash structure of the data to write to Jiak. The fields for
-    # this structure should come from the write mask of the structured Jiak
-    # interaction.  See JiakSchema for write mask discussion.
+    # this structure should come from the JiakData write mask.See JiakSchema
+    # for write mask discussion.
     #
     # User-defined data classes must override this method. The method is called
     # during the creation of a JiakObject to send information to Jiak. The
@@ -240,7 +329,7 @@ module RiakRest
     #    end
     # </code>
     #
-    # Raise JiakDataException if not explicitly defined by user-defined data class.
+    # Raise JiakDataException if not defined by user-defined data class.
     def to_jiak
       raise JiakDataException, "#{self} must define to_jiak"
     end
@@ -259,6 +348,9 @@ module RiakRest
     #     f1.to_s
     #   end
     # </code>
+    #
+    # The JiakData#keygen class method can also be used to override this
+    # default implement method.
     def keygen
       nil
     end
