@@ -23,7 +23,7 @@ class DogData  # :nodoc:
     new(jiak)
   end
 
-  def for_jiak
+  def to_jiak
     self.class.write_mask.inject({}) do |build,field|
       val = send("#{field}")
       build[field] = val   unless val.nil?
