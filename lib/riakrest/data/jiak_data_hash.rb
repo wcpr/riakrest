@@ -21,10 +21,6 @@ module RiakRest
   # still has all of the field attributes, this simply provides a easy way to
   # initialize some or all of the values for the fields.
   #
-  # The class created by JiakDataHash also provides a <code>keygen</code> class
-  # method that allows specifying a list of fields for use in generating the
-  # key for instance data. See JiakDataHash#keygen.
-  #
   # Note the created class has methods provided by JiakData to inspect or
   # manipulate the structure Jiak interaction for instances of the class. See
   # JiakData#ClassMethods for those methods.
@@ -32,7 +28,7 @@ module RiakRest
   # ===Usage
   # <code>
   #   Dog = JiakDataHash.create(:name,:weight)
-  #   Dog.keygen :name
+  #   Dog.keygen {name}
   #
   #   addie = Dog.new(:name => "Adelaide", :weight => 45)
   #   addie.name                                           # => "Adeliade"
@@ -66,17 +62,6 @@ module RiakRest
           end
         else
           readwrite *args
-        end
-
-        # :call-seq:
-        #   DataClass.keygen(*fields)
-        #
-        # The key generation for the data class will be a concatenation of the
-        # to_s result of calling each of the listed data class fields.
-        def self.keygen(*fields)
-          define_method(:keygen) do
-            fields.inject("") {|key,field| key += send("#{field}").to_s}
-          end
         end
 
         # :call-seq:
@@ -144,7 +129,6 @@ module RiakRest
             build
           end
         end
-
 
         # call-seq:
         #    jiak_data == other -> true or false
