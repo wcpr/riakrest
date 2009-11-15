@@ -93,10 +93,10 @@ module RiakRest
       end
       private :check_fields
 
-      # :call-seq:
-      #   JiakResource.keygen &block
       def keygen(&block)
-        jiak.data.keygen &block
+        jiak.data.class_eval <<-EOS
+          define_method(:keygen,&block)
+        EOS
       end
 
       # :call-seq:

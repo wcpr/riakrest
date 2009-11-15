@@ -88,9 +88,9 @@ describe "JiakResource default class-level auto-post/auto-update" do
     server         'http://localhost:8002/jiak'
     group          'people'
     jattr_accessor  :name, :age
+    keygen { name }
     point_of_view
   end
-  People.jiak.data.keygen :name
 
   before do
     @name = 'p default'
@@ -138,9 +138,9 @@ describe "JiakResource class auto-post" do
     server         'http://localhost:8002/jiak'
     group          'people'
     jattr_accessor  :name, :age
+    keygen { name }
     point_of_view
   end
-  People.jiak.data.keygen :name
 
   before do
     @name = 'p auto-post'
@@ -217,10 +217,10 @@ describe "JiakResource class auto-update" do
     server         'http://localhost:8002/jiak'
     group          'dogs'
     jattr_accessor  :name, :age
+    keygen { name }
     point_of_view
     auto_manage
   end
-  Dogs.jiak.data.keygen :name
 
   before do
     @pname = 'p auto-update'
@@ -312,10 +312,10 @@ describe "JiakResource simple" do
     server         'http://localhost:8002/jiak'
     group          'dogs'
     jattr_accessor  :name, :age
+    keygen { name }
     point_of_view
     auto_manage
   end
-  Dogs.jiak.data.keygen :name
 
   before do
     @pname = 'p'
@@ -372,9 +372,9 @@ describe "JiakResource complex" do
     include JiakResource
     server        'http://localhost:8002/jiak'
     jattr_accessor :name
+    keygen { name }
     point_of_view
   end
-  Parents.jiak.data.keygen :name
 
   Children = Parents.dup
   Children.group 'children'
