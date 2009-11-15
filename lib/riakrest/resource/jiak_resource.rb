@@ -93,10 +93,10 @@ module RiakRest
       end
       private :check_fields
 
+      # :call-seq:
+      #   JiakResource.keygen &block
       def keygen(&block)
-        jiak.data.class_eval <<-EOS
-          define_method(:keygen,&block)
-        EOS
+        jiak.data.keygen &block
       end
 
       # :call-seq:
@@ -193,17 +193,6 @@ module RiakRest
         jiak.data.schema
       end
 
-      # :call-seq:
-      #   JiakResource.keys   -> array
-      #
-      # Get an array of the current keys for this resource. Since key lists are
-      # updated asynchronously on a Riak cluster the returned array can be out
-      # of synch immediately after new puts or deletes.
-      def keys
-        jiak.server.keys(jiak.bucket)
-      end
-
-      # :call-seq:
       #   JiakResource.point_of_view  -> JiakSchema
       #
       # Ready the Jiak server point-of-view to accept structured interaction
@@ -223,6 +212,16 @@ module RiakRest
         jiak.server.schema(jiak.bucket).eql? jiak.bucket.schema
       end
       alias :pov? :point_of_view?
+
+      # :call-seq:
+      #   JiakResource.keys   -> array
+      #
+      # Get an array of the current keys for this resource. Since key lists are
+      # updated asynchronously on a Riak cluster the returned array can be out
+      # of synch immediately after new puts or deletes.
+      def keys
+        jiak.server.keys(jiak.bucket)
+      end
 
       # :call-seq:
       #   JiakResource.put(JiakResource,opts={})  -> JiakResource
