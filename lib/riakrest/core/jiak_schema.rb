@@ -129,16 +129,17 @@ module RiakRest
     # call-seq:
     #    JiakSchema.from_json(json)  -> JiakSchema
     #
-    # Create a JiakSchema from parsed JSON returned by the Jiak server.
-    def self.from_jiak(jiak)
+    # Called by the Core Client framework when marshalling from Jiak. This
+    # method does not need to be call explicitly.
+    def self.jiak_create(jiak)
       new(jiak)
     end
 
     # :call-seq:
     #    to_jiak  -> JSON
     #
-    # Create a hash representation suitable for sending to a Jiak
-    # server. Called by JiakClient when transporting a schema to Jiak.
+    # Called by the Core Client framework when marshalling to Jiak. This method
+    # does not need to be call explicitly.
     def to_jiak
       { :schema =>
         { :allowed_fields  => @allowed_fields,

@@ -1,28 +1,31 @@
 module RiakRest
 
-  # Restful client interaction with a Riak document store via the HTTP/JSON
-  # interface Jiak.
+  # Client for restful interaction with a Riak document store via the HTTP/JSON
+  # interface Jiak. Use of RiakRest Core Client exposes Jiak server constructs
+  # and concepts. JiakResource wraps Jiak interaction at a higher level of
+  # abstraction and takes care of much of the Core Client bookkeeping
+  # tasks. See JiakResource.
   #
   # ===Example
   #  require 'riakrest'
   #  include RiakRest
   #
-  #  class People
+  #  class PeopleData
   #    include JiakData
   #    jattr_accessor :name, :age
   #  end
   #
   #  client = JiakClient.new("http://localhost:8002/jiak")
-  #  bucket = JiakBucket.new('people',People)
+  #  bucket = JiakBucket.new('people',PeopleData)
   #  client.set_schema(bucket)
   #
   #  remy = client.store(JiakObject.new(:bucket => bucket,
-  #                                      :data => People.new(:name => "remy",
-  #                                                          :age => 10)),
-  #                       :return => :object)
+  #                                     :data => PeopleData.new(:name => "remy",
+  #                                                             :age => 10)),
+  #                      :return => :object)
   #  callie = client.store(JiakObject.new(:bucket => bucket,
-  #                                       :data => People.new(:name => "Callie",
-  #                                                           :age => 12)),
+  #                                       :data => PeopleData.new(:name => "Callie",
+  #                                                               :age => 12)),
   #                        :return => :object)
   #
   #  remy.data.name = "Remy"
@@ -30,7 +33,7 @@ module RiakRest
   #  client.store(remy)
   #
   #  sisters = client.walk(bucket,remy.key,
-  #                        QueryLink.new(bucket,'sister'),People)
+  #                        QueryLink.new(bucket,'sister'),PeopleData)
   #  sisters[0].eql?(callie)                                       #  => true
   #
   #  client.delete(bucket,remy.key)
@@ -96,7 +99,6 @@ module RiakRest
     end
 
     # :call-seq:
-    #
     #   server  -> string
     #
     # Return Jiak server URI
@@ -173,7 +175,7 @@ module RiakRest
     # to the Jiak server. See JiakBucket#schema for a way to get this
     # information without server access.
     def schema(bucket)
-      JiakSchema.from_jiak(bucket_info(bucket,SCHEMA))
+      JiakSchema.jiak_create(bucket_info(bucket,SCHEMA))
     end
 
     # :call-seq:
@@ -195,9 +197,9 @@ module RiakRest
     # for storage must be JiakObject.
     #
     # =====Valid options
-    # <code>:return</code> -- If <code>:key</code>, return the key under which
-    # the data was stored. If <code>:object</code> return the stored JiakObject
-    # (which includes Riak context). Defaults to <code>:key</code>.<br/>
+    # <code>:return</code> -- <code>:key</code> (default), returns the key
+    # use to store the data, or <code>:object</code> returns the stored
+    # JiakObject with included Riak context.<br/>
     # <code>:writes</code><br/>
     # <code>:durable_writes</code><br/>
     # <code>:reads</code><br/>
@@ -237,7 +239,7 @@ module RiakRest
         end
         
         if(req_params[RETURN_BODY])
-          JiakObject.from_jiak(JSON.parse(resp),jobj.bucket.data_class)
+          JiakObject.jiak_create(JSON.parse(resp),jobj.bucket.data_class)
         elsif(key_empty)
           resp.headers[:location].split('/').last
         else
@@ -284,7 +286,7 @@ module RiakRest
       begin
         uri = jiak_uri(bucket,key,req_params)
         resp = RestClient.get(uri, :accept => APP_JSON)
-        JiakObject.from_jiak(JSON.parse(resp),bucket.data_class)
+        JiakObject.jiak_create(JSON.parse(resp),bucket.data_class)
       rescue RestClient::ResourceNotFound => err
         raise JiakResourceNotFound, "failed get: #{err.message}"
       rescue RestClient::ExceptionWithResponse => err
@@ -342,7 +344,7 @@ module RiakRest
         resp = RestClient.get(uri, :accept => APP_JSON)
         # JSON.parse(resp)['results'][0]
         JSON.parse(resp)['results'][0].map do |jiak|
-          JiakObject.from_jiak(jiak,data_class)
+          JiakObject.jiak_create(jiak,data_class)
         end
       rescue RestClient::ExceptionWithResponse => err
         fail_with_response("put", err)

@@ -16,7 +16,7 @@ describe "JiakSchema" do
   end
 
   it "should respond to" do
-    JiakSchema.should respond_to(:from_jiak)
+    JiakSchema.should respond_to(:jiak_create)
 
     @jiak_schema.should respond_to(:allowed_fields,:allowed_fields=)
     @jiak_schema.should respond_to(:required_fields,:required_fields=)
@@ -94,7 +94,7 @@ describe "JiakSchema" do
   end
 
   it "should create from json" do
-    schema = JiakSchema.from_jiak(JSON.parse(@hash.to_json))
+    schema = JiakSchema.jiak_create(JSON.parse(@hash.to_json))
     @allowed_fields.same_fields?(schema.allowed_fields).should be true
     @required_fields.same_fields?(schema.required_fields).should be true
     @write_mask.same_fields?(schema.write_mask).should be true

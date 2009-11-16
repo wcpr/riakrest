@@ -30,7 +30,7 @@ describe "JiakObject" do
   end
 
   it "should respond to" do
-    JiakObject.should respond_to(:new,:from_jiak)
+    JiakObject.should respond_to(:new,:jiak_create)
 
     @object.should respond_to(:bucket,:bucket=)
     @object.should respond_to(:key,:key=)
@@ -73,7 +73,7 @@ describe "JiakObject" do
   it "should initialize from JSON" do
     [@core_json,@full_json].each do |json|
       jiak = JSON.parse(json)
-      jobj = JiakObject.from_jiak(jiak,@bucket.data_class)
+      jobj = JiakObject.jiak_create(jiak,@bucket.data_class)
       jobj.bucket.should eql @object.bucket
       jobj.key.should eql @object.key
       jobj.data.f1.should eql @data.f1
@@ -88,7 +88,7 @@ describe "JiakObject" do
     end
 
     jiak = JSON.parse(@full_json)
-    jobj = JiakObject.from_jiak(jiak,@bucket.data_class)
+    jobj = JiakObject.jiak_create(jiak,@bucket.data_class)
     jobj.riak[:vclock].should eql 'vclock'
     jobj.riak[:vtag].should eql 'vtag'
     jobj.riak[:lastmod].should eql 'last mod'

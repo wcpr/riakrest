@@ -1,6 +1,8 @@
 module RiakRest
 
-  # Wrapper for JiakData.
+  # JiakObject wraps a JiakData. JiakObject also maintains Jiak information,
+  # Riak context, and a set a links used in conjuction with the Jiak link
+  # map/reduce facility.
   class JiakObject
 
     attr_accessor :bucket, :key, :data, :links, :riak
@@ -41,12 +43,11 @@ module RiakRest
     end
 
     # :call-seq:
-    #    JiakObject.from_jiak(jiak)  -> JiakObject
+    #    JiakObject.jiak_create(jiak)  -> JiakObject
     #
-    # Create a JiakObject from parsed JSON returned by the Jiak server. Calls
-    # the <code>jiak_create</code> of the JiakData class passed as the second
-    # argument to inflate the data into the user-defined data class.
-    def self.from_jiak(jiak,klass)
+    # Called by the Core Client framework when marshalling from Jiak. This
+    # method does not need to be call explicitly.
+    def self.jiak_create(jiak,klass)
       jiak[:bucket] = JiakBucket.new(jiak.delete('bucket'),klass)
       jiak[:data] = klass.jiak_create(jiak.delete('object'))
       jiak[:links] = jiak.delete('links').map {|link| JiakLink.new(link)}
@@ -60,9 +61,8 @@ module RiakRest
     # :call-seq:
     #    to_jiak  -> hash
     #
-    # Create a hash representation suitable for sending to a Jiak server. Calls
-    # the <code>to_jiak</code> method of the wrapped JiakData. Called by
-    # JiakClient when transporting an object to Jiak.
+    # Called by the Core Client framework when marshalling to Jiak. This method
+    # does not need to be call explicitly.
     def to_jiak
       jiak = {
         :bucket => @bucket.name,
