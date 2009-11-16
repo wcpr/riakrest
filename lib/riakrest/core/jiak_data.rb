@@ -91,14 +91,7 @@ module RiakRest
       #
       # Add read accessible fields.
       def jattr_reader(*fields)
-        added_fields = readable(*fields)
-        added_fields.each do |field|
-          class_eval <<-EOS
-            def #{field}
-              @#{field}
-            end
-          EOS
-        end
+        readable *fields
         nil
       end
       alias :jattr :jattr_reader
@@ -108,14 +101,7 @@ module RiakRest
       #
       # Add write accessible fields.
       def jattr_writer(*fields)
-        added_fields = writable(*fields)
-        added_fields.each do |field|
-          class_eval <<-EOS
-            def #{field}=(val)
-              @#{field} = val
-            end
-          EOS
-        end
+        writable *fields
         nil
       end
 
@@ -124,8 +110,8 @@ module RiakRest
       #
       # Add read/write accessible fields.
       def jattr_accessor(*fields)
-        jattr_reader *fields
-        jattr_writer *fields
+        readable *fields
+        writable *fields
       end
 
       # :call-seq:
@@ -162,13 +148,7 @@ module RiakRest
       #
       # Returns an array of added fields.
       def readable(*fields)
-        added_fields = delegate_schema("readable",*fields)
-        unless added_fields.empty?
-          def jiak_create(jiak)
-            new(jiak)
-          end
-        end
-        added_fields
+        delegate_schema("readable",*fields)
       end
 
       # :call-seq:
@@ -179,17 +159,7 @@ module RiakRest
       #
       # Returns an array of added fields.
       def writable(*fields)
-        added_fields = delegate_schema("writable",*fields)
-        unless added_fields.empty?
-          define_method(:to_jiak) do
-            self.class.schema.write_mask.inject({}) do |build,field|
-              val = send("#{field}")
-              build[field] = val
-              build
-            end
-          end
-        end
-        added_fields
+        delegate_schema("writable",*fields)
       end
 
       # :call-seq:
@@ -200,7 +170,9 @@ module RiakRest
       #
       # Returns nil
       def readwrite(*fields)
-        delegate_schema("readwrite",*fields)
+        readable(*fields)
+        writable(*fields)
+        nil
       end
 
       # Delegates adding fields to the schema, then creates attr accessors for
@@ -239,49 +211,37 @@ module RiakRest
       # by Jiak. These fields are determined by the read mask of the
       # structured Jiak interaction. See JiakSchema for read mask discussion.
       #
-      # User-defined data classes must override this method. The method is
-      # called during the creation of a JiakObject from information returned by
-      # Jiak. The JiakObject contains the user-defined data itself. You do not
-      # call this method explicitly.
+      # User-defined data classes must either override this method explicitly
+      # or use the <code>jattr_*</code> methods which implicitly override this
+      # method. The method is automatically called to marshall data from
+      # Jiak. You do not call this method explicitly.
       #
       # ====Example
-      # <code>
-      #    def initialize(f1,f2)
-      #      @f1 = f1
-      #      @f2 = f2
-      #    end
-      #    def jiak_create(jiak)
-      #      new(jiak['f1'], jiak['f2'])
-      #    end
-      # </code>
-      #
-      # Raise JiakDataException if not explicitly defined by user-data class.
-      def jiak_create(json)
-        raise JiakDataException, "#{self} must define jiak_create"
+      #  def initialize(f1,f2)
+      #    @f1 = f1
+      #    @f2 = f2
+      #  end
+      #  def jiak_create(jiak)
+      #    new(jiak['f1'], jiak['f2'])
+      #  end
+      def jiak_create(jiak)
+        new(jiak)
       end
 
-    #   def transform_fields(*fields)
-    #     fields = fields[0] if(fields[0].is_a?(Array))
-    #     fields.map {|f| f.to_sym}
-    #   end
-    #   private :transform_fields
-
-    #   def check_allowed(fields)
-    #     allowed_fields = @schema.allowed_fields
-    #     fields.each do |field|
-    #       unless allowed_fields.include?(field)
-    #         raise JiakDataException, "field '#{field}' not allowed"
-    #       end
-    #     end
-    #   end
-    #   private :check_allowed
     end
 
     def self.included(including_class)  # :nodoc:
       including_class.extend(ClassMethods)
 
-      define_method(:initialize) do |hash|
+      define_method(:initialize) do |hash={}|
         hash.each {|k,v| instance_variable_set("@#{k}", v)}
+      end
+
+      define_method(:to_jiak) do
+        self.class.schema.write_mask.inject({}) do |build,field|
+          build[field] = send("#{field}")
+          build
+        end
       end
 
       define_method(:eql?) do |other|
@@ -315,23 +275,25 @@ module RiakRest
     # this structure should come from the JiakData write mask. See JiakSchema
     # for shema discussion.
     #
+    # User-defined data classes must either override this method explicitly or
+    # use the <code>jattr_*</code> methods which implicitly provide an implicit
+    # override. The method is automatically called to marshall data to
+    # Jiak. You do not call this method explicitly.
+
     # Data classes that do not used the jattr_* methods to specify attributes
-    # must override this method. The method is called during the creation of a
-    # JiakObject to send information to Jiak. The JiakObject contains the
-    # user-defined data itself. You do not call this method explicitly.
+    # must override this method. 
     #
     # ====Example
-    # <code>
-    #    def to_jiak
-    #      { :writable_f1 => @writable_f1,
-    #        :writable_f2 => @writable_f2
-    #      }
-    #    end
-    # </code>
-    #
-    # Raise JiakDataException if not defined by user-defined data class.
+    #  def to_jiak
+    #    { :writable_f1 => @writable_f1,
+    #      :writable_f2 => @writable_f2
+    #    }
+    #  end
     def to_jiak
-      raise JiakDataException, "#{self} must define to_jiak"
+      self.class.schema.write_mask.inject({}) do |build,field|
+        build[field] = send("#{field}")
+        build
+      end
     end
 
     # :call-seq:

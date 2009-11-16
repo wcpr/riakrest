@@ -452,7 +452,7 @@ module RiakRest
         end
         @jiak = Struct.new(:server,:uri,:group,:data,:bucket,
                            :auto_post,:auto_update).new
-        @jiak.data = JiakDataHash.create
+        @jiak.data = JiakDataFields.create
         @jiak.group = self.name.split('::').last.downcase
         @jiak.bucket = JiakBucket.new(@jiak.group,@jiak.data)
         

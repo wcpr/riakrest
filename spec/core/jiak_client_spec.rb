@@ -121,7 +121,7 @@ describe "JiakClient processing" do
     end
 
     it "should update an existing bucket schema" do
-      FooBarBazBuz = JiakDataHash.create(:foo,:bar,:baz,:buz)
+      FooBarBazBuz = JiakDataFields.create(:foo,:bar,:baz,:buz)
       @client.set_schema(JiakBucket.new(@bucket_name,FooBarBazBuz))
       
       resp_schema = @client.schema(@bucket)
@@ -268,16 +268,18 @@ describe "JiakClient processing" do
 
 end
 
-Parent = JiakDataHash.create(:name)
-Child = JiakDataHash.create(:name)
+class PersonData
+  include JiakData
+  jattr_accessor :name
+end
 
 describe "JiakClient links" do
   before do
     @base_uri = 'http://127.0.0.1:8002/jiak/'
     @client = JiakClient.new @base_uri
 
-    @p_bucket = JiakBucket.new('parent',Parent)
-    @c_bucket = JiakBucket.new('child',Child)
+    @p_bucket = JiakBucket.new('parent',PersonData)
+    @c_bucket = JiakBucket.new('child',PersonData)
     @client.set_schema(@p_bucket)
     @client.set_schema(@c_bucket)
   end
@@ -303,7 +305,7 @@ describe "JiakClient links" do
     #  - create p and c (when necessary)
     #  - add links for p -> c and c -> p
     parent_children.each do |p_name,c_names|
-      p_data = Parent.new(:name => p_name)
+      p_data = PersonData.new(:name => p_name)
       p_obj = JiakObject.new(:bucket => @p_bucket,
                              :key => p_name,
                              :data => p_data)
@@ -313,7 +315,7 @@ describe "JiakClient links" do
         begin
           child = @client.get(@c_bucket,c_name)
         rescue JiakResourceNotFound
-          c_data = Child.new(:name => c_name)
+          c_data = PersonData.new(:name => c_name)
           c_obj = JiakObject.new(:bucket => @c_bucket,
                                  :key => c_name,
                                  :data => c_data)
@@ -357,7 +359,7 @@ describe "JiakClient links" do
     # p's should include links to their c's
     c_link = QueryLink.new(@c_bucket,'child',nil)
     parent_children.each do |p_name,children|
-      @client.walk(@p_bucket,p_name,c_link,Child).each do |c_obj|
+      @client.walk(@p_bucket,p_name,c_link,PersonData).each do |c_obj|
         children.should include c_obj.data.name
       end
     end
@@ -365,14 +367,14 @@ describe "JiakClient links" do
     # c's should include links to their p's
     p_link = QueryLink.new(@p_bucket,'parent',nil)
     child_parents.each do |c_name,parents|
-      @client.walk(@c_bucket,c_name,p_link,Parent).each do |p_obj|
+      @client.walk(@c_bucket,c_name,p_link,PersonData).each do |p_obj|
         parents.should include p_obj.data.name
       end
     end
 
     # c siblings requires a second step
     c1s,c2s,c3s,c4s,c5s,c6s,c7s = child_parents.keys.map do |c|
-      siblings = @client.walk(@c_bucket,c,[p_link,c_link],Child)
+      siblings = @client.walk(@c_bucket,c,[p_link,c_link],PersonData)
       me = @client.get(@c_bucket,c)
       siblings.reject! {|s| s.eql?(me)}
       siblings

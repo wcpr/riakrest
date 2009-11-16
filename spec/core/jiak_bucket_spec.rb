@@ -1,9 +1,12 @@
 require File.dirname(__FILE__) + '/../spec_helper.rb'
 
+F1F2 = JiakDataFields.create :f1, :f2
+G1   = JiakDataFields.create :g1
+
 describe "JiakBucket" do
   before do
     @name = 'bucket_name'
-    @data_class = JiakDataHash.create(:f1,:f2)
+    @data_class = F1F2
     @bucket = JiakBucket.new(@name,@data_class)
   end
 
@@ -29,7 +32,7 @@ describe "JiakBucket" do
     @bucket.name = name
     @bucket.name.should eql name
 
-    data_class = JiakDataHash.create(:g1)
+    data_class = G1
     @bucket.data_class = data_class
     @bucket.data_class.should eql data_class
   end
@@ -62,7 +65,7 @@ describe "JiakBucket" do
     bucket = JiakBucket.new(@name.upcase,@data_class)
     bucket.should_not eql @bucket
 
-    data_class = JiakDataHash.create(:g1)
+    data_class = G1
     bucket = JiakBucket.new(@name,data_class)
     bucket.should_not eql @bucket
   end

@@ -1,13 +1,13 @@
 require File.dirname(__FILE__) + '/../spec_helper.rb'
 
-DataObject = JiakDataHash.create(:f1,:f2,:f3)
+UserData = JiakDataFields.create :f1, :f2, :f3
 
 describe "JiakObject" do
   before do
     @data = 
-      DataObject.new(:f1 => 'f1',:f2 => ['a','b'], :f3 => {:f3_1 => 'f3_1'})
+      UserData.new(:f1 => 'f1',:f2 => ['a','b'], :f3 => {:f3_1 => 'f3_1'})
     @bucket_name = 'bucket'
-    @bucket = JiakBucket.new(@bucket_name,DataObject)
+    @bucket = JiakBucket.new(@bucket_name,UserData)
     @key = 'hey'
     @l1 = JiakLink.new('l1b','l1k','l1t')
     @l2 = JiakLink.new('l2b','l2k','l2t')
@@ -140,7 +140,7 @@ describe "JiakObject" do
 
   it "should allow attribute updates" do
     bucket_name = 'new bucket'
-    bucket = JiakBucket.new(bucket_name,DataObject)
+    bucket = JiakBucket.new(bucket_name,UserData)
     @object.bucket = bucket
     @object.bucket.should eql bucket
 
@@ -148,7 +148,7 @@ describe "JiakObject" do
     @object.key = key
     @object.key.should eql key
 
-    object = DataObject.new(:f1 => 'new f1',:f2 => [], :f3 => 6)
+    object = UserData.new(:f1 => 'new f1',:f2 => [], :f3 => 6)
     @object.data.should_not eql object
     @object.data = object
     @object.data.should eql object
