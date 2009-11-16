@@ -5,12 +5,10 @@ module RiakRest
   # to be traversed later using a QueryLink.
   #
   # ===Usage
-  # <code>
-  #   link = JiakLink.new('people','callie','sister')
-  # </code>
-  # If the above link were added to a JiakObject in the same bucket and keyed
-  # by the string 'remy', the link from remy to the sister callie would be
-  # retrieve using JiakClient#walk and the query link
+  #  link = JiakLink.new('people','callie','sister')
+  # If the above link were added to a JiakObject <code>remy</code> , then
+  # <code>remy</code> could retrieve the sister object <code>callie</code>
+  # using JiakClient#walk with a query link
   # <code>QueryLink.new('people','sister')</code>
   #   
   class JiakLink

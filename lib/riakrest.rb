@@ -61,7 +61,7 @@ module RiakRest
   # Convenience method for checking validity of method options. If any of the
   # options in opt are not in valid, raise the exception with the invalid
   # options in the message.
-  def check_opts(opts,valid,exception)
+  def check_opts(opts,valid,exception)              # :nodoc:
     err = opts.select {|k,v| !valid.include?(k)}
     unless err.empty?
       raise exception, "unrecognized options: #{err.keys}"
@@ -74,16 +74,16 @@ require 'riakrest/core/exceptions'
 require 'riakrest/core/jiak_bucket'
 require 'riakrest/core/jiak_client'
 require 'riakrest/core/jiak_data'
+require 'riakrest/core/jiak_data_fields'
 require 'riakrest/core/jiak_link'
 require 'riakrest/core/jiak_object'
 require 'riakrest/core/jiak_schema'
 require 'riakrest/core/query_link'
 
-require 'riakrest/data/jiak_data_hash'
 require 'riakrest/resource/jiak_resource'
 
 # Extend Array with convenience methods for comparing array contents.
-class Array
+class Array   # :nodoc:
   # Compare arrays for same elements regardless of order.
   def same_elements?(arr)
     raise ArgumentError unless arr.is_a?(Array)

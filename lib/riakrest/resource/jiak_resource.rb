@@ -1,39 +1,37 @@
 module RiakRest
-  # JiakResource provides a resource-oriented wrapper for Jiak interaction. See
-  # RiakRest for a basic usage example.
+  # JiakResource provides a resource-oriented wrapper for Jiak interaction.
+  #
+  # ===Example
+  #  require 'riakrest'
+  #  include RiakRest
+  #
+  #  class People
+  #    include JiakResource
+  #    server 'http://localhost:8002/jiak'
+  #    jattr_accessor :name, :age
+  #    auto_manage
+  #  end
+  #
+  #  remy = People.new(:name => 'Remy',:age => 10)       # (auto-post)
+  #  remy.age = 11                                       # (auto-update)
+  #
+  #  callie = People.new(:name => 'Callie', :age => 13)
+  #  remy.link(callie,'sister')
+  #
+  #  sisters = remy.query(People,'sister')
+  #  sisters[0].eql?(callie)                             # => true
+  #
+  #  remy.delete
+  #  callie.delete
   
   module JiakResource
     # ----------------------------------------------------------------------
     # Class methods
     # ----------------------------------------------------------------------
     
-    # Class methods for creating a user-defined JiakResource. The methods
-    # <code>server</code>, <code>group</code> and <code>data_class</code> are
-    # mandatory to create a fully usable JiakResource.
+    # Class methods for creating a user-defined JiakResource.
     #
-    # ===Example
-    #  require 'riakrest'
-    #  include RiakRest
-    #
-    #  class People
-    #    include JiakResource
-    #    server 'http://localhost:8002/jiak'
-    #    jattr_accessor :name, :age
-    #    auto_manage
-    #  end
-    #
-    #  remy = People.new(:name => 'Remy',:age => 10)       # (auto-post)
-    #  remy.age = 11                                       # (auto-update)
-    #
-    #  callie = People.new(:name => 'Callie', :age => 13)
-    #  remy.link(callie,'sister')
-    #
-    #  sisters = remy.query(People,'sister')
-    #  sisters[0].eql?(callie)                             # => true
-    #
-    #  remy.delete
-    #  callie.delete
-    # 
+    # See JiakResource for example usage.
     module ClassMethods
 
       # :call-seq:

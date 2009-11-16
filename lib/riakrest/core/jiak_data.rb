@@ -3,78 +3,45 @@ module RiakRest
   # All end-user data stored via RiakRest is contained in user-defined data
   # objects. To make a user-defined data object, include module JiakData into
   # your class definition. This allows creating a class that can be used to
-  # create instances of your user-defined data. Note JiakData does create
-  # user-data instances, rather it facilitates creating the class you use to
+  # create instances of your user-defined data. Note JiakData does not create
+  # user-data instances, rather it facilitates creating the class used to
   # create user-data instances.
   #
-  # The four class methods <code>allow, require, readable, writable</code>
-  # defined in JiakData#ClassMethods are used to declare the schema for
-  # structured Jiak interaction with user-defined data. The <code>allow</code>
-  # method is mandatory; the other methods take the defaults as described in
-  # JiakSchema. See JiakSchema for discussion on structured data interaction.
+  # The class methods <code>jattr_reader,jattr_writer</code>, and
+  # <code>jattr_accessor</code> are used to declare the Jiak readable and
+  # writable fields for a JiakData. The method <code>keygen</code> is used
+  # to specify a block for generating the key for a data instance. By default,
+  # JiakData generates an empty key which is interpreted by the Jiak server as
+  # a signal to generate a random key.
+  # ====Example
+  #  class FooBar
+  #    include JiakData
+  #    jattr_accessor :foo, :bar
+  #    keygen { foo.downcase }
+  #  end
   #
-  # User-defined data classes must override JiakData#ClassMethods#jiak_create
-  # (creating your user-defined data from the information returned by Jiak) and
-  # JiakData#to_jiak (providing the information to be sent to Jiak). The
-  # default implementations of these methods throw JiakDataException to
-  # enforce this override.
+  # The four class methods <code>allow, require, readable, writable</code> are
+  # used for more specific data schema control. See JiakSchema for a
+  # discussion of the schema fields.
+  # ====Example
+  #  class FooBarBaz
+  #    include JiakData
   #
-  # JiakData provides a default data key generator that returns nil, which
-  # instructs the Jiak server to generate a random key on first data
-  # storage. To explicitly set the key use either JiakData#keygen to specify a
-  # block or define a keygen method which returns whatever string you want to
-  # use for the key. Keys need to be unique within each bucket on the Jiak
-  # server but can be the same across distinct buckets.
+  #    allow    :foo, :bar, :baz
+  #    require  :foo
+  #    readable :foo, :bar
+  #    writable :foo, :baz
+  #  end
   #
-  # ===Example
-  # <code>
-  #   class FooBarBaz
-  #     include JiakData
+  # The methods used in the above examples can be used together as well.
   #
-  #     allow    :foo, :bar, :baz
-  #     require  :foo
-  #     readable :foo, :bar
-  #     writable :foo, :baz
-  #  
-  #     keygen { foo.to_s.downcase }
-  # 
-  #     def initialize(foo,bar,baz)
-  #       @foo = foo
-  #       @bar = bar
-  #       @baz = baz
-  #     end
-  # 
-  #     def self.jiak_create(jiak)
-  #       new(jiak['foo'],jiak['bar'])
-  #     end
-  # 
-  #     def to_jiak
-  #       { :foo => @foo,
-  #         :baz => @baz
-  #       }
-  #     end
+  # The Core Client framework uses a JiakData class to marshall data to and
+  # from the Jiak server. Marshalling to the Jiak server uses JiakData#to_jiak
+  # and marshalling from the Jiak server uses
+  # JiakData#ClassMethods#jiak_create. Implementations of these methods are
+  # automatically generated to marshall writable fields to Jiak and initialize
+  # from readable fields.
   #
-  #   end
-  # </code>
-  #
-  # Note that FooBarBaz <code>bar</code> is readable but not writable and
-  # <code>baz</code> is writable but not readable. Also note
-  # <code>to_jiak</code> only provides the <code>writable</code> fields for
-  # writing to the Jiak server and <code>jiak_create</code> only initializes
-  # from the <code>readable</code> fields returned by the Jiak server. The
-  # above definition means a user of FooBarBaz could change <code>baz</code>
-  # but not see that change and could access <code>bar</code> but not change
-  # it. This could be useful if either another JiakData class (with a different
-  # schema) created access into the same data, allowing <code>bar</code> writes
-  # and <code>baz</code> reads, or if Riak server-side manipulation affected
-  # those fields. The constraints declared in FooBarBaz simply provide
-  # a particular structured interaction of data on a Jiak server.
-  #
-  # If only one JiakData will be used for a particular type of data on the Jiak
-  # server it is desirable to have the <code>readable</code> and
-  # <code>writable</code> fields be the same as <code>allow</code>. Setting
-  # only <code>allow</code> fields provide this reasonable default, hence only
-  # that call is mandatory.
   module JiakData
 
     # ----------------------------------------------------------------------
@@ -120,8 +87,6 @@ module RiakRest
       #
       # Adds to the fields allowed in Jiak interactions.
       #
-      # The field <code>jiak</code> is reserved for RiakRest.
-      # 
       # Returns an array of added fields.
       #
       # Raise JiakDataException if the fields include <code>jiak</code>.
@@ -199,7 +164,9 @@ module RiakRest
       # :call-seq:
       #   JiakData.keygen(&block)  -> nil
       #
-      # Define the key generation for an instance of the created JiakData class.
+      # Define the key generation for an instance of the created JiakData
+      # class. Key generation will call the specified block in the scope of the
+      # current instance.
       def keygen(&block)
         define_method(:keygen,&block)
       end
@@ -305,14 +272,12 @@ module RiakRest
     #
     # ====Example
     # A simple implementation would look like:
-    # <code>
-    #   def keygen
-    #     f1.to_s
-    #   end
-    # </code>
+    #  def keygen
+    #    f1.to_s
+    #  end
     #
-    # The JiakData#keygen class method can also be used to override this
-    # default implement method.
+    # The JiakData#ClassMethods#keygen class method can also be used to
+    # override this default implement method.
     def keygen
       nil
     end

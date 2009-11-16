@@ -1,8 +1,10 @@
 module RiakRest
 
-  # JiakObject wraps a JiakData. JiakObject also maintains Jiak information,
-  # Riak context, and a set a links used in conjuction with the Jiak link
+  # JiakObject wraps a JiakData and also maintains Jiak information, Riak
+  # context, and a set a links used in conjunction with the Jiak link
   # map/reduce facility.
+  #
+  # See JiakClient for example usage.
   class JiakObject
 
     attr_accessor :bucket, :key, :data, :links, :riak

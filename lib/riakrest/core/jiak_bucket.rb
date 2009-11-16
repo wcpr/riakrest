@@ -3,24 +3,18 @@ module RiakRest
   # Data in stored in Riak by key in a bucket. Riak introduces structured
   # interaction with the data in a bucket via a concept called a schema. The
   # schema is not a constraint on bucket data, but rather on the interaction
-  # with bucket data.
-  #
-  # During Jiak interaction, the associated schema bucket on the server
-  # determines permissible data interaction. See JiakSchema for a discussion of
-  # schemas in Jiak. Since the bucket schema can be changed dynamically,
-  # schemas can be viewed more as a loose, dynamic type system rather than an
-  # onerous restriction.
+  # with bucket data. See JiakSchema.
   #
   # In RiakRest buckets have an associated JiakData class, and each JiakData
   # class has an associated JiakSchema. These associations facility setting and
   # maintaining the current schema in use for a Jiak bucket. Dynamically
   # changing the bucket schema means you can have either homogeneous (simplest)
-  # or heterogenous data in a single Jiak server bucket. It also means you can
-  # define multiple JiakData classes that effectively present different "views"
-  # (via schemas) into the same data stored on the Jiak server. These classes
-  # act like types that can determine which fields are accessible for reading
-  # and writing data. The JiakData class associated with a bucket is also used
-  # to marshal user-defined data going to and from the Jiak server.
+  # or heterogenous data in a single Jiak bucket. It also means you can define
+  # multiple JiakData classes that effectively present different "views" (via
+  # schemas) into the same data stored on the Jiak server. These classes act
+  # like loose, dynamic types that can determine which fields are accessible
+  # for reading and writing data. The JiakData class associated with a bucket
+  # is also used to marshal user-defined data to and from the Jiak server.
   class JiakBucket
 
     attr_reader :schema

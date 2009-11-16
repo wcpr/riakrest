@@ -1,9 +1,9 @@
 module RiakRest
 
-  # Client for restful interaction with a Riak document store via the HTTP/JSON
-  # interface Jiak. Use of RiakRest Core Client exposes Jiak server constructs
-  # and concepts. JiakResource wraps Jiak interaction at a higher level of
-  # abstraction and takes care of much of the Core Client bookkeeping
+  # Client for restful interaction with a Riak document store via the Jiak
+  # HTTP/JSON interface. RiakRest Core Client classes expose Jiak server
+  # constructs and concepts. JiakResource wraps Jiak interaction at a higher
+  # level of abstraction and takes care of much of the Core Client bookkeeping
   # tasks. See JiakResource.
   #
   # ===Example
