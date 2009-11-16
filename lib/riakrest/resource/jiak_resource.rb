@@ -11,14 +11,28 @@ module RiakRest
     # <code>server</code>, <code>group</code> and <code>data_class</code> are
     # mandatory to create a fully usable JiakResource.
     #
-    # ===Usage
-    # <code>
-    #   class Users
-    #     include JiakResource
-    #     server      'http://localhost:8002/jiak'
-    #     jattr_accessor :login, :name
-    #   end
-    # </code>
+    # ===Example
+    #  require 'riakrest'
+    #  include RiakRest
+    #
+    #  class People
+    #    include JiakResource
+    #    server 'http://localhost:8002/jiak'
+    #    jattr_accessor :name, :age
+    #    auto_manage
+    #  end
+    #
+    #  remy = People.new(:name => 'Remy',:age => 10)       # (auto-post)
+    #  remy.age = 11                                       # (auto-update)
+    #
+    #  callie = People.new(:name => 'Callie', :age => 13)
+    #  remy.link(callie,'sister')
+    #
+    #  sisters = remy.query(People,'sister')
+    #  sisters[0].eql?(callie)                             # => true
+    #
+    #  remy.delete
+    #  callie.delete
     # 
     module ClassMethods
 
@@ -117,7 +131,7 @@ module RiakRest
       # set on the Riak cluster should suffice and these parameters aren't
       # necessary for Jiak interaction.
       def params(opts={})
-        jiak.bucket.params = opts
+        jiak.server.params = opts
       end
 
       # :call-seq:

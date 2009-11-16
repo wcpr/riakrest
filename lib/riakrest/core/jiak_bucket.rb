@@ -1,11 +1,15 @@
 module RiakRest
 
-  # Data is stored on the Jiak server by key under a bucket. During Jiak
-  # interaction, the bucket on the server has an associated schema which
+  # Data in stored in Riak by key in a bucket. Riak introduces structured
+  # interaction with the data in a bucket via a concept called a schema. The
+  # schema is not a constraint on bucket data, but rather on the interaction
+  # with bucket data.
+  #
+  # During Jiak interaction, the associated schema bucket on the server
   # determines permissible data interaction. See JiakSchema for a discussion of
   # schemas in Jiak. Since the bucket schema can be changed dynamically,
-  # schemas can be viewed more as a loose type system rather than an onerous
-  # restriction.
+  # schemas can be viewed more as a loose, dynamic type system rather than an
+  # onerous restriction.
   #
   # In RiakRest buckets have an associated JiakData class, and each JiakData
   # class has an associated JiakSchema. These associations facility setting and
@@ -17,30 +21,21 @@ module RiakRest
   # act like types that can determine which fields are accessible for reading
   # and writing data. The JiakData class associated with a bucket is also used
   # to marshal user-defined data going to and from the Jiak server.
-  #
-  # JiakResource greatly eases the bookkeeping necessary for heterogenous, as
-  # well as homogenous, data interaction with the Jiak server.
   class JiakBucket
 
     attr_reader :schema
-    attr_accessor :name, :data_class, :params
+    attr_accessor :name, :data_class
 
     # :call-seq:
-    #   JiakBucket.new(name,data_class,params={})  -> JiakBucket
+    #   JiakBucket.new(name,data_class)  -> JiakBucket
     #
     # Create a bucket for use in Jiak interaction.
     #
-    # Valid optional parameters are <code>params</code> hash are <code>:reads,
-    # :writes, :durable_writes, :waits</code>. See JiakClient#store,
-    # JiakClient#get, and JiakClient#delete for discriptions of these
-    # parameters.
-    #
     # Raise JiakBucketException if the bucket name is not a non-empty string or
     # the data class has not included JiakData.
-    def initialize(name,data_class,params={})
+    def initialize(name,data_class)
       @name = transform_name(name)
       @data_class = check_data_class(data_class)
-      @params = check_params(params)
     end
 
     # :call-seq:
@@ -64,16 +59,6 @@ module RiakRest
     end
 
     # :call-seq:
-    #   bucket.params = params
-    #
-    # Set default params for Jiak client requests. See JiakBucket#new for
-    # valid parameters.
-    #
-    def params=(params)
-      @params = check_params(params)
-    end
-
-    # :call-seq:
     #   bucket.schema  -> JiakSchema
     #
     # Gets the data schema for this bucket. This call does not access the
@@ -93,8 +78,7 @@ module RiakRest
     # values.
     def ==(other)
       (@name == other.name &&
-       @data_class == other.data_class  &&
-       @params == other.params) rescue false
+       @data_class == other.data_class) rescue false
     end
 
     # :call-seq:
@@ -103,13 +87,13 @@ module RiakRest
     # Returns <code>true</code> if <i>jiak_bucket</i> and <i>other</i> contain
     # the same attribute values.
     def eql?(other)
-      (@name.eql?(other.name) &&
-       @data_class.eql?(other.data_class) &&
-       @params.eql?(other.params)) rescue false
+      other.is_a?(JiakBucket) &&
+        @name.eql?(other.name) &&
+        @data_class.eql?(other.data_class)
     end
 
     def hash    # :nodoc:
-      @name.hash + @data_class.hash + @params.hash
+      @name.hash + @data_class.hash
     end
 
     def transform_name(name)
@@ -130,16 +114,6 @@ module RiakRest
       data_class
     end
     private :check_data_class
-
-    def check_params(params)
-      valid = [:reads,:writes,:durable_writes,:waits]
-      err = params.select {|k,v| !valid.include?(k)}
-      unless err.empty?
-        raise JiakBucketException, "unrecognized request params: #{err.keys}"
-      end
-      params
-    end
-    private :check_params
 
   end
 

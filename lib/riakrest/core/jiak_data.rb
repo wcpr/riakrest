@@ -281,7 +281,7 @@ module RiakRest
       including_class.extend(ClassMethods)
 
       define_method(:initialize) do |hash|
-        hash.each {|k,v| instance_variable_set(:"@#{k}", v)}
+        hash.each {|k,v| instance_variable_set("@#{k}", v)}
       end
 
       define_method(:eql?) do |other|
@@ -312,13 +312,13 @@ module RiakRest
     #   to_jiak  -> hash
     #
     # Provide a hash structure of the data to write to Jiak. The fields for
-    # this structure should come from the JiakData write mask.See JiakSchema
-    # for write mask discussion.
+    # this structure should come from the JiakData write mask. See JiakSchema
+    # for shema discussion.
     #
-    # User-defined data classes must override this method. The method is called
-    # during the creation of a JiakObject to send information to Jiak. The
-    # JiakObject contains the user-defined data itself. You do not call this
-    # method explicitly.
+    # Data classes that do not used the jattr_* methods to specify attributes
+    # must override this method. The method is called during the creation of a
+    # JiakObject to send information to Jiak. The JiakObject contains the
+    # user-defined data itself. You do not call this method explicitly.
     #
     # ====Example
     # <code>

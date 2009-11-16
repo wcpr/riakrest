@@ -3,51 +3,35 @@ require File.dirname(__FILE__) + '/../spec_helper.rb'
 class FooBarBaz  # :nodoc:
   include JiakData
 
-  allow    :foo, :bar, :baz
-  require  :foo
-  readable :foo, :bar
-  writable :foo, :bar
-
-  def initialize(hsh)
-    hsh.each {|key,val| send("#{key}=",val)}
-  end
-
-  def self.jiak_create(jiak)
-    new(jiak)
-  end
-
-  def to_jiak
-    { :foo => @foo,
-      :bar => @bar
-    }.reject {|k,v| v.nil?}
-  end
-
-  def eql?(other)
-    other.is_a?(FooBarBaz) && other.foo.eql?(@foo) && other.bar.eql?(@bar)
-  end
+  jattr_accessor :foo, :bar
+  require :foo
+  allow   :baz
 end
 
 describe "JiakClient" do
   before do
     @base_uri = 'http://127.0.0.1:8002/jiak/'
-    @client = JiakClient.new @base_uri
+    @client = JiakClient.new(@base_uri)
+    @params = {:reads => 1, :writes => 2, :durable_writes => 3, :waits => 4}
+    @opts = @params.merge({:proxy => 'proxy_uri'})
   end
 
   it "should respond to" do
-    @client.should respond_to(:set_schema, :schema, :keys)
-    @client.should respond_to(:uri)
+    @client.should respond_to(:set_schema,:schema,:keys)
+    @client.should respond_to(:proxy,:proxy=)
+    @client.should respond_to(:params,:set_params,:params=)
+    @client.should respond_to(:get,:store,:delete,:walk)
     @client.should respond_to(:==,:eql?)
-    @client.should respond_to(:get, :store, :delete, :walk)
   end
 
   it "should default to base URI" do
-    @client.uri.should match @base_uri
+    @client.server.should match @base_uri
   end
 
   it "should allow specified base URI" do
     base_uri = 'http://localhost:1234/tmp/'
     client = JiakClient.new base_uri
-    client.uri.should match base_uri
+    client.server.should match base_uri
   end
 
   it "should equal another JiakClient with the same URI" do
@@ -56,6 +40,49 @@ describe "JiakClient" do
     client.should ==  @client
   end
 
+  it "should initialize proxy and params" do
+    client = JiakClient.new(@base_uri,:proxy => 'proxy_uri',:reads => 1)
+    client.proxy.should eql 'proxy_uri'
+    client.params[:reads].should == 1
+
+    client = JiakClient.new(@base_uri,@opts)
+    client.proxy.should eql 'proxy_uri'
+    client.params.should have_exactly(4).items
+    @params.each {|k,v| client.params[k].should == @params[k]}
+    
+    @opts.delete(:proxy)
+    @opts.delete(:writes)
+    client = JiakClient.new(@base_uri,@opts)
+    client.params.should have_exactly(3).items
+    client.proxy.should be nil
+    client.params[:writes].should be nil
+
+    @opts[:junk] = 'junk'
+    bad_opts = lambda {JiakClient.new(@base_uri,@opts)}
+    bad_opts.should raise_error(JiakClientException,/option/)
+  end
+
+  it "should update proxy and params" do
+    @client.proxy = 'another_proxy'
+    @client.proxy.should eql 'another_proxy'
+
+    @client.params = @params
+    @params.each {|k,v| @client.params[k].should == @params[k]}
+
+    @client.set_params(:writes => 1, :waits => nil)
+    params = @client.params
+    params[:reads].should eql 1
+    params[:writes].should eql 1
+    params[:durable_writes].should eql 3
+    params[:waits].should eql nil
+
+    bad_opts = lambda {@client.set_params(:junk => 'junk')}
+    bad_opts.should raise_error(JiakClientException,/option/)
+    
+    @params[:junk] = 'junk'
+    bad_opts = lambda {@client.params = @params}
+    bad_opts.should raise_error(JiakClientException,/option/)
+  end
 end
 
 describe "JiakClient URI handling" do
