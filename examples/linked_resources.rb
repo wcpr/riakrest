@@ -1,17 +1,13 @@
 require 'riakrest'
 include RiakRest
 
-PersonData = JiakDataHash.create(:name)
-PersonData.keygen :name
-
-class Parent
+class Parents
   include JiakResource
-
-  server      'http://localhost:8002/jiak'
-  group       'parents'
-  data_class  PersonData
+  server         'http://localhost:8002/jiak'
+  jattr_accessor :name
+  keygen { name }
 end
-Child = Parent.copy(:group => 'children')
+(Child = Parents.dup).group 'children'
 
 # relationships
 parent_children = {
@@ -31,7 +27,7 @@ end
 
 # store data and relationships
 parent_children.each do |pname,cnames|
-  p = Parent.new(:name => pname).post
+  p = Parents.new(:name => pname).post
   cnames.each do |cname|
     begin
       c = Child.get(cname)
@@ -46,49 +42,50 @@ parent_children.each do |pname,cnames|
 end
 
 # retrieve parents
-parents = parent_children.keys.map {|p| Parent.get(p)}
+parents = parent_children.keys.map {|p| Parents.get(p)}
 p0,p1,p2,p3 = parents
-puts p1.name                                # => 'p1'
+puts p1.name                                      # => 'p1'
 
 # retrieve children
 children = child_parents.keys.map {|c| Child.get(c)}
 c0,c1,c2,c3 = children
-puts c1.name                                # => 'c1'
+puts c1.name                                      # => 'c1'
 
 # retrieve parent children
 p0c,p1c,p2c,p3c = parents.map {|p| p.query(Child,'child')}
-puts p2c[0].name                            # => 'c2' (not sorted, could be 'c3')
+puts p2c[0].name                                  # => 'c2' (could be 'c3')
 
 # retrieve children parents
-c0p,c1p,c2p,c3p = children.map {|c| c.query(Parent,'parent')}
-puts c3p[0].name                            # => 'p3'
+c0p,c1p,c2p,c3p = children.map {|c| c.query(Parents,'parent')}
+puts c3p[0].name                                  # => 'p2'
+puts c3p[1].name                                  # => 'p3'
 
 # retrieve children siblings
 c0s,c1s,c2s,c3s = children.map do |c|
-  c.query(Parent,'parent',Child,'child').delete_if{|s| s.eql?(c)}
+  c.query(Parents,'parent',Child,'child').delete_if{|s| s.eql?(c)}
 end
-puts c3s[0].name                            # => 'c2'
+puts c3s[0].name                                  # => 'c2'
 
 # who is c3's step-sibling's other parent?
-c3sp = c3.query(Parent,'parent',Child,'child',Parent,'parent')
+c3sp = c3.query(Parents,'parent',Child,'child',Parents,'parent')
 c3p.each {|p| c3sp.delete_if{|sp| p.eql?(sp)}}
-puts c3sp[0].name                           # => "p1"
+puts c3sp[0].name                                 # => "p1"
 
 # turn on auto-update at class level
-Parent.auto_update true
+Parents.auto_update true
 Child.auto_update  true
 
 # add sibling links
 children.each do |c|
-  siblings = c.query(Parent,'parent',Child,'child').delete_if{|s| s.eql?(c)}
+  siblings = c.query(Parents,'parent',Child,'child').delete_if{|s| s.eql?(c)}
   siblings.each {|s| c.link(s,'sibling')}
   c.update
 end
-puts c1.query(Child,'sibling').size          # => 2  
+puts c1.query(Child,'sibling').size               # => 2  
   
 # some folks are odd, and others are normal
 parent_children.keys.each do |p|
-  parent = Parent.get(p)
+  parent = Parents.get(p)
   p_children = parent.query(Child,'child')
   p_children.each do |child| 
     child.link(parent, p[1].to_i.odd? ? 'odd' : 'normal')
@@ -103,10 +100,10 @@ children.each {|c| c.refresh}
 
 # do any odd parents have normal children?
 op = parents.inject([]) do |build,parent|
-  build << parent.query(Child,'normal',Parent,'odd')
+  build << parent.query(Child,'normal',Parents,'odd')
   build.flatten.uniq
 end
-puts op[0].name                            # => 'p1'
+puts op[0].name                                   # => 'p1'
 
 # clean-up by deleting everybody
 parents.each  {|p| p.delete}

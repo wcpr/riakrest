@@ -2,37 +2,37 @@ require 'riakrest'
 include RiakRest
 
 # class with 10 fields
-class Full
+class Fields
   include JiakResource
-  server       'http://localhost:8002/jiak'
-  group        'fields'
-  data_class   JiakDataHash.create (0...10).map {|n| "f#{n}".to_sym}
-  auto_post    true
-  auto_update  true
+  server         'http://localhost:8002/jiak'
+  jattr_accessor (0...10).map {|n| "f#{n}".to_sym}
+  auto_manage
 end
 
-# copy of above, but no read/write fields, i.e., only links
-LinksOnly = JiakDataHash.create Full.schema
-LinksOnly.readwrite []
-Links = Full.copy(:data_class => LinksOnly)
+class Links
+  include JiakResource
+  server       'http://localhost:8002/jiak'
+  auto_manage
+end
 
-# populate two Full objects with (meaningless) stuff
-Full.pov
-full1,full2 =
-  ["full1","full2"].map {|o| Full.new(Full.schema.write_mask.inject({}) do |h,f|
-                                        h[f]="#{o.upcase}-#{f.hash}"
-                                        h
-                                      end)}
+# populate two Fields objects with (meaningless) stuff
+Fields.pov
+fields = ["fields1","fields2"]
+fields1,fields2 =
+  fields.map {|o| Fields.new(Fields.schema.write_mask.inject({}) do |h,f|
+                               h[f]="#{o.upcase}-#{f.hash}"
+                               h
+                             end)}
 
 Links.pov
-links1 = Links.get(full1.jiak.key)
-links1.link(full2,'link')
+links1 = Links.get(fields1.jiak.key)
+links1.link(fields2,'link')
 
-Full.pov
-full2.f1 = "new f1"
+Fields.pov
+fields2.f1 = "new f1"
 
-linked = full1.query(Full,'link')[0]
-puts linked.f1 == full2.f1                        # => true
+linked = fields1.query(Fields,'link')[0]
+puts linked.f1 == fields2.f1                        # => true
 
-full1.delete
-full2.delete
+fields1.delete
+fields2.delete
