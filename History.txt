@@ -1,34 +1,33 @@
+=== 0.1.0 2009-11-16
+  - Renamed data/JiakDataHash to core/JiakDataFields and reworked.
+  - Move JiakDataHash functionality into JiakData as default implementation
+    - Like Resource, JiakData has jattr_* to manage data inside out.
+  - Resource encapsulates its data.
+    - jattr_* methods add data fields and implicitly maintain schema.
+    - Removed class methods for schema manipulation.
+  - Incrementally add fields data.
+  - Incrementally add fields to schemas.
+
 === 0.0.4 2009-11-10
- * Mods
-   * Fixed bug when running ruby 1.8
-   * Changed client_store option for returning object to :return => :object
-   * Added check to eql? and == that both objects are either local or not.
-   * Refactored local? method to jiak_object.
+  - Fixed bug when running ruby 1.8
+  - Changed client_store option for returning object to :return => :object
+  - Added check to eql? and == that both objects are either local or not.
+  - Refactored local? method to jiak_object.
 
 === 0.0.3 2009-11-03
-
-* Mods:
-   * Switched to jeweler for managing gem
-   * Allow passing an array for specifying schema fields/masks
-   * Added convenience accessors to rsrc.jiak
-   * Allow setting proxy on core client
-
-  Clean-up:
-   * More examples futzing.
+  - Switched to jeweler for managing gem
+  - Allow passing an array for specifying schema fields/masks
+  - Added convenience accessors to rsrc.jiak
+  - Allow setting proxy on core client
+  - More examples futzing.
 
 === 0.0.2 2009-10-30
-
-* Mods:
-   * Fixed corner case for auto_post false / auto_update true.
-   * Explicitly reserve jiak field in user data classes.
-   * Changed walk to query. Kept walk as an alias.
-
-* Clean-up:
-   * DRY'd some code
-   * Examples
+  - Fixed corner case for auto_post false / auto_update true.
+  - Explicitly reserve jiak field in user data classes.
+  - Changed walk to query. Kept walk as an alias.
+  - DRY'd some code
+  - Examples
 
 
 === 0.0.1 2009-10-20
-
-* Initial release:
-   * To github, anyway. git log shows the prior activity.
+  - Initial release to github, anyway. git log shows the prior activity.
