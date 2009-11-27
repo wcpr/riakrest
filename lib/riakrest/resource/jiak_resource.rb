@@ -313,10 +313,12 @@ module RiakRest
       #   JiakResource.refresh(resource,opts={})  -> JiakResource
       #
       # Updates a JiakResource with the data on the Jiak server. The current
-      # data of the JiakResource is overwritten, so use with caution. See
-      # JiakResource.get for options.
+      # data of the JiakResource is overwritten, so use with caution.
+      #
+      # See JiakResource#put for options.
       def refresh(resource,opts={})
         resource.jiak.object = get(resource.jiak.key,opts).jiak.object
+        resource.jiak_convenience
       end
 
       # :call-seq:
