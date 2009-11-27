@@ -205,6 +205,14 @@ describe "JiakClient processing" do
     end
 
     describe "fetching" do
+      it "should check for resource existence" do
+        jobj = JiakObject.new(:bucket => @bucket, :data => @data)
+        key = @client.store(jobj)
+        
+        @client.exist?(@bucket,key).should be true
+        @client.exist?(@bucket,'nope').should be false
+      end
+
       it "should get a previously stored JiakObject" do
         key = 'fetch_key_1'
         jobj = JiakObject.new(:bucket => @bucket, :key => key, :data => @data)

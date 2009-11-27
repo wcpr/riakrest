@@ -417,12 +417,7 @@ module RiakRest
       #
       # Determine if a resource exists on the Jiak server for a key.
       def exist?(key)
-        begin
-          get(key)
-          true
-        rescue JiakResourceNotFound
-          false
-        end
+        jiak.server.exist?(jiak.bucket,key)
       end
 
       # :call-seq:

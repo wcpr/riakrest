@@ -321,6 +321,22 @@ module RiakRest
     end
 
     # :call-seq:
+    #   exist?(bucket,key)  -> true or false
+    #
+    # Return true if a resource exists at bucket/key
+    def exist?(bucket,key)
+      begin
+        uri = jiak_uri(bucket,key)
+        RestClient.head(uri,:accept => APP_JSON)
+        true
+      rescue RestClient::ResourceNotFound
+        false
+      rescue RestClient::Exception => err
+        fail_with_message("delete", err)
+      end
+    end
+
+    # :call-seq:
     #   walk(bucket,key,query,data_class)  -> array
     #
     # Return an array of JiakObjects retrieved by walking a query links
