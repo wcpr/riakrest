@@ -40,7 +40,8 @@ module RiakRest
 
       # The Riak context for the object if provided.
       if opts[:vclock]
-        @riak = {}.merge(opts)
+        @riak = {}
+        [:vclock,:vtag,:lastmod].each {|k| @riak[k] = opts[k]}
       end
     end
 
