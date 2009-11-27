@@ -46,15 +46,19 @@ module RiakRest
 
     # :stopdoc:
     APP_JSON       = 'application/json'
+
     RETURN_BODY    = 'returnbody'
     READS          = 'r'
     WRITES         = 'w'
     DURABLE_WRITES = 'dw'
-    RESPONSE_WAITS = 'rw'
+    DELETES        = 'rw'
+    MASK           = 'm'
+
+    VALID_PARAMS   = [:reads,:writes,:durable_writes,:deletes]
+    VALID_OPTS     = VALID_PARAMS << :proxy
+
     KEYS           = 'keys'
     SCHEMA         = 'schema'
-    VALID_PARAMS   = [:reads,:writes,:durable_writes,:waits]
-    VALID_OPTS     = VALID_PARAMS << :proxy
     # :startdoc:
 
     # :call-seq:
@@ -64,17 +68,22 @@ module RiakRest
     # the specified URI. Go through a proxy if proxy option specified.
     #
     # =====Valid options
-    # <code>:reads</code>:: Respond after this many Riak nodes reply to a read request.
-    # <code>:writes</code>:: Respond after this many Riak nodes reply to a write request.
-    # <code>:durable_writes</code>:: Ensure this many Riak nodes perform a durable write.
-    # <code>:waits</code>:: Respond after this many Riak nodes reply to a delete request.
+    # <code>:reads</code>:: Minimum number of responding nodes for successful reads.
+    # <code>:writes</code>:: Minimum number of responding nodes for successful writes. Writes can be buffered on the server nodes for performance.
+    # <code>:durable_writes</code>:: Minimum number of resonding nodes that must perform a durable write to the persistence layer.
+    # <code>:deletes</code>:: Minimum number of responding nodes for successful delete.
     # <code>:proxy</code>:: Proxy server URI
     #
-    # Any of the request parameters <code>writes, durable_writes, reads,</code>
-    # and <code>waits</code> can be set on a per request basis. If the
-    # parameters are not specified, the value set for JiakClient is used. If
-    # neither of those scopes include the parameter, the value set on the Riak
-    # cluster is used.
+    # The configuration of a Riak cluster includes server setting for the
+    # <code>writes, durable_writes, reads,</code> and <code>deletes</code>
+    # parameters. None of these request parameter are required by RiakRest, and
+    # their use within RiakRest is to override the Riak cluster settings,
+    # either at the JiakClient level or the individual request level.
+    #
+    # Settings passed to individual <code>get, store,</code> and
+    # <code>delete</code> requests take precendence over the setting maintained
+    # by a JiakClient. Any request parameter not set in JiakClient or on an
+    # individual request will default to the values set in the Riak cluster.
     # 
     def initialize(uri, opts={})
       check_opts(opts,VALID_OPTS,JiakClientException)
@@ -145,7 +154,7 @@ module RiakRest
     # :call-seq:
     #   params  ->  hash
     #
-    # Copy of the current parameters hash.
+    # Copy of the current request parameters hash.
     def params
       @params.dup
     end
@@ -203,6 +212,11 @@ module RiakRest
     # <code>:writes</code><br/>
     # <code>:durable_writes</code><br/>
     # <code>:reads</code><br/>
+    #
+    # See JiakClient#new for description of <code>writes,
+    # durable_writes,</code> and <code>reades</code> parameters. The
+    # <code>reads</code> parameter only takes effect if the JiakObject is being
+    # returned (which involves reading the writes).
     #
     # Raise JiakClientException if object not a JiakObject or illegal options
     # are passed.<br/>
@@ -270,7 +284,7 @@ module RiakRest
     # String.
     #
     # =====Valid options
-    # <code>:reads</code>
+    # <code>:reads</code> --- See JiakClient#new
     #
     # Raise JiakClientException if bucket not a JiakBucket.<br/>
     # Raise JiakResourceNotFound if resource not found on Jiak server.<br/>
@@ -281,10 +295,12 @@ module RiakRest
         raise JiakClientException, "Bucket must be a JiakBucket."
       end
       check_opts(opts,[:reads],JiakClientException)
-      req_params = {READS => opts[:reads] || @params[:reads]}
+      req_params = {
+        READS => opts[:reads] || @params[:reads]
+      }
 
       begin
-        uri = jiak_uri(bucket,key,req_params)
+        uri = jiak_uri(bucket,key) << jiak_qstring(req_params)
         resp = RestClient.get(uri, :accept => APP_JSON)
         JiakObject.jiak_create(JSON.parse(resp),bucket.data_class)
       rescue RestClient::ResourceNotFound => err
@@ -302,16 +318,16 @@ module RiakRest
     # Delete the JiakObject stored at the bucket/key.
     #
     # =====Valid options
-    # <code>:waits</code>
+    # <code>:deletes</code> --- See JiakClient#new
     #
     # Raise JiakResourceException on RESTful HTTP errors.
     #
     def delete(bucket,key,opts={})
-      check_opts(opts,[:waits],JiakClientException)
+      check_opts(opts,[:deletes],JiakClientException)
       begin
-        req_params = {RESPONSE_WAITS => opts[:waits] || @params[:waits]}
-        uri = jiak_uri(bucket,key,req_params)
-        RestClient.delete(uri, :accept => APP_JSON)
+        req_params = {DELETES => opts[:deletes] || @params[:deletes]}
+        uri = jiak_uri(bucket,key) << jiak_qstring(req_params)
+        RestClient.delete(uri,:accept => APP_JSON)
         true
       rescue RestClient::ExceptionWithResponse => err
         fail_with_response("delete", err)
@@ -358,7 +374,6 @@ module RiakRest
             'a QueryLink or an Array of QueryLink objects'
         end
         resp = RestClient.get(uri, :accept => APP_JSON)
-        # JSON.parse(resp)['results'][0]
         JSON.parse(resp)['results'][0].map do |jiak|
           JiakObject.jiak_create(jiak,data_class)
         end
@@ -372,7 +387,7 @@ module RiakRest
     # :call-seq:
     #    client == other -> true or false
     #
-    # Equality -- JiakClients are equal if they have the same URI
+    # Equality --- JiakClients are equal if they have the same URI
     def ==(other)
       (@server == other.server) rescue false
     end

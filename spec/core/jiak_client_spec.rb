@@ -12,7 +12,7 @@ describe "JiakClient" do
   before do
     @base_uri = 'http://127.0.0.1:8002/jiak/'
     @client = JiakClient.new(@base_uri)
-    @params = {:reads => 1, :writes => 2, :durable_writes => 3, :waits => 4}
+    @params = {:reads => 1, :writes => 2, :durable_writes => 3, :deletes => 4}
     @opts = @params.merge({:proxy => 'proxy_uri'})
   end
 
@@ -20,7 +20,8 @@ describe "JiakClient" do
     @client.should respond_to(:set_schema,:schema,:keys)
     @client.should respond_to(:proxy,:proxy=)
     @client.should respond_to(:params,:set_params,:params=)
-    @client.should respond_to(:get,:store,:delete,:walk)
+    @client.should respond_to(:store,:get,:delete)
+    @client.should respond_to(:exist?,:walk)
     @client.should respond_to(:==,:eql?)
   end
 
@@ -69,12 +70,12 @@ describe "JiakClient" do
     @client.params = @params
     @params.each {|k,v| @client.params[k].should == @params[k]}
 
-    @client.set_params(:writes => 1, :waits => nil)
+    @client.set_params(:writes => 1, :deletes => nil)
     params = @client.params
     params[:reads].should eql 1
     params[:writes].should eql 1
     params[:durable_writes].should eql 3
-    params[:waits].should eql nil
+    params[:deletes].should eql nil
 
     bad_opts = lambda {@client.set_params(:junk => 'junk')}
     bad_opts.should raise_error(JiakClientException,/option/)
@@ -129,7 +130,6 @@ describe "JiakClient processing" do
       resp_schema.required_fields.should be_empty
       resp_schema.read_mask.should include :baz
       resp_schema.write_mask.should include :baz
-
     end
 
     it "should get a list of keys for a bucket" do
@@ -159,7 +159,11 @@ describe "JiakClient processing" do
     before do
       @bucket = JiakBucket.new('bucket_2',FooBarBaz)
       @client.set_schema(@bucket)
-      @data = FooBarBaz.new(:foo => 'foo val')
+      @data = FooBarBaz.new(:foo => 'Foo',:bar => 'Bar')
+    end
+
+    after do
+      @client.keys(@bucket).each {|key| @client.delete(@bucket,key)}
     end
 
     describe "storage" do
@@ -214,9 +218,8 @@ describe "JiakClient processing" do
       end
 
       it "should get a previously stored JiakObject" do
-        key = 'fetch_key_1'
-        jobj = JiakObject.new(:bucket => @bucket, :key => key, :data => @data)
-        @client.store(jobj)
+        jobj = JiakObject.new(:bucket => @bucket, :data => @data)
+        key = @client.store(jobj)
 
         fetched = @client.get(@bucket,key)
         fetched.should be_a JiakObject
