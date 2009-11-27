@@ -2,16 +2,18 @@
 begin
   require 'json'
 rescue LoadError
-  raise "RiakRest requires json for REST JSON messaging."
+  puts "\nRiakRest requires json for REST JSON messaging."
+  puts "  Install with:  gem install json"
+  puts
+  exit
 end
 
 begin
   require 'restclient'
 rescue LoadError
-  raise <<EOM
-RiakRest requires the restclient gem for making REST calls.
-  gem install rest-client
-EOM
+  puts "\nRiakRest requires the restclient gem for making REST calls."
+  puts "  Install with:  gem install rest-client"
+  exit
 end
 
 require 'uri'
@@ -59,12 +61,14 @@ module RiakRest
   VERSION = IO.read(version_file).chomp
 
   # Convenience method for checking validity of method options. If any of the
-  # options in opt are not in valid, raise the exception with the invalid
+  # options in opt are not in valid, raise the exception listing the invalid
   # options in the message.
   def check_opts(opts,valid,exception)              # :nodoc:
-    err = opts.select {|k,v| !valid.include?(k)}
-    unless err.empty?
-      raise exception, "unrecognized options: #{err.keys}"
+    unless(opts.empty?)
+      err = opts.select {|k,v| !valid.include?(k)}
+      unless err.empty?
+        raise exception, "unrecognized options: #{err.keys}"
+      end
     end
     opts
   end

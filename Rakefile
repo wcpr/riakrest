@@ -4,25 +4,29 @@ require 'rake'
 begin
   require 'jeweler'
 rescue LoadError
-  puts "Jeweler (or a dependency) not available. Install it with: sudo gem install jeweler"
+  puts "Jeweler (or a dependency) not available."
+  puts "  Install with: sudo gem install jeweler"
 end
 
 Jeweler::Tasks.new do |gem|
   gem.name = "riakrest"
   gem.summary = %Q{RiakRest provides structured, RESTful interaction with a Riak document store.}
-  gem.description = <<-EOH
+  gem.description = <<-EOS
     RiakRest provides structured, RESTful interaction with
     the HTTP/JSON interface of a Riak[http://riak.basho.com] document data
     store. RiakRest provides two levels of interaction: Core Client and
     Resource. Core Client works at the Jiak level and exposes Jiak
     internals. JiakResource is an abstraction built on top of the Core Client
     that gives a true RESTful feel.
-  EOH
+  EOS
   gem.authors = ["Paul Rogers"]
-  gem.email = "paul@dingosky.com"
+  gem.email = "riak@dingosky.com"
   gem.homepage = "http://github.com/wcpr/riakrest"
   gem.add_dependency('rest-client', '>= 1.0.0')
+  gem.add_dependency('json', '>= 1.1.9')
   gem.add_development_dependency "rest-client", ">= 1.0.0"
+  gem.add_development_dependency "json", ">= 1.1.9"
+  gem.add_development_dependency "jeweler", ">= 1.4.0"
   gem.add_development_dependency "rspec", ">= 1.2.9"
 end
 
