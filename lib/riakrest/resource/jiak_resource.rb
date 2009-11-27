@@ -40,8 +40,8 @@ module RiakRest
       # Set the URI for Jiak server interaction. Go through a proxy if proxy
       # option specified.
       #
-      # Valid options:
-      #  <code>:proxy</code> Proxy server URI.
+      # =====Valid options:
+      #  <code>:proxy</code> -- Proxy server URI.
       def server(uri,opts={})
         jiak.server = JiakClient.new(uri,opts)
         jiak.uri = uri
@@ -64,9 +64,11 @@ module RiakRest
         check_fields(fields)
         added_fields = jiak.data.readable(*fields)
         added_fields.each do |field|
-          define_method("#{field}") do
-            @jiak.data.send("#{field}")
-          end
+          class_eval <<-EOM
+            def #{field}
+              @jiak.data.#{field}
+            end
+          EOM
         end
         nil
       end
@@ -80,10 +82,12 @@ module RiakRest
         check_fields(fields)
         added_fields = jiak.data.writable(*fields)
         added_fields.each do |field|
-          define_method("#{field}=") do |val|
-            @jiak.data.send("#{field}=",val)
-            self.class.do_auto_update(self)
-          end
+          class_eval <<-EOM
+            def #{field}=(val)
+              @jiak.data.#{field} = val
+              self.class.do_auto_update(self)
+            end
+          EOM
         end
         nil
       end
@@ -105,6 +109,10 @@ module RiakRest
       end
       private :check_fields
 
+      # :call-seq:
+      #   keygen(&block)
+      #
+      # Specify the block for generating keys for a JiakResource instance.
       def keygen(&block)
         jiak.data.class_eval <<-EOS
           define_method(:keygen,&block)
