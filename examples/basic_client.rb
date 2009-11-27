@@ -1,5 +1,4 @@
-require 'riakrest'
-include RiakRest
+require File.dirname(__FILE__) + '/example_helper.rb'
 
 class PeopleData
   include JiakData
