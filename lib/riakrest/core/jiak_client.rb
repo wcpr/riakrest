@@ -228,12 +228,14 @@ module RiakRest
       req_params = {
         WRITES => opts[:writes] || @params[:writes], 
         DURABLE_WRITES => opts[:durable_writes] || @params[:durable_writes],
-        READS => opts[:reads] || @params[:reads]
       }
-      req_params[RETURN_BODY] = (opts[:return] == :object)
+      if(opts[:return] == :object)
+        req_params[RETURN_BODY] = true
+        req_params[READS] = opts[:reads] || @params[:reads]
+      end
 
       begin
-        uri = jiak_uri(jobj.bucket,jobj.key,req_params)
+        uri = jiak_uri(jobj.bucket,jobj.key) << jiak_qstring(req_params)
         payload = jobj.to_jiak.to_json
         headers = { 
           :content_type => APP_JSON,
@@ -366,7 +368,7 @@ module RiakRest
         start = jiak_uri(bucket,key)
         case query
         when QueryLink
-          uri = start+'/'+query.for_uri
+          uri = "#{start}/#{query.for_uri}"
         when Array
           uri = query.inject(start) {|build,link| build+'/'+link.for_uri}
         else
@@ -407,20 +409,29 @@ module RiakRest
     end
 
     # Build the URI for accessing the Jiak server.
-    def jiak_uri(bucket,key="",params={})
+    def jiak_uri(bucket,key="")
       uri = "#{@server}#{URI.encode(bucket.name)}"
-      uri += "/#{URI.encode(key)}" unless key.empty?
-      qstring = params.reject {|k,v| v.nil?}.map{|k,v| "#{k}=#{v}"}.join('&')
-      uri += "?#{URI.encode(qstring)}"  unless qstring.empty?
+      uri << "/#{URI.encode(key)}" unless key.empty?
       uri
     end
     private :jiak_uri
+
+    # Build query string. Strip keys with nil values.
+    def jiak_qstring(params={})
+      qstring = ""
+      params.delete_if {|k,v| v.nil?}
+      unless(params.empty?)
+        qstring << "?" << params.map{|k,v| "#{k}=#{v}"}.join('&')
+      end
+      qstring
+    end
+    private :jiak_qstring
     
     # Get either the schema or keys for the bucket.
     def bucket_info(bucket,info)
       ignore = (info == SCHEMA) ? KEYS : SCHEMA
       begin
-        uri = jiak_uri(bucket,"",{ignore => false})
+        uri = jiak_uri(bucket,"") << jiak_qstring({ignore => false})
         JSON.parse(RestClient.get(uri, :accept => APP_JSON))[info]
       rescue RestClient::ExceptionWithResponse => err
         fail_with_response("get", err)
