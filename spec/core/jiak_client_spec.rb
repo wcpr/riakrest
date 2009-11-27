@@ -233,6 +233,16 @@ describe "JiakClient processing" do
         fetched.should be_a JiakObject
       end
 
+      it "should accept write and read parameters" do
+        key = 'fetch_key_wr'
+        jobj = JiakObject.new(:bucket => @bucket, :key => key, :data => @data)
+        jobj = @client.store(jobj, 
+                             :writes => 3, :reads => 3,
+                             :return => :object)
+
+        jobj = @client.get(@bucket, key, :reads => 1)
+      end
+
       it "should raise JiakResourceNotFound for a non-existent key" do
         get_nope = lambda {@client.get(@bucket,'nope')}
         get_nope.should raise_error(JiakResourceNotFound)
