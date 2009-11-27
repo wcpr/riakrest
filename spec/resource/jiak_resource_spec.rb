@@ -11,15 +11,14 @@ describe "JiakResource default" do
     @server = 'http://localhost:8002/jiak/'
     @group = 'rsrc'
     @schema = JiakSchema.new [:f1,:f2]
-    Rsrc.pov
   end
 
   describe "class creation" do
     it "should respond to" do
       Rsrc.should respond_to(:server,:group)
       Rsrc.should respond_to(:jattr_reader,:jattr,:jattr_writer,:jattr_accessor)
-      Rsrc.should respond_to(:params,:auto_update,:schema,:keys)
-      Rsrc.should respond_to(:point_of_view,:pov,:point_of_view?,:pov?)
+      Rsrc.should respond_to(:params,:auto_update,:keys)
+      Rsrc.should respond_to(:schema,:push_schema,:server_schema?)
       Rsrc.should respond_to(:post,:put,:get,:delete)
       Rsrc.should respond_to(:refresh,:update,:exist?)
       Rsrc.should respond_to(:link,:bi_link,:query,:walk)
@@ -51,7 +50,7 @@ describe "JiakResource default" do
     end
 
     it "should respond to" do
-      @rsrc.should respond_to(:jiak,:jiak=)
+      @rsrc.should respond_to(:jiak)
       @rsrc.should respond_to(:auto_update=,:auto_update?)
       @rsrc.should respond_to(:post,:put,:delete)
       @rsrc.should respond_to(:update,:push,:refresh,:pull)
@@ -89,7 +88,6 @@ describe "JiakResource default class-level auto-post/auto-update" do
     group          'people'
     jattr_accessor  :name, :age
     keygen { name }
-    point_of_view
   end
 
   before do
@@ -139,7 +137,6 @@ describe "JiakResource class auto-post" do
     group          'people'
     jattr_accessor  :name, :age
     keygen { name }
-    point_of_view
   end
 
   before do
@@ -218,7 +215,6 @@ describe "JiakResource class auto-update" do
     group          'dogs'
     jattr_accessor  :name, :age
     keygen { name }
-    point_of_view
     auto_manage
   end
 
@@ -313,7 +309,6 @@ describe "JiakResource simple" do
     group          'dogs'
     jattr_accessor  :name, :age
     keygen { name }
-    point_of_view
     auto_manage
   end
 
@@ -373,7 +368,6 @@ describe "JiakResource complex" do
     server        'http://localhost:8002/jiak'
     jattr_accessor :name
     keygen { name }
-    point_of_view
   end
 
   Children = Parents.dup
