@@ -213,25 +213,23 @@ module RiakRest
         jiak.data.schema
       end
 
-      #   JiakResource.point_of_view  -> JiakSchema
+      # :call-seq:
+      #   JiakResource.push_schema  -> JiakSchema
       #
-      # Ready the Jiak server point-of-view to accept structured interaction
-      # with a JiakResource. Returns the schema set on the Jiak server.
-      def point_of_view
+      # Push schema to the Jiak server. Returns the schema set on the Jiak
+      # server.
+      def push_schema
         jiak.server.set_schema(jiak.bucket)
         jiak.bucket.schema
       end
-      alias :pov :point_of_view
 
       # :call-seq:
-      #   JiakResource.point_of_view?  -> true or false
+      #   JiakResource.server_schema?  -> true or false
       #
-      # Determine if the point-of-view on the Jiak server is that of this
-      # JiakResource.
-      def point_of_view?
+      # Determine if schema on the Jiak server is that of this JiakResource.
+      def server_schema?
         jiak.server.schema(jiak.bucket).eql? jiak.bucket.schema
       end
-      alias :pov? :point_of_view?
 
       # :call-seq:
       #   JiakResource.keys   -> array
@@ -466,7 +464,7 @@ module RiakRest
     # Instance methods
     # ----------------------------------------------------------------------
 
-    attr_accessor :jiak   # :nodoc:
+    attr_reader :jiak   # :nodoc:
 
     # :call-seq:
     #   JiakResource.new(*args)   -> JiakResource
