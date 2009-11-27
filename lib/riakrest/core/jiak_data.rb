@@ -91,7 +91,7 @@ module RiakRest
       #
       # Raise JiakDataException if the fields include <code>jiak</code>.
       def allow(*fields)
-        delegate_schema("allow",*fields)
+        expand_schema("allow",*fields)
       end
 
       # :call-seq:
@@ -102,7 +102,7 @@ module RiakRest
       #
       # Returns an array of added fields.
       def require(*fields)
-        delegate_schema("require",*fields)
+        expand_schema("require",*fields)
       end
 
       # :call-seq:
@@ -113,7 +113,7 @@ module RiakRest
       #
       # Returns an array of added fields.
       def readable(*fields)
-        delegate_schema("readable",*fields)
+        expand_schema("readable",*fields)
       end
 
       # :call-seq:
@@ -124,7 +124,7 @@ module RiakRest
       #
       # Returns an array of added fields.
       def writable(*fields)
-        delegate_schema("writable",*fields)
+        expand_schema("writable",*fields)
       end
 
       # :call-seq:
@@ -142,7 +142,7 @@ module RiakRest
 
       # Delegates adding fields to the schema, then creates attr accessors for
       # each field added.
-      def delegate_schema(method,*fields)
+      def expand_schema(method,*fields)
         @schema ||= JiakSchema.new
         prev_allowed = @schema.allowed_fields
         added_fields = @schema.send(method,*fields)
@@ -150,7 +150,7 @@ module RiakRest
         added_allowed.each {|field| attr_accessor field}
         added_fields
       end
-      private :delegate_schema
+      private :expand_schema
       
       # :call-seq:
       #   JiakData.schema  -> JiakSchema
@@ -158,7 +158,6 @@ module RiakRest
       # Get a JiakSchema representation this data.
       def schema
         @schema ||= JiakSchema.new
-        @schema.dup
       end
 
       # :call-seq:
@@ -200,10 +199,6 @@ module RiakRest
     def self.included(including_class)  # :nodoc:
       including_class.extend(ClassMethods)
 
-      define_method(:initialize) do |hash={}|
-        hash.each {|k,v| instance_variable_set("@#{k}", v)}
-      end
-
       define_method(:to_jiak) do
         self.class.schema.write_mask.inject({}) do |build,field|
           build[field] = send("#{field}")
@@ -234,6 +229,10 @@ module RiakRest
     # ----------------------------------------------------------------------
     #   Instance methods
     # ----------------------------------------------------------------------
+
+    def initialize(hash={})
+      hash.each {|k,v| instance_variable_set("@#{k}", v)}
+    end
 
     # :call-seq:
     #   to_jiak  -> hash
