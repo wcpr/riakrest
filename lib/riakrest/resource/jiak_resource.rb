@@ -122,20 +122,25 @@ module RiakRest
       # :call-seq:
       #   JiakResource.params(opts={})  -> hash
       #
-      # Default options for request parameters during Jiak interaction. Valid
-      # options are:
+      # Default options for request parameters during Jiak interaction.
       #
-      # <code>:reads</code> :: The number of Riak nodes that must successfully read data.
-      # <code>:writes</code> :: The number of Riak nodes that must successfully store data.
-      # <code>:durable_writes</code> :: The number of Riak nodes (<code>< writes</code>) that must successfully store data in a durable manner.
-      # <code>:waits</code> :: The number of Riak nodes that must reply the delete has occurred before success.
+      # =====Valid options
+      # <code>:reads</code>:: Minimum number of responding nodes for successful reads.
+      # <code>:writes</code>:: Minimum number of responding nodes for successful writes. Writes can be buffered for performance.
+      # <code>:durable_writes</code>:: Minimum number of resonding nodes that must perform a durable write to the persistence layer.
+      # <code>:deletes</code>:: Minimum number of responding nodes for successful delete.
       #
-      # Request parameters can be set at the JiakResource level using this
-      # method, or at the individual call level. The order of precedence for
-      # setting each parameter at the time of the Jiak interaction is
-      # individual call -> JiakResource -> Riak cluster. In general the values
-      # set on the Riak cluster should suffice and these parameters aren't
-      # necessary for Jiak interaction.
+      # The configuration of a Riak cluster includes server setting for
+      # <code>writes, durable_writes, reads,</code> and <code>deletes</code>
+      # parameters. None of these parameter are required by RiakRest, and their
+      # use within RiakRest is to override the Riak cluster settings, either at
+      # the JiakResource level or the individual request level.
+      #
+      # Settings passed to individual <code>get, put, post, update,
+      # refresh,</code> and <code>delete</code> requests take precendence over
+      # the setting maintained by a JiakResource. Any parameter not set in
+      # JiakResource or on an individual request will default to the values
+      # set in the Riak cluster.
       def params(opts={})
         jiak.server.params = opts
       end
@@ -244,11 +249,12 @@ module RiakRest
       # :call-seq:
       #   JiakResource.put(JiakResource,opts={})  -> JiakResource
       #
-      # Put a JiakResource on the Jiak server. Valid options are:
+      # Put a JiakResource on the Jiak server.
       #
-      # <code>:writes</code> :: The number of Riak nodes that must successfully store the data.
-      # <code>:durable_writes</code> :: The number of Riak nodes (<code>< writes</code>) that must successfully store the data in a durable manner.
-      # <code>:reads</code> :: The number of Riak nodes that must successfully read data being returned.
+      # =====Valid options:
+      # <code>:writes</code>
+      # <code>:durable_writes</code>
+      # <code>:reads</code>
       # 
       # If any of the request parameters <code>:writes, :durable_writes,
       # :reads</code> are not set, each first defaults to the value set for the
@@ -265,8 +271,9 @@ module RiakRest
       #   JiakResource.post(JiakResource,opts={})  -> JiakResource
       #
       # Put a JiakResource on the Jiak server with a guard to ensure the
-      # resource has not been previously stored. See JiakResource#put for
-      # options.
+      # resource has not been previously stored.
+      #
+      # See JiakResource#put for options.
       def post(resource,opts={})
         unless(resource.local?)
           raise JiakResourceException, "Resource already initially stored"
@@ -278,7 +285,9 @@ module RiakRest
       #   JiakResource.update(JiakResource,opts={})  -> JiakResource
       #
       # Updates a JiakResource on the Jiak server with a guard to ensure the
-      # resource has been previously stored. See JiakResource#put for options.
+      # resource has been previously stored.
+      #
+      # See JiakResource#put for options.
       def update(resource,opts={})
         if(resource.local?)
           raise JiakResourceException, "Resource not previously stored"
@@ -289,12 +298,10 @@ module RiakRest
       # :call-seq:
       #   JiakResource.get(key,opts={})  -> JiakResource
       #
-      # Get a JiakResource on the Jiak server by the specified key. Valid
-      # options are:
+      # Get a JiakResource on the Jiak server by the specified key.
       #
-      # <code>:reads</code> --- The number of Riak nodes that must successfully
-      # reply with the data. If not set, defaults first to the value set for the
-      # JiakResource class, then to the value set on the Riak cluster.
+      # =====Valid options:
+      # <code>:reads</code> --- See JiakResource#new
       #
       # Raise JiakResourceNotFound if no resource exists on the Jiak server for
       # the key.
@@ -316,12 +323,10 @@ module RiakRest
       #   JiakResource.delete(resource,opts={})  -> true or false
       #
       # Delete the JiakResource store on the Jiak server by the specified
-      # key. Valid options are:
+      # key.
       #
-      # <code>:waits</code> --- The number of Riak nodes that must reply the
-      # delete has occurred before success. If not set, defaults first to the
-      # value set for the JiakResource, then to the value set on the Riak
-      # cluster. In general the values set on the Riak cluster should suffice.
+      # =====Valid options:
+      # <code>:deletes</code> --- See JiakResource#new
       def delete(resource,opts={})
         jiak.server.delete(jiak.bucket,resource.jiak.object.key,opts)
       end
@@ -523,7 +528,8 @@ module RiakRest
     # :call-seq:
     #   auto_update?  -> true, false, or nil
     #
-    # Get current auto_update setting. See JiakResource#auto_update for settings.
+    # Get current auto_update setting. See JiakResource#auto_update for
+    # settings.
     def auto_update?
       @jiak.auto_update
     end
@@ -640,7 +646,7 @@ module RiakRest
     # :call-seq:
     #   jiak_resource == other -> true or false
     #
-    # Equality -- Two JiakResources are equal if they wrap the same data.
+    # Equality -- Two JiakResources are equal if they wrap the same Jiak data.
     def ==(other)
       (@jiak.object == other.jiak.object)  rescue false
     end
