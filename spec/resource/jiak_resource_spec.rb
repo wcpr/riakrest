@@ -3,12 +3,12 @@ require File.dirname(__FILE__) + '/../spec_helper.rb'
 describe "JiakResource default" do
   class Rsrc           # :nodoc:
     include JiakResource
-    server        'http://localhost:8002/jiak/'
+    server        SERVER_URI
     jattr_accessor :f1, :f2
   end
 
   before do
-    @server = 'http://localhost:8002/jiak/'
+    @server = SERVER_URI
     @group = 'rsrc'
     @schema = JiakSchema.new [:f1,:f2]
   end
@@ -84,7 +84,7 @@ end
 describe "JiakResource default class-level auto-post/auto-update" do
   class People           # :nodoc:
     include JiakResource
-    server         'http://localhost:8002/jiak'
+    server         SERVER_URI
     group          'people'
     jattr_accessor  :name, :age
     keygen { name }
@@ -133,7 +133,7 @@ end
 describe "JiakResource class auto-post" do
   class People           # :nodoc:
     include JiakResource
-    server         'http://localhost:8002/jiak'
+    server         SERVER_URI
     group          'people'
     jattr_accessor  :name, :age
     keygen { name }
@@ -211,7 +211,7 @@ end
 describe "JiakResource class auto-update" do
   class Dogs           # :nodoc:
     include JiakResource
-    server         'http://localhost:8002/jiak'
+    server         SERVER_URI
     group          'dogs'
     jattr_accessor  :name, :age
     keygen { name }
@@ -305,7 +305,7 @@ end
 describe "JiakResource simple" do
   class Dogs           # :nodoc:
     include JiakResource
-    server         'http://localhost:8002/jiak'
+    server         SERVER_URI
     group          'dogs'
     jattr_accessor  :name, :age
     keygen { name }
@@ -365,7 +365,7 @@ end
 describe "JiakResource complex" do
   class Parents           # :nodoc:
     include JiakResource
-    server        'http://localhost:8002/jiak'
+    server        SERVER_URI
     jattr_accessor :name
     keygen { name }
   end

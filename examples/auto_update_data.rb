@@ -2,7 +2,7 @@ require File.dirname(__FILE__) + '/example_helper.rb'
 
 class People
   include JiakResource
-  server         'http://localhost:8002/jiak'
+  server         SERVER_URI
   jattr_accessor :name, :age
   keygen { name }
   auto_manage

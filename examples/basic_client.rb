@@ -5,7 +5,7 @@ class PeopleData
   jattr_accessor :name, :age
 end
 
-client = JiakClient.new("http://localhost:8002/jiak")
+client = JiakClient.new(SERVER_URI)
 bucket = JiakBucket.new('people',PeopleData)
 client.set_schema(bucket)
 

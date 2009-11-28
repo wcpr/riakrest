@@ -11,3 +11,5 @@ $:.unshift(File.dirname(__FILE__) + '/../lib')
 
 require 'riakrest'
 include RiakRest
+
+SERVER_URI = 'http://10.0.1.120:8002/jiak'  unless(defined?(SERVER_URI))

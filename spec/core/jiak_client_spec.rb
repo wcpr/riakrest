@@ -10,7 +10,7 @@ end
 
 describe "JiakClient" do
   before do
-    @base_uri = 'http://127.0.0.1:8002/jiak/'
+    @base_uri = SERVER_URI
     @client = JiakClient.new(@base_uri)
     @params = {:reads => 1, :writes => 2, :durable_writes => 3, :deletes => 4}
     @opts = @params.merge({:proxy => 'proxy_uri'})
@@ -30,7 +30,7 @@ describe "JiakClient" do
   end
 
   it "should allow specified base URI" do
-    base_uri = 'http://localhost:1234/tmp/'
+    base_uri = 'http://host:port/base/'
     client = JiakClient.new base_uri
     client.server.should match base_uri
   end
@@ -88,7 +88,7 @@ end
 
 describe "JiakClient URI handling" do
   before do
-    @base_uri = 'http://127.0.0.1:8002/jiak/'
+    @base_uri = SERVER_URI
     @client = JiakClient.new @base_uri
     @bucket = JiakBucket.new('uri_bucket',FooBarBaz)
     @key = 'uri_key'
@@ -97,7 +97,7 @@ end
 
 describe "JiakClient processing" do
   before do
-    @base_uri = 'http://127.0.0.1:8002/jiak/'
+    @base_uri = SERVER_URI
     @client = JiakClient.new @base_uri
   end
 
@@ -296,7 +296,7 @@ end
 
 describe "JiakClient links" do
   before do
-    @base_uri = 'http://127.0.0.1:8002/jiak/'
+    @base_uri = SERVER_URI
     @client = JiakClient.new @base_uri
 
     @p_bucket = JiakBucket.new('parent',PersonData)
