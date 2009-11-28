@@ -65,7 +65,10 @@ module RiakRest
   # options in the message.
   def check_opts(opts,valid,exception)              # :nodoc:
     unless(opts.empty?)
-      err = opts.select {|k,v| !valid.include?(k)}
+      err = opts.inject({}) do |h,(k,v)|
+        h[k] = v  unless(valid.include?(k))
+        h
+      end
       unless err.empty?
         raise exception, "unrecognized options: #{err.keys}"
       end
