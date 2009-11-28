@@ -1,3 +1,10 @@
+=== 0.1.1 2009-11-28
+  - Fixed several 1.8.7 issues.
+  - Added helper for examples and put server URI setting in helpers.
+  - Removed POV terminology. Riak doesn't support per-request masks (yet?).
+  - Added some gem dependency declarations.
+  - Minor refactoring.
+
 === 0.1.0 2009-11-16
   - Renamed data/JiakDataHash to core/JiakDataFields and reworked.
   - Move JiakDataHash functionality into JiakData as default implementation
