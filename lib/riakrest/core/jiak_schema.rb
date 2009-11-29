@@ -42,6 +42,8 @@ module RiakRest
   # </pre>
   class JiakSchema
 
+    WILDCARD = "*"
+
     attr_accessor :allowed_fields, :required_fields, :read_mask, :write_mask
 
     # call-seq:
@@ -108,6 +110,16 @@ module RiakRest
           :read_mask       => arg,
           :write_mask      => arg
         }
+      when String
+        unless(arg.eql?(WILDCARD))
+          raise JiakSchemaException, "Initialize string can only be WILDCARD"
+        end
+        opts = {
+          :allowed_fields  => WILDCARD,
+          :required_fields => [],
+          :read_mask       => WILDCARD,
+          :write_mask      => WILDCARD
+        }
       when nil
         arr = []
         opts = {
@@ -117,14 +129,16 @@ module RiakRest
           :write_mask      => arr
         }
       else
-        raise JiakSchemaException, "Initialize arg must be either hash or array"
+        raise JiakSchemaException, "Illegal initialize arg"
       end
-
+      
+      # Dup to protect internal arrays from those passed into initialize
       @allowed_fields  = opts[:allowed_fields].dup
       @required_fields = opts[:required_fields].dup
       @read_mask       = opts[:read_mask].dup
       @write_mask      = opts[:write_mask].dup
     end
+    WIDE_OPEN = JiakSchema.new(WILDCARD)
 
     # call-seq:
     #    JiakSchema.from_json(json)  -> JiakSchema
@@ -317,58 +331,65 @@ module RiakRest
     #    schema == other -> true or false
     #
     # Equality -- Two schemas are equal if they contain the same array elements
-    # for all attributes, irrespective of order.
+    # for all attributes, regardless of order.
     def ==(other)
-      (@allowed_fields.same_fields?(other.allowed_fields) &&
-       @required_fields.same_fields?(other.required_fields) &&
-       @read_mask.same_fields?(other.read_mask) &&
-       @write_mask.same_fields?(other.write_mask)) rescue false
+      (compare_fields(@allowed_fields,other.allowed_fields)  &&
+       compare_fields(@required_fields,other.required_fields) &&
+       compare_fields(@read_mask,other.read_mask) &&
+       compare_fields(@write_mask,other.write_mask)) rescue false
     end
 
     # call-seq:
     #    schema.eql?(other) -> true or false
     #
     # Returns <code>true</code> if <code>other</code> is a JiakSchema with the
-    # same array elements, irrespective of order.
+    # same array elements, regardless of order.
     def eql?(other)
       other.is_a?(JiakSchema) &&
-        @allowed_fields.same_fields?(other.allowed_fields)  &&
-        @required_fields.same_fields?(other.required_fields) &&
-        @read_mask.same_fields?(other.read_mask) &&
-        @write_mask.same_fields?(other.write_mask)
+        compare_fields(@allowed_fields,other.allowed_fields)  &&
+        compare_fields(@required_fields,other.required_fields) &&
+        compare_fields(@read_mask,other.read_mask) &&
+        compare_fields(@write_mask,other.write_mask)
+    end
+
+    def compare_fields(arg1,arg2)
+      if(arg1.is_a?(Array) && arg2.is_a?(Array))
+        arg1.same_fields?(arg2)
+      elsif(arg1.is_a?(String) && arg2.is_a?(String))
+        arg1.eql?(arg2)
+      else
+        false
+      end
     end
 
     def hash    # :nodoc:
-      @allowed_fields.name.hash + @required_fields.hash + 
+      @allowed_fields.hash + @required_fields.hash + 
         @read_mask.hash + @write_mask.hash
     end
 
     # String representation of this schema.
     def to_s
-      'allowed_fields="'+@allowed_fields.inspect+
-        '",required_fields="'+@required_fields.inspect+
-        '",read_mask="'+@read_mask.inspect+
-        '",write_mask="'+@write_mask.inspect+'"'
+      af = "allowed_fields=#{@allowed_fields.inspect}"
+      rf = "required_fields=#{@required_fields.inspect}"
+      rm = "read_mask=#{@read_mask.inspect}"
+      wm = "write_mask=#{@write_mask.inspect}"
+      "#{af},#{rf},#{rm},#{wm}"
     end
 
     # Check for array of symbol or string elements.
     def transform_fields(desc,arr)
-      if(arr.eql?("*"))
-        raise(JiakSchemaException,
-              "RiakRest does not support wildcard schemas at this time.")
-      end
-      unless arr.is_a?(Array)
-        raise JiakSchemaException, "#{desc} must be an array"
-      end
-      arr.each do |field| 
-        unless(field.is_a?(String) || field.is_a?(Symbol)) 
-          raise JiakSchemaException, "#{desc} must be strings or symbols"
+      if(arr.is_a?(Array))
+        arr.each do |field| 
+          unless(field.is_a?(String) || field.is_a?(Symbol)) 
+            raise JiakSchemaException, "#{desc} must be strings or symbols"
+          end
         end
+        arr.map{|f| f.to_sym}.uniq
+      elsif(arr.eql?(WILDCARD))
+        arr
+      else
+        raise JiakSchemaException, "#{desc} must be an array or WILDCARD"
       end
-      # unless arr.map{|f| f.to_s}.uniq.size == arr.size
-      #   raise JiakSchemaException, "#{desc} must have unique elements."
-      # end
-      arr.map{|f| f.to_sym}.uniq
     end
     private :transform_fields
 

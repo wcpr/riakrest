@@ -136,6 +136,7 @@ describe "JiakSchema" do
   it "should ignore duplicate fields" do
     hash = @hash.clone
     hash[:allowed_fields] << @allowed_fields[0].to_s
+
     jiak_schema = JiakSchema.new(hash)
     jiak_schema.should eql @jiak_schema
 
@@ -144,15 +145,55 @@ describe "JiakSchema" do
 
     hash[:read_mask] << @read_mask[0]
     jiak_schema.read_mask = hash[:read_mask]
-    jiak_schema.read_mask.should eql @hash[:read_mask]
+    jiak_schema.read_mask.should eql @jiak_schema.read_mask
 
     hash[:write_mask] << @write_mask[0]
     jiak_schema.write_mask = hash[:write_mask]
-    jiak_schema.write_mask.should eql @hash[:write_mask]
+    jiak_schema.write_mask.should eql @jiak_schema.write_mask
 
     jiak_schema.readwrite = hash[:read_mask]
-    jiak_schema.read_mask.should eql @hash[:read_mask]
-    jiak_schema.write_mask.should eql @hash[:read_mask]
+    jiak_schema.read_mask.should eql @jiak_schema.read_mask
+    jiak_schema.write_mask.should eql @jiak_schema.read_mask
+  end
+
+  it "should be independent of init arg" do
+    @jiak_schema.allowed_fields.should eql @hash[:allowed_fields]
+    @hash[:allowed_fields] << :junk
+    @jiak_schema.allowed_fields.should_not eql @hash[:allowed_fields]
+
+    @jiak_schema.required_fields.should eql @hash[:required_fields]
+    @hash[:required_fields] << :junk
+    @jiak_schema.required_fields.should_not eql @hash[:required_fields]
+
+    @jiak_schema.read_mask.should eql @hash[:read_mask]
+    @hash[:read_mask] << :junk
+    @jiak_schema.read_mask.should_not eql @hash[:read_mask]
+
+    @jiak_schema.write_mask.should eql @hash[:write_mask]
+    @hash[:write_mask] << :junk
+    @jiak_schema.write_mask.should_not eql @hash[:write_mask]
+
+    arr = [:a,:b]
+    jiak_schema = JiakSchema.new(arr)
+    jiak_schema.allowed_fields.should eql arr
+    arr << :c
+    jiak_schema.allowed_fields.should_not eql arr
+  end
+
+  it "should init with wildcards" do
+    jiak_schema = JiakSchema.new(JiakSchema::WILDCARD)
+    jiak_schema.allowed_fields.should eql JiakSchema::WILDCARD
+    jiak_schema.required_fields.should be_empty
+    jiak_schema.read_mask.should eql JiakSchema::WILDCARD
+    jiak_schema.write_mask.should eql JiakSchema::WILDCARD
+  end
+
+  it "should init a wide open schema" do
+    jiak_schema = JiakSchema::WIDE_OPEN
+    jiak_schema.allowed_fields.should eql JiakSchema::WILDCARD
+    jiak_schema.required_fields.should be_empty
+    jiak_schema.read_mask.should eql JiakSchema::WILDCARD
+    jiak_schema.write_mask.should eql JiakSchema::WILDCARD
   end
 
   it "should update individual arrays" do
