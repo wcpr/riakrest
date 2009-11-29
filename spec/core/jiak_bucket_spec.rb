@@ -52,6 +52,9 @@ describe "JiakBucket" do
 
     bad_data_class = lambda {@bucket.data_class = Hash}
     bad_data_class.should raise_error(JiakBucketException,/JiakData/)
+
+    nil_data_class = lambda {JiakBucket.new(@name,nil)}
+    nil_data_class.should raise_error(JiakBucketException,/JiakData/)
   end
 
   it "should provide the schema for the data class" do

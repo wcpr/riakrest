@@ -102,8 +102,8 @@ module RiakRest
     private :transform_name
 
     def check_data_class(data_class)
-      unless data_class.include?(JiakData)
-        raise JiakBucketException, "Data class must be type of JiakData."
+      unless !data_class.nil? && data_class.include?(JiakData)
+        raise JiakBucketException, "Data class must include JiakData."
       end
       data_class
     end
