@@ -35,7 +35,7 @@ module RiakRest
     module ClassMethods
 
       # :call-seq:
-      #   JiakServer.server(uri,opts={})
+      #   JiakResource.server(uri,opts={})
       #
       # Set the URI for Jiak server interaction. Go through a proxy if proxy
       # option specified.
@@ -43,7 +43,7 @@ module RiakRest
       # =====Valid options:
       #  <code>:proxy</code> -- Proxy server URI.
       def server(uri,opts={})
-        jiak.server = JiakClient.new(uri,opts)
+        jiak.client = JiakClient.new(uri,opts)
         jiak.uri = uri
       end
 
@@ -142,7 +142,7 @@ module RiakRest
       # JiakResource or on an individual request will default to the values
       # set in the Riak cluster.
       def params(opts={})
-        jiak.server.params = opts
+        jiak.client.params = opts
       end
 
       # :call-seq:
@@ -224,7 +224,7 @@ module RiakRest
       # Push schema to the Jiak server. Returns the schema set on the Jiak
       # server.
       def push_schema
-        jiak.server.set_schema(jiak.bucket)
+        jiak.client.set_schema(jiak.bucket)
         jiak.bucket.schema
       end
 
@@ -233,7 +233,7 @@ module RiakRest
       #
       # Determine if schema on the Jiak server is that of this JiakResource.
       def server_schema?
-        jiak.server.schema(jiak.bucket).eql? jiak.bucket.schema
+        jiak.client.schema(jiak.bucket).eql? jiak.bucket.schema
       end
 
       # :call-seq:
@@ -243,7 +243,7 @@ module RiakRest
       # updated asynchronously on a Riak cluster the returned array can be out
       # of synch immediately after new puts or deletes.
       def keys
-        jiak.server.keys(jiak.bucket)
+        jiak.client.keys(jiak.bucket)
       end
 
       # :call-seq:
@@ -262,7 +262,7 @@ module RiakRest
       # general the values set on the Riak cluster should suffice.
       def put(resource,opts={})
         opts[:return] = :object
-        resource.jiak.object = jiak.server.store(resource.jiak.object,opts)
+        resource.jiak.object = jiak.client.store(resource.jiak.object,opts)
         resource.jiak_convenience
         resource
       end
@@ -306,7 +306,7 @@ module RiakRest
       # Raise JiakResourceNotFound if no resource exists on the Jiak server for
       # the key.
       def get(key,opts={})
-        new(jiak.server.get(jiak.bucket,key,opts))
+        new(jiak.client.get(jiak.bucket,key,opts))
       end
 
       # :call-seq:
@@ -330,7 +330,7 @@ module RiakRest
       # =====Valid options:
       # <code>:deletes</code> --- See JiakResource#new
       def delete(resource,opts={})
-        jiak.server.delete(jiak.bucket,resource.jiak.object.key,opts)
+        jiak.client.delete(jiak.bucket,resource.jiak.object.key,opts)
       end
 
       # :call-seq:
@@ -418,7 +418,7 @@ module RiakRest
           end
         end
         links = links[0]  if links.size == 1
-        jiak.server.walk(from.jiak.object.bucket, from.jiak.object.key, links,
+        jiak.client.walk(from.jiak.object.bucket, from.jiak.object.key, links,
                          last_klass.jiak.bucket.data_class).map do |jobj|
           last_klass.new(jobj)
         end        
@@ -430,7 +430,7 @@ module RiakRest
       #
       # Determine if a resource exists on the Jiak server for a key.
       def exist?(key)
-        jiak.server.exist?(jiak.bucket,key)
+        jiak.client.exist?(jiak.bucket,key)
       end
 
       # :call-seq:
@@ -456,7 +456,7 @@ module RiakRest
         def jiak  # :nodoc:
           @jiak
         end
-        @jiak = Struct.new(:server,:uri,:group,:data,:bucket,
+        @jiak = Struct.new(:client,:uri,:group,:data,:bucket,
                            :auto_post,:auto_update).new
         @jiak.data = JiakDataFields.create
         @jiak.group = self.name.split('::').last.downcase

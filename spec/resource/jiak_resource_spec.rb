@@ -8,7 +8,7 @@ describe "JiakResource default" do
   end
 
   before do
-    @server = SERVER_URI
+    @server_uri = SERVER_URI
     @group = 'rsrc'
     @schema = JiakSchema.new [:f1,:f2]
   end
@@ -24,7 +24,7 @@ describe "JiakResource default" do
       Rsrc.should respond_to(:link,:bi_link,:query,:walk)
       Rsrc.should respond_to(:auto_post,:auto_update,:auto_manage)
       Rsrc.should respond_to(:auto_post,:auto_update,:auto_manage?)
-      Rsrc.jiak.should respond_to(:server,:uri,:group,:data,:bucket)
+      Rsrc.jiak.should respond_to(:client,:uri,:group,:data,:bucket)
     end
     
     it "should have specified settings" do
@@ -33,8 +33,8 @@ describe "JiakResource default" do
       Rsrc.schema.should eql @schema
       
       Rsrc.jiak.should be_a Struct
-      Rsrc.jiak.server.should be_a JiakClient
-      Rsrc.jiak.uri.should eql @server
+      Rsrc.jiak.client.should be_a JiakClient
+      Rsrc.jiak.uri.should eql @server_uri
       Rsrc.jiak.group.should eql @group
       Rsrc.jiak.data.should include JiakData
       Rsrc.jiak.bucket.should be_a JiakBucket
