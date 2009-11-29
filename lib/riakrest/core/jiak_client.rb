@@ -160,19 +160,32 @@ module RiakRest
     end
 
     # :call-seq:
-    #   set_schema(bucket)  -> nil
+    #   set_schema(bucket,schema=nil)  -> nil
     #
-    # Set the Jiak server schema for a bucket. The schema is determined by the
-    # JiakData associated with the JiakBucket.
+    # Set the Jiak server schema for a bucket. If a JaikSchema is given, bucket
+    # must be a string; otherwise, if the schema is not given bucket must be a
+    # JiakBucket and the associated JiakData schema is used.
     #
     # Raise JiakClientException if the bucket is not a JiakBucket.
-    #
-    def set_schema(bucket)
-      unless bucket.is_a?(JiakBucket)
-        raise JiakClientException, "Bucket must be a JiakBucket."
+    # Raise JiakClientException if the schema is not a JiakSchema.
+    def set_schema(bucket,schema=nil)
+      if(schema.nil?)
+        unless bucket.is_a?(JiakBucket)
+          raise JiakClientException, "Bucket must be a JiakBucket."
+        end
+        bucket_name = bucket.name
+        schema = bucket.schema
+      else
+        unless(bucket.is_a?(String))
+          raise JiakClientException, "Bucket must be a string name."
+        end
+        unless(schema.is_a?(JiakSchema))
+          raise JiakClientException, "Schema must be a JiakSchema."
+        end
+        bucket_name = bucket
       end
-      resp = RestClient.put(jiak_uri(bucket),
-                            bucket.schema.to_jiak.to_json,
+      resp = RestClient.put(jiak_uri(bucket_name),
+                            schema.to_jiak.to_json,
                             :content_type => APP_JSON,
                             :accept => APP_JSON)
     end
@@ -180,9 +193,7 @@ module RiakRest
     # :call-seq:
     #   schema(bucket)  -> JiakSchema
     #
-    # Get the data schema for a bucket on a Jiak server. This involves a call
-    # to the Jiak server. See JiakBucket#schema for a way to get this
-    # information without server access.
+    # Get the data schema for a bucket on a Jiak server.
     def schema(bucket)
       JiakSchema.jiak_create(bucket_info(bucket,SCHEMA))
     end
@@ -410,7 +421,8 @@ module RiakRest
 
     # Build the URI for accessing the Jiak server.
     def jiak_uri(bucket,key="")
-      uri = "#{@server}#{URI.encode(bucket.name)}"
+      bucket_name = bucket.is_a?(JiakBucket) ? bucket.name : bucket
+      uri = "#{@server}#{URI.encode(bucket_name)}"
       uri << "/#{URI.encode(key)}" unless key.empty?
       uri
     end

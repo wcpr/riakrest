@@ -108,7 +108,24 @@ describe "JiakClient processing" do
       @client.set_schema(@bucket)
     end
 
-    it "should create and fetch a bucket schema" do
+    it "should fetch schema by bucket or bucket name" do
+      @client.schema(@bucket).should eql FooBarBaz.schema
+      @client.schema(@bucket.name).should eql FooBarBaz.schema
+    end
+
+    it "should fetch default schema" do
+      bucket_name = "wide open"
+      bucket = JiakBucket.new(bucket_name,FooBarBaz)
+      @client.schema(bucket).should eql JiakSchema::WIDE_OPEN
+    end
+
+    it "should set and fetch a wide open schema" do
+      @client.schema(@bucket).should_not eql JiakSchema::WIDE_OPEN
+      @client.set_schema(@bucket.name,JiakSchema::WIDE_OPEN)
+      @client.schema(@bucket).should eql JiakSchema::WIDE_OPEN
+    end
+
+    it "should set and fetch a bucket schema" do
       schema = @client.schema(@bucket)
       
       ['allowed_fields',
