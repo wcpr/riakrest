@@ -62,6 +62,6 @@ sudo gem install riakrest
 
 == LICENSE:
 
-Copyright (c) 2009 Paul Rogers, DingoSky. See LICENCE for details.
+Copyright (c) 2009 Paul Rogers, DingoSky. See LICENSE for details.
 
 ===Go forth and Riak!
