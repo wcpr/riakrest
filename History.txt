@@ -1,3 +1,7 @@
+=== 0.1.2 2009-11-29
+  - Add wide open schemas.
+  - Add wild card schema arrays.
+
 === 0.1.1 2009-11-28
   - Fixed several 1.8.7 issues.
   - Added helper for examples and put server URI setting in helpers.
