@@ -46,19 +46,28 @@ module RiakRest
 
     # :stopdoc:
     APP_JSON       = 'application/json'
+    APP_JSON.freeze
 
     RETURN_BODY    = 'returnbody'
+    RETURN_BODY.freeze
     READS          = 'r'
+    READS.freeze
     WRITES         = 'w'
+    WRITES.freeze
     DURABLE_WRITES = 'dw'
+    DURABLE_WRITES.freeze
     DELETES        = 'rw'
-    MASK           = 'm'
+    DELETES.freeze
 
     VALID_PARAMS   = [:reads,:writes,:durable_writes,:deletes]
-    VALID_OPTS     = VALID_PARAMS << :proxy
+    VALID_PARAMS.freeze
+    VALID_OPTS     = Array.new(VALID_PARAMS) << :proxy
+    VALID_OPTS.freeze
 
     KEYS           = 'keys'
+    KEYS.freeze
     SCHEMA         = 'schema'
+    SCHEMA.freeze
     # :startdoc:
 
     # :call-seq:

@@ -16,6 +16,9 @@ module RiakRest
   # already stored by Jiak. Schema designations only affect structured Jiak
   # interaction, not the data itself.
   #
+  # At this time, Riak does not support concurrent bucket access with different
+  # schemas, so the bucket interactions is semi-static.
+  #
   # The fields are kept as symbols or strings in four attribute arrays:
   # <code>allowed_fields</code>:: Allowed in Jiak interaction.
   # <code>required_fields</code>:: Required during Jiak interaction.
@@ -25,6 +28,13 @@ module RiakRest
   # Since Jiak interaction is JSON, duplicate fields names within an array are
   # not meaningful, including a symbol that "equals" a string. Duplicates
   # fields are ignored.
+  #
+  # Riak supports wild cards in schemas. The wild card is specified using the
+  # constant JiakSchema::WILDCARD. The constant JiakSchema::WIDE_OPEN specifies
+  # a wide open schema with allowed_fields, read_mask, and write_mask all set
+  # to JiakSchema::WILDCARD, and required_fields set to an empty array. The
+  # wide open schema allows the least restricted interaction with Jiak server
+  # data. An initially created Riak bucket has the wide open schema setting.
   #
   # ===Usage
   # <pre>
@@ -42,7 +52,9 @@ module RiakRest
   # </pre>
   class JiakSchema
 
+    # Wild card constant.
     WILDCARD = "*"
+    WILDCARD.freeze
 
     attr_accessor :allowed_fields, :required_fields, :read_mask, :write_mask
 
@@ -138,7 +150,10 @@ module RiakRest
       @read_mask       = opts[:read_mask].dup
       @write_mask      = opts[:write_mask].dup
     end
+
+    # Wide open schema constant.
     WIDE_OPEN = JiakSchema.new(WILDCARD)
+    WIDE_OPEN.freeze
 
     # call-seq:
     #    JiakSchema.from_json(json)  -> JiakSchema
@@ -214,7 +229,7 @@ module RiakRest
     #   allow(:f1,...,:fn) -> array
     #   allow([:f1,...,:fn]) -> array
     #
-    # Add to the allowed fields array.
+    # Add to the allowed fields array. Overwrites JiakSchema::WILDCARD array.
     #
     # Returns fields added to allowed fields.
     def allow(*fields)
@@ -227,7 +242,7 @@ module RiakRest
     #   require(:f1,...,:fn) -> array
     #   require([:f1,...,:fn]) -> array
     #
-    # Add fields to the required fields array.  Adds the fields to the allowed
+    # Add fields to the required fields array. Adds the fields to the allowed
     # fields as well.
     #
     # Returns fields added to required_fields.
@@ -242,7 +257,7 @@ module RiakRest
     #   readable([:f1,...,:fn]) -> array
     #
     # Add fields to the read mask array.  Adds the fields to the allowed
-    # fields as well.
+    # fields as well. Overwrites JiakSchema::WILDCARD arrays.
     #
     # Returns fields added to read_mask
     def readable(*fields)
@@ -257,7 +272,7 @@ module RiakRest
     #   writable([:f1,...,:fn]) -> array
     #
     # Add fields to the write mask array.  Adds the fields to the allowed
-    # fields as well.
+    # fields as well. Overwrites JiakSchema::WILDCARD arrays.
     #
     # Returns fields added to write_mask
     def writable(*fields)
@@ -272,7 +287,7 @@ module RiakRest
     #   readwrite([:f1,...,:fn]) -> nil
     #
     # Add fields to the read and write mask arrays. Adds the fields to the
-    # allowed fields as well.
+    # allowed fields as well. Overwrites JiakSchema::WILDCARD arrays.
     #
     # Returns nil.
     def readwrite(*fields)

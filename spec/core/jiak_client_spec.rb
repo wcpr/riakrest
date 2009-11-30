@@ -25,6 +25,38 @@ describe "JiakClient" do
     @client.should respond_to(:==,:eql?)
   end
 
+  it "should protect constants" do
+    no_no = lambda {JiakClient::APP_JSON << 'a'}
+    no_no.should raise_error(StandardError,/frozen/)
+
+    no_no = lambda {JiakClient::RETURN_BODY << 'a'}
+    no_no.should raise_error(StandardError,/frozen/)
+
+    no_no = lambda {JiakClient::READS << 'a'}
+    no_no.should raise_error(StandardError,/frozen/)
+
+    no_no = lambda {JiakClient::WRITES << 'a'}
+    no_no.should raise_error(StandardError,/frozen/)
+
+    no_no = lambda {JiakClient::DURABLE_WRITES << 'a'}
+    no_no.should raise_error(StandardError,/frozen/)
+
+    no_no = lambda {JiakClient::DELETES << 'a'}
+    no_no.should raise_error(StandardError,/frozen/)
+
+    no_no = lambda {JiakClient::VALID_PARAMS << 'a'}
+    no_no.should raise_error(StandardError,/frozen/)
+
+    no_no = lambda {JiakClient::VALID_OPTS << 'a'}
+    no_no.should raise_error(StandardError,/frozen/)
+    
+    no_no = lambda {JiakClient::KEYS << 'a'}
+    no_no.should raise_error(StandardError,/frozen/)
+    
+    no_no = lambda {JiakClient::SCHEMA << 'a'}
+    no_no.should raise_error(StandardError,/frozen/)
+  end
+
   it "should default to base URI" do
     @client.server.should match @base_uri
   end

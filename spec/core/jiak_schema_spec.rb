@@ -28,6 +28,14 @@ describe "JiakSchema" do
     @jiak_schema.should respond_to(:==,:eql?)
   end
 
+  it "should protect constants" do
+    no_no = lambda {JiakSchema::WIDE_OPEN.allow :x}
+    no_no.should raise_error(StandardError,/frozen/)
+
+    no_no = lambda {JiakSchema::WILDCARD << 'a'}
+    no_no.should raise_error(StandardError,/frozen/)
+  end
+
   it "should create using defaults from allowed_fields" do
     jiak_schema = JiakSchema.new({:allowed_fields => @allowed_fields})
     jiak_schema.allowed_fields.should eql @allowed_fields
