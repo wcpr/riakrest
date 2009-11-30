@@ -219,21 +219,23 @@ module RiakRest
       end
 
       # :call-seq:
-      #   JiakResource.push_schema  -> JiakSchema
+      #   JiakResource.push_schema  -> nil
       #
-      # Push schema to the Jiak server. Returns the schema set on the Jiak
-      # server.
-      def push_schema
-        jiak.client.set_schema(jiak.bucket)
-        jiak.bucket.schema
+      # Push schema to the Jiak server. If no schema is provided, pushes the
+      # schema associated with the JiakResource.
+      def push_schema(schema=nil)
+        schema ||= jiak.bucket.schema
+        jiak.client.set_schema(jiak.bucket.name,schema)
       end
 
       # :call-seq:
       #   JiakResource.server_schema?  -> true or false
       #
-      # Determine if schema on the Jiak server is that of this JiakResource.
-      def server_schema?
-        jiak.client.schema(jiak.bucket).eql? jiak.bucket.schema
+      # Determine if a schema is that set on the Jiak server. If no schema is
+      # provided, use the schema associated with the JiakResource.
+      def server_schema?(schema=nil)
+        schema ||= jiak.bucket.schema
+        jiak.client.schema(jiak.bucket).eql? schema
       end
 
       # :call-seq:

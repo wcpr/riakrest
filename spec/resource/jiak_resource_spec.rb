@@ -81,6 +81,30 @@ describe "JiakResource default" do
   end
 end
 
+describe "JiakResource schema" do
+  class People           # :nodoc:
+    include JiakResource
+    server         SERVER_URI
+    group          'schema'
+    jattr_accessor  :name, :age
+    keygen { name }
+  end
+
+  it "should have data schema" do
+    jiak_schema = JiakSchema.new([:name,:age])
+    People.schema.should eql jiak_schema
+  end
+
+  it "should push/check server schema" do
+    People.server_schema?.should be false
+    People.push_schema
+    People.server_schema?.should be true
+
+    People.push_schema(JiakSchema::WIDE_OPEN)
+    People.server_schema?.should be false
+  end
+end
+
 describe "JiakResource default class-level auto-post/auto-update" do
   class People           # :nodoc:
     include JiakResource
