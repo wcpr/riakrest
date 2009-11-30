@@ -235,6 +235,59 @@ describe "JiakSchema" do
     jiak_schema.write_mask.should eql arr123
   end
 
+  it "should update wild card arrays" do
+    array = [:f1]
+    jiak_schema = JiakSchema.new(JiakSchema::WILDCARD)
+    jiak_schema.allow :f1
+    jiak_schema.allowed_fields.should eql array
+    jiak_schema.required_fields.should be_empty
+    jiak_schema.read_mask.should eql JiakSchema::WILDCARD
+    jiak_schema.write_mask.should eql JiakSchema::WILDCARD
+
+    array << :f2
+    jiak_schema = JiakSchema.new(JiakSchema::WILDCARD)
+    jiak_schema.readable array
+    jiak_schema.allowed_fields.should eql array
+    jiak_schema.required_fields.should be_empty
+    jiak_schema.read_mask.should eql array
+    jiak_schema.write_mask.should eql JiakSchema::WILDCARD
+
+    array << :f3
+    jiak_schema = JiakSchema.new(JiakSchema::WILDCARD)
+    jiak_schema.writable array
+    jiak_schema.allowed_fields.should eql array
+    jiak_schema.required_fields.should be_empty
+    jiak_schema.read_mask.should eql JiakSchema::WILDCARD
+    jiak_schema.write_mask.should eql array
+
+    array << :f4
+    jiak_schema = JiakSchema.new(JiakSchema::WILDCARD)
+    jiak_schema.readwrite array
+    jiak_schema.allowed_fields.should eql array
+    jiak_schema.required_fields.should be_empty
+    jiak_schema.read_mask.should eql array
+    jiak_schema.write_mask.should eql array
+  end
+
+  it "should set wild card arrays" do
+    @jiak_schema.allowed_fields = JiakSchema::WILDCARD
+    @jiak_schema.allowed_fields.should eql JiakSchema::WILDCARD
+    @jiak_schema.read_mask.should eql @read_mask
+    @jiak_schema.write_mask.should eql @write_mask
+
+    @jiak_schema.read_mask = JiakSchema::WILDCARD
+    @jiak_schema.allowed_fields.should eql JiakSchema::WILDCARD
+    @jiak_schema.read_mask.should eql JiakSchema::WILDCARD
+    @jiak_schema.write_mask.should eql @write_mask
+
+    @jiak_schema.write_mask = JiakSchema::WILDCARD
+    @jiak_schema.allowed_fields.should eql JiakSchema::WILDCARD
+    @jiak_schema.read_mask.should eql JiakSchema::WILDCARD
+    @jiak_schema.write_mask.should eql JiakSchema::WILDCARD
+
+    @jiak_schema.required_fields.should eql @required_fields
+  end
+
   it "should return added fields when updating individual arrays" do
     arr12 = [:f1,:f2]
     arr23 = [:f2,:f3]

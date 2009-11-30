@@ -218,7 +218,9 @@ module RiakRest
     #
     # Returns fields added to allowed fields.
     def allow(*fields)
-      add_fields(@allowed_fields,"allow",fields)
+      added_fields = add_fields(@allowed_fields,"allow",fields)
+      @allowed_fields = added_fields  if(@allowed_fields.eql?(WILDCARD))
+      added_fields
     end
 
     # :call-seq:
@@ -246,6 +248,7 @@ module RiakRest
     def readable(*fields)
       added_fields = add_fields(@read_mask,"readable",fields)
       allow(*fields)
+      @read_mask = added_fields if(@read_mask.eql?(WILDCARD))
       added_fields
     end
 
@@ -260,6 +263,7 @@ module RiakRest
     def writable(*fields)
       added_fields = add_fields(@write_mask,"writable",fields)
       allow(*fields)
+      @write_mask = added_fields if(@write_mask.eql?(WILDCARD))
       added_fields
     end
 
@@ -283,7 +287,11 @@ module RiakRest
     def add_fields(arr,descr,fields)
       fields = fields[0] if(fields.size == 1 && fields[0].is_a?(Array))
       scrubbed = transform_fields(descr,fields)
-      (scrubbed - arr).each {|f| arr << f}
+      if(arr.eql?(WILDCARD))
+        arr = scrubbed
+      else
+        (scrubbed - arr).each {|f| arr << f}
+      end
     end
     private :add_fields
 
