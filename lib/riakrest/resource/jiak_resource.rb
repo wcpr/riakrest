@@ -25,6 +25,15 @@ module RiakRest
   #  callie.delete
   
   module JiakResource
+
+    PUT_PARAMS    = [:writes,:durable_writes,:reads,:copy,:read]
+    GET_PARAMS    = [:reads,:read]
+    DELETE_PARAMS = [:deletes]
+
+    PUT_PARAMS.freeze
+    GET_PARAMS.freeze
+    DELETE_PARAMS.freeze
+
     # ----------------------------------------------------------------------
     # Class methods
     # ----------------------------------------------------------------------
@@ -66,7 +75,7 @@ module RiakRest
         added_fields.each do |field|
           class_eval <<-EOM
             def #{field}
-              @jiak.data.#{field}
+              @jiak.object.data.#{field}
             end
           EOM
         end
@@ -84,7 +93,7 @@ module RiakRest
         added_fields.each do |field|
           class_eval <<-EOM
             def #{field}=(val)
-              @jiak.data.#{field} = val
+              @jiak.object.data.#{field} = val
               self.class.do_auto_update(self)
             end
           EOM
@@ -127,7 +136,7 @@ module RiakRest
       # =====Valid options
       # <code>:reads</code>:: Minimum number of responding nodes for successful reads.
       # <code>:writes</code>:: Minimum number of responding nodes for successful writes. Writes can be buffered for performance.
-      # <code>:durable_writes</code>:: Minimum number of resonding nodes that must perform a durable write to the persistence layer.
+      # <code>:durable_writes</code>:: Minimum number of responding nodes that must perform a durable write to a persistence layer.
       # <code>:deletes</code>:: Minimum number of responding nodes for successful delete.
       #
       # The configuration of a Riak cluster includes server setting for
@@ -258,14 +267,11 @@ module RiakRest
       # <code>:durable_writes</code>
       # <code>:reads</code>
       # 
-      # If any of the request parameters <code>:writes, :durable_writes,
-      # :reads</code> are not set, each first defaults to the value set for the
-      # JiakResource class, then to the value set on the Riak cluster. In
-      # general the values set on the Riak cluster should suffice.
+      # See JiakResource#params for description of options.
       def put(resource,opts={})
+        check_opts(opts,PUT_PARAMS,JiakResourceException)
         opts[:return] = :object
         resource.jiak.object = jiak.client.store(resource.jiak.object,opts)
-        resource.jiak_convenience
         resource
       end
 
@@ -303,11 +309,12 @@ module RiakRest
       # Get a JiakResource on the Jiak server by the specified key.
       #
       # =====Valid options:
-      # <code>:reads</code> --- See JiakResource#new
+      # <code>:reads</code> --- See JiakResource#params
       #
       # Raise JiakResourceNotFound if no resource exists on the Jiak server for
       # the key.
       def get(key,opts={})
+        check_opts(opts,GET_PARAMS,JiakResourceException)
         new(jiak.client.get(jiak.bucket,key,opts))
       end
 
@@ -317,10 +324,10 @@ module RiakRest
       # Updates a JiakResource with the data on the Jiak server. The current
       # data of the JiakResource is overwritten, so use with caution.
       #
-      # See JiakResource#put for options.
+      # See JiakResource#get for options.
       def refresh(resource,opts={})
-        resource.jiak.object = get(resource.jiak.key,opts).jiak.object
-        resource.jiak_convenience
+        check_opts(opts,GET_PARAMS,JiakResourceException)
+        resource.jiak.object = get(resource.jiak.object.key,opts).jiak.object
       end
 
       # :call-seq:
@@ -330,8 +337,9 @@ module RiakRest
       # key.
       #
       # =====Valid options:
-      # <code>:deletes</code> --- See JiakResource#new
+      # <code>:deletes</code> --- See JiakResource#params
       def delete(resource,opts={})
+        check_opts(opts,DELETE_PARAMS,JiakResourceException)
         jiak.client.delete(jiak.bucket,resource.jiak.object.key,opts)
       end
 
@@ -392,38 +400,46 @@ module RiakRest
       end
       
       # :call-seq:
-      #   JiakResource.query(from,*steps)
+      #   JiakResource.query(from,steps,opts={})
       #
       # Retrieves an array of JiakResource objects by starting with the links
-      # in the <code>from</code> JiakResource and doing the query steps. The
-      # steps are a series of query links designated by a JiakResource and a
-      # string tag, or a JiakResource, a string tag and a string
-      # accumulator. The type of JiakResource returned in the array is
-      # determined by the JiakResource designated in the last step.
+      # in the <code>from</code> JiakResource and performing the query
+      # steps. Steps is an array holding a series of query links designated by
+      # JiakResource,tag pairs. The type of JiakResources returned by the query
+      # is determined by the JiakResource class designated in the last step.
+      #
+      # Note: Although Jiak supports accumulating intermediate link step
+      # results, since RiakRest auto-inflates returned data intermediate
+      # accumulation is not supported. The most common usage, however, is to
+      # only accumulate the last step as supported by RiakRest.
       #
       # ====Usage
       # <code>
-      #   JiakResource.query(resource,Child,'child')
-      #   JiakResource.query(resource,Parent,'odd',Child,'normal')
+      #   JiakResource.query(resource,[Child,'child'])
+      #   JiakResource.query(resource,[Parent,'odd',Child,'normal'])
       # </code>
-      def query(from,*steps)
-        links = []
-        until steps.empty?
-          begin
-            klass,tag = steps.shift(2)
-            last_klass = klass
-            acc = steps[0].is_a?(String) ? steps.shift : nil
-            links << QueryLink.new(klass.jiak.group,tag,acc)
-          rescue
-            raise(JiakResourceException, 
-                  "each step should be Klass,tag or Klass,tag,acc")
+      def query(from,steps,opts={})
+        check_opts(opts,GET_PARAMS,JiakResourceException)
+        begin
+          links = []
+          klass = nil
+          steps.each_slice(2) do |pair|
+            klass = pair[0]
+            links << QueryLink.new(klass.jiak.bucket.name,pair[1],nil)
           end
+          data_class = klass.jiak.bucket.data_class
+          if(klass.include?(JiakResourcePOV))
+            opts[:read] = klass.jiak.read_mask
+          end
+          jiak.client.walk(from.jiak.object.bucket,
+                           from.jiak.object.key,
+                           links,
+                           data_class,
+                           opts).map {|jobj| klass.new(jobj)}
+        # rescue
+        #   raise(JiakResourceException,
+        #         "each step should be JiakResource,tag pair")
         end
-        links = links[0]  if links.size == 1
-        jiak.client.walk(from.jiak.object.bucket, from.jiak.object.key, links,
-                         last_klass.jiak.bucket.data_class).map do |jobj|
-          last_klass.new(jobj)
-        end        
       end
       alias :walk :query
       
@@ -483,7 +499,7 @@ module RiakRest
     # with the JiakResource.
     def initialize(*args)
       # First form is used by JiakResource.get and JiakResource.query
-      @jiak = Struct.new(:object,:bucket,:key,:data,:links,:auto_update).new
+      @jiak = Struct.new(:object,:auto_update).new
       if(args.size == 1 && args[0].is_a?(JiakObject))
         @jiak.object = args[0]
       else
@@ -498,16 +514,6 @@ module RiakRest
           self.class.post(self)
         end
       end
-      jiak_convenience
-    end
-
-    # Public method as a by-product of implementation. No harm done in calling
-    # this method, as it will just repeat assignments already done.
-    def jiak_convenience     # :nodoc:
-      @jiak.bucket = @jiak.object.bucket
-      @jiak.key    = @jiak.object.key
-      @jiak.data   = @jiak.object.data
-      @jiak.links  = @jiak.object.links
     end
 
     # :call-seq:
@@ -545,7 +551,6 @@ module RiakRest
     # for options.
     def put(opts={})
       @jiak.object = (self.class.put(self,opts)).jiak.object
-      jiak_convenience
       self
     end
 
@@ -557,7 +562,6 @@ module RiakRest
     # options.
     def post(opts={})
       @jiak.object = (self.class.post(self,opts)).jiak.object
-      jiak_convenience
       self
     end
 
@@ -569,7 +573,6 @@ module RiakRest
     # options.
     def update(opts={})
       @jiak.object = (self.class.update(self,opts)).jiak.object
-      jiak_convenience
       self
     end
     alias :push :update
@@ -632,21 +635,26 @@ module RiakRest
     end
 
     # :call-seq:
-    #   query(*steps) -> array
+    #   query(steps) -> array
     #
     # Performs a Jiak query starting at this resource. See
     # JiakResource#ClassMethods#query for description.
     #
     # ====Usage
     # <code>
-    #   query(Child,'child')
-    #   query(Parent,'odd',Child,'normal')
+    #   query([Child,'child'])
+    #   query([Parent,'odd',Child,'normal'])
     # </code>
-    def query(*steps)
-      self.class.query(self,*steps)
+    def query(steps,opts={})
+      self.class.query(self,steps)
     end
     alias :walk :query
 
+    # CxINC
+    def pov(pov)
+      pov.get(@jiak.object.key)
+    end
+    
     # :call-seq:
     #   jiak_resource == other -> true or false
     #

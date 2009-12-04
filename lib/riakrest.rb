@@ -88,6 +88,7 @@ require 'riakrest/core/jiak_schema'
 require 'riakrest/core/query_link'
 
 require 'riakrest/resource/jiak_resource'
+require 'riakrest/resource/jiak_resource_pov'
 
 # Extend Array with convenience methods for comparing array contents.
 class Array   # :nodoc:

@@ -1,21 +1,28 @@
 module RiakRest
 
-  # Represents a link used to query linked objects in Jiak. Links are
-  # established using a JiakLink and queried using a QueryLink. The structures
-  # are very similar but significantly different.
+  # Represents a link used to query linked objects using Jiak's link/step
+  # map-reduce facility. Links are established using a JiakLink and queried
+  # using a QueryLink. The structures are very similar but significantly
+  # different. A JiakLink is [bucket,key,tag] and a QueryLink is
+  # [bucket,tag,acc]. The accumulator field of a QueryLink allows for
+  # accumulating intermediate link/step results. Since RiakRest auto-inflates
+  # data returned via Jiak link/step processing, the accumulation of
+  # intermediate results is not supported by RiakRest. The setting of the
+  # <code>acc</code> is implemented for future consideration but should not be
+  # used.
   #
   # ===Usage
   # <code>
   #   link = QueryLink.new('people','parent')
-  #   link = QueryLink.new(['children','odd','_'])
-  #   link = QueryLink.new('blogs',nil,QueryLink::ANY)
+  #   link = QueryLink.new('blogs',nil)
   # </code>
   class QueryLink
 
     attr_accessor :bucket, :tag, :acc
 
-    # Jiak (erlang) wildcard character (atom)
+    # Jiak wildcard character (erlang atom)
     ANY = '_'
+    ANY.freeze
 
     # :call-seq:
     #   QueryLink.new(*args)  -> QueryLink

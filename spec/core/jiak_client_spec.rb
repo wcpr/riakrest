@@ -44,12 +44,27 @@ describe "JiakClient" do
     no_no = lambda {JiakClient::DELETES << 'a'}
     no_no.should raise_error(StandardError,/frozen/)
 
-    no_no = lambda {JiakClient::VALID_PARAMS << 'a'}
+    no_no = lambda {JiakClient::COPY << 'a'}
     no_no.should raise_error(StandardError,/frozen/)
 
-    no_no = lambda {JiakClient::VALID_OPTS << 'a'}
+    no_no = lambda {JiakClient::READ << 'a'}
     no_no.should raise_error(StandardError,/frozen/)
-    
+
+    no_no = lambda {JiakClient::CLIENT_PARAMS << 'a'}
+    no_no.should raise_error(StandardError,/frozen/)
+
+    no_no = lambda {JiakClient::STORE_PARAMS << 'a'}
+    no_no.should raise_error(StandardError,/frozen/)
+
+    no_no = lambda {JiakClient::GET_PARAMS << 'a'}
+    no_no.should raise_error(StandardError,/frozen/)
+
+    no_no = lambda {JiakClient::DELETE_PARAMS << 'a'}
+    no_no.should raise_error(StandardError,/frozen/)
+
+    no_no = lambda {JiakClient::WALK_PARAMS << 'a'}
+    no_no.should raise_error(StandardError,/frozen/)
+
     no_no = lambda {JiakClient::KEYS << 'a'}
     no_no.should raise_error(StandardError,/frozen/)
     
