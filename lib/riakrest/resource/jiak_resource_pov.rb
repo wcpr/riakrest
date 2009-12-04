@@ -1,15 +1,64 @@
 module RiakRest
 
+  # JiakResourcePOV provides a point-of-view interface to existing JiakResource
+  # data that restricts the fields available during Jiak interaction. This
+  # restriction provides two primary benefits: Only explicitly declared fields
+  # can be read or written via the POV, thereby protecting all other
+  # JiakResource fields, and only the declared fields are transported to and
+  # from the Jiak server, thereby reducing the HTTP message sizes.
+  #
+  # ===Example
+  #  require 'riakrest'
+  #  include RiakRest
+  #
+  #  class AB
+  #    include JiakResource
+  #    server SERVER_URI
+  #    group  "test"
+  #    attr_accessor :a, :b
+  #    keygen { "k#{a}" }
+  #  end
+  #
+  #  class A
+  #    include JiakResourcePOV
+  #    resource AB
+  #    attr_accessor :a
+  #  end
+  #
+  #  ab = AB.new(:a => 1, :b => 2)
+  #  ab.post
+  #  a = ab.pov(A)
+  #  a.a = 11
+  #  a.update
+  #  
+  #  ab.refresh
+  #  ab.a                                     # => 11
+
   module JiakResourcePOV
 
+    # ----------------------------------------------------------------------
+    # Class methods
+    # ----------------------------------------------------------------------
+    
+    # Class methods for creating a user-defined JiakResourcePOV.
+    #
+    # See JiakResourcePOV for example usage.
     module ClassMethods
 
+      # :call-seq:
+      #   JiakResourcePOV.resource(resource)
+      #
+      # Set the JiakResource to which this JiakResourcePOV is a point-of-view.
       def resource(resource)
         @resource = resource
         @jiak.bucket = JiakBucket.new(@resource.jiak.group,
                                       JiakDataFields.create)
       end
 
+      # :call-seq:
+      #   attr_reader :f1,...,:fn
+      #
+      # Add read accessible fields.
       def attr_reader(*fields)
         check_fields(fields,@resource.schema.read_mask)
         added_fields = @jiak.bucket.data_class.readable(*fields)
@@ -24,6 +73,10 @@ module RiakRest
         nil
       end
 
+      # :call-seq:
+      #   attr_writer :f1,...,:fn
+      #
+      # Add write accessible fields.
       def attr_writer(*fields)
         check_fields(fields,@resource.schema.write_mask)
         added_fields = @jiak.bucket.data_class.writable(*fields)
@@ -38,6 +91,10 @@ module RiakRest
         nil
       end
 
+      # :call-seq:
+      #   attr_accessor :f1,...,:fn
+      #
+      # Add read/write accessible fields.
       def attr_accessor(*fields)
         attr_reader(*fields)
         attr_writer(*fields)

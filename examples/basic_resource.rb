@@ -1,6 +1,7 @@
 require File.dirname(__FILE__) + '/example_helper.rb'
 
-class People
+# Simple resource.
+class Person
   include JiakResource
   server SERVER_URI
   attr_accessor :name, :age
@@ -8,20 +9,27 @@ class People
   auto_manage
 end
 
-remy = People.new(:name => 'Remy',:age => 10)    #            (auto-post)
-puts remy.name                                   # => "Remy"
+# Convenience method for showing results
+def show_jiak_values
+  rsrc = Person.get('remy')
+  puts "name:#{rsrc.name}, age:#{rsrc.age}"
+end
 
-puts People.get('remy').name                     # => "Remy"  (from Jiak server)
-puts People.get('remy').age                      # => 10      (from Jiak server)
+# Created resource is auto-posted
+remy = Person.new(:name => 'Remy',:age => 10)
+show_jiak_values                                 # => Remy, 10
+puts "name:#{remy.name}, age:#{remy.age}"        # => Remy, 10
 
-remy.age = 11                                    #            (auto-update)
-puts People.get('remy').age                      # => 11      (from Jiak server)
+# Change is auto-updated
+remy.age = 11
+show_jiak_values                                 # => Remy, 11
 
-callie = People.new(:name => 'Callie', :age => 13)
+# Created resource auto-posted and added link auto-updated
+callie = Person.new(:name => 'Callie', :age => 13)
 remy.link(callie,'sister')
-
-sisters = remy.query([People,'sister'])
+sisters = remy.query([Person,'sister'])
 puts sisters[0].eql?(callie)                     # => true
 
+# Clean-up
 remy.delete
 callie.delete

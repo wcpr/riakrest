@@ -1,24 +1,28 @@
 module RiakRest
-  # JiakResource provides a resource-oriented wrapper for Jiak interaction.
+  # JiakResource provides an abstraction to the Jiak interaction provided by
+  # the Core Client classes of RiakRest. JiakResource is built on top of Core
+  # Client and does not provide any functionality not possible through Core
+  # Client. However, JiakResource does provide a much simplier Jiak interaction
+  # interface.
   #
   # ===Example
   #  require 'riakrest'
   #  include RiakRest
   #
-  #  class People
+  #  class Person
   #    include JiakResource
   #    server 'http://localhost:8002/jiak'
   #    attr_accessor :name, :age
   #    auto_manage
   #  end
   #
-  #  remy = People.new(:name => 'Remy',:age => 10)       # (auto-post)
+  #  remy = Person.new(:name => 'Remy',:age => 10)       # (auto-post)
   #  remy.age = 11                                       # (auto-update)
   #
-  #  callie = People.new(:name => 'Callie', :age => 13)
+  #  callie = Person.new(:name => 'Callie', :age => 13)
   #  remy.link(callie,'sister')
   #
-  #  sisters = remy.query(People,'sister')
+  #  sisters = remy.query([Person,'sister'])
   #  sisters[0].eql?(callie)                             # => true
   #
   #  remy.delete
@@ -26,6 +30,7 @@ module RiakRest
   
   module JiakResource
 
+    # :stopdoc:
     PUT_PARAMS    = [:writes,:durable_writes,:reads,:copy,:read]
     GET_PARAMS    = [:reads,:read]
     DELETE_PARAMS = [:deletes]
@@ -33,6 +38,7 @@ module RiakRest
     PUT_PARAMS.freeze
     GET_PARAMS.freeze
     DELETE_PARAMS.freeze
+    # :startdoc:
 
     # ----------------------------------------------------------------------
     # Class methods

@@ -23,7 +23,7 @@ end
 ab = AB.new(:a => 1, :b => 2)
 
 # Store data using AB
-puts "\nPUT ab.a=1, ab.b=2"
+puts "PUT ab.a=1, ab.b=2"
 ab.post
 a = ab.pov(A)
 b = B.get('k1')

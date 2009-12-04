@@ -46,7 +46,7 @@ $:.unshift(dirname) unless
 #  callie = People.new(:name => 'Callie', :age => 13)
 #  remy.link(callie,'sister')
 #
-#  sisters = remy.query(People,'sister')
+#  sisters = remy.query([People,'sister'])
 #  sisters[0].eql?(callie)                             # => true
 #
 #  remy.delete

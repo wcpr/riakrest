@@ -75,7 +75,7 @@ describe "JiakResource default" do
 end
 
 describe "JiakResource schema" do
-  class People           # :nodoc:
+  class Person           # :nodoc:
     include JiakResource
     server         SERVER_URI
     group          'schema'
@@ -85,21 +85,20 @@ describe "JiakResource schema" do
 
   it "should have data schema" do
     jiak_schema = JiakSchema.new([:name,:age])
-    People.schema.should eql jiak_schema
+    Person.schema.should eql jiak_schema
   end
 
   it "should push/check server schema" do
-    People.server_schema?.should be false
-    People.push_schema
-    People.server_schema?.should be true
+    Person.push_schema
+    Person.server_schema?.should be true
 
-    People.push_schema(JiakSchema::WIDE_OPEN)
-    People.server_schema?.should be false
+    Person.push_schema(JiakSchema::WIDE_OPEN)
+    Person.server_schema?.should be false
   end
 end
 
 describe "JiakResource default class-level auto-post/auto-update" do
-  class People           # :nodoc:
+  class Person           # :nodoc:
     include JiakResource
     server         SERVER_URI
     group          'people'
@@ -109,46 +108,46 @@ describe "JiakResource default class-level auto-post/auto-update" do
 
   before do
     @name = 'p default'
-    @p = People.new(:name => @name, :age => 10)
+    @p = Person.new(:name => @name, :age => 10)
   end
 
   it "should create instance without posting" do
-    People.auto_post?.should be false
+    Person.auto_post?.should be false
     
-    People.exist?(@name).should be false
+    Person.exist?(@name).should be false
     @p.local?.should be true
     @p.post
-    People.get(@name).name.should eql @name
+    Person.get(@name).name.should eql @name
     @p.local?.should be false
     @p.delete
   end
 
   it "should change local data without updating" do
     @p.post
-    People.get(@name).age.should eql 10
+    Person.get(@name).age.should eql 10
     @p.age = 12
-    People.get(@name).age.should eql 10
+    Person.get(@name).age.should eql 10
     @p.update
-    People.get(@name).age.should eql 12
+    Person.get(@name).age.should eql 12
     @p.delete
   end
 
   it "should check if resource is local and if it exists on server" do
     name = 'p local'
-    p = People.new(:name => name)
+    p = Person.new(:name => name)
     p.local?.should be true
-    People.exist?(name).should be false
+    Person.exist?(name).should be false
 
     p.post
     p.local?.should be false
-    People.exist?(name).should be true
+    Person.exist?(name).should be true
 
     p.delete
   end
 end
 
 describe "JiakResource class auto-post" do
-  class People           # :nodoc:
+  class Person           # :nodoc:
     include JiakResource
     server         SERVER_URI
     group          'people'
@@ -162,21 +161,21 @@ describe "JiakResource class auto-post" do
 
   describe "false" do
     before do
-      People.auto_post false
+      Person.auto_post false
     end
 
     it "should not auto-post, or auto-update a local object" do
-      People.auto_post?.should be false
+      Person.auto_post?.should be false
 
-      People.exist?(@name).should be false
+      Person.exist?(@name).should be false
 
-      People.auto_update true
-      p = People.new(:name => @name, :age => 10)
+      Person.auto_update true
+      p = Person.new(:name => @name, :age => 10)
       p.local?.should be true
       p.age = 12
       p.local?.should be true
 
-      q = People.new(:name => 'q', :age => 20)
+      q = Person.new(:name => 'q', :age => 20)
 
       link_to_local = lambda {p.link(q,'link')}
       link_to_local.should raise_error(JiakResourceException,/local/)
@@ -191,11 +190,11 @@ describe "JiakResource class auto-post" do
       p.post
       p.local?.should be false
       p.age.should be 12
-      People.get(@name).age.should be 12
-      p.query([People,'link'])[0].should eql q
+      Person.get(@name).age.should be 12
+      p.query([Person,'link'])[0].should eql q
       
       p.age = 10
-      People.get(@name).age.should be 10
+      Person.get(@name).age.should be 10
 
       p.delete
       q.delete
@@ -204,21 +203,21 @@ describe "JiakResource class auto-post" do
 
   describe "true" do
     before do
-      People.auto_post true
+      Person.auto_post true
     end
 
     it "should auto-post a new instance" do
-      People.auto_post?.should be true
+      Person.auto_post?.should be true
       
-      People.exist?(@name).should be false
-      p = People.new(:name => @name, :age => 10)
-      People.get(@name).name.should eql @name
+      Person.exist?(@name).should be false
+      p = Person.new(:name => @name, :age => 10)
+      Person.get(@name).name.should eql @name
       p.delete
     end
 
     it "should reject auto-post of a new instance with an existing key" do
-      p = People.new(:name => @name, :age => 10)
-      duplicate_key = lambda {People.new(:name => p.name, :age => 0)}
+      p = Person.new(:name => @name, :age => 10)
+      duplicate_key = lambda {Person.new(:name => p.name, :age => 0)}
       duplicate_key.should raise_error(JiakResourceException,/exist/)
       p.delete
     end
@@ -226,7 +225,7 @@ describe "JiakResource class auto-post" do
 end
 
 describe "JiakResource class auto-update" do
-  class Dogs           # :nodoc:
+  class Dog           # :nodoc:
     include JiakResource
     server         SERVER_URI
     group          'dogs'
@@ -239,88 +238,88 @@ describe "JiakResource class auto-update" do
     @pname = 'p auto-update'
     @c1name = 'c1 auto-update'
     @c2name = 'c2 auto-update'
-    @p = Dogs.new(:name => @pname, :age => 10)
-    @c1 = Dogs.new(:name => @cname, :age => 4)
-    @c2 = Dogs.new(:name => @cname, :age => 4)
+    @p = Dog.new(:name => @pname, :age => 10)
+    @c1 = Dog.new(:name => @cname, :age => 4)
+    @c2 = Dog.new(:name => @cname, :age => 4)
   end
   
   after do
     @p.delete
     @c1.delete
     @c2.delete
-    Dogs.auto_update true
+    Dog.auto_update true
   end
 
   it "should auto-update local changes" do
-    Dogs.get(@pname).age.should eql 10
+    Dog.get(@pname).age.should eql 10
     @p.age = 12
-    Dogs.get(@pname).age.should eql 12
+    Dog.get(@pname).age.should eql 12
 
-    Dogs.get(@pname).name.should eql @pname
+    Dog.get(@pname).name.should eql @pname
     @p.name = @pname.upcase
-    Dogs.get(@pname).name.should eql @pname.upcase
+    Dog.get(@pname).name.should eql @pname.upcase
 
-    @p.query([Dogs,'pup']).size.should eql 0
+    @p.query([Dog,'pup']).size.should eql 0
     @p.link(@c1,'pup')
-    @p.query([Dogs,'pup']).size.should eql 1
+    @p.query([Dog,'pup']).size.should eql 1
 
-    [@c1,@c2].each {|c| c.query([Dogs,'sibling']).size.should eql 0}
+    [@c1,@c2].each {|c| c.query([Dog,'sibling']).size.should eql 0}
     @c1.bi_link(@c2,'sibling')
-    [@c1,@c2].each {|c| c.query([Dogs,'sibling']).size.should eql 1}
+    [@c1,@c2].each {|c| c.query([Dog,'sibling']).size.should eql 1}
   end
 
   it "should allow instance level override of class level auto-update true" do
     @p.auto_update?.should be nil
     
-    Dogs.get(@pname).age.should eql 10
+    Dog.get(@pname).age.should eql 10
     @p.auto_update = false
     @p.auto_update?.should be false
     @p.age = 12
-    Dogs.get(@pname).age.should eql 10
+    Dog.get(@pname).age.should eql 10
     @p.update
-    Dogs.get(@pname).age.should eql 12
+    Dog.get(@pname).age.should eql 12
     
-    [@c1,@c2].each {|c| c.query([Dogs,'sibling']).size.should eql 0}
+    [@c1,@c2].each {|c| c.query([Dog,'sibling']).size.should eql 0}
     @c2.auto_update = false
     @c1.bi_link(@c2,'sibling')
-    @c1.query([Dogs,'sibling']).size.should eql 1
-    @c2.query([Dogs,'sibling']).size.should eql 0
+    @c1.query([Dog,'sibling']).size.should eql 1
+    @c2.query([Dog,'sibling']).size.should eql 0
   end
 
   it "should allow instance level override of class level auto-update false" do
-    Dogs.auto_update false
+    Dog.auto_update false
     
-    Dogs.get(@pname).age.should eql 10
+    Dog.get(@pname).age.should eql 10
     @p.auto_update = true
     @p.auto_update?.should be true
     @p.age = 12
-    Dogs.get(@pname).age.should eql 12
+    Dog.get(@pname).age.should eql 12
     
-    [@c1,@c2].each {|c| c.query([Dogs,'sibling']).size.should eql 0}
+    [@c1,@c2].each {|c| c.query([Dog,'sibling']).size.should eql 0}
     @c2.auto_update = true
     @c1.bi_link(@c2,'sibling')
-    @c1.query([Dogs,'sibling']).size.should eql 0
-    @c2.query([Dogs,'sibling']).size.should eql 1
+    @c1.query([Dog,'sibling']).size.should eql 0
+    @c2.query([Dog,'sibling']).size.should eql 1
   end
 
   it "should allow instance level deferring back to class level" do
-    Dogs.get(@pname).age.should eql 10
+    Dog.get(@pname).age.should eql 10
     @p.auto_update = false
     @p.age = 12
-    Dogs.get(@pname).age.should eql 10
+    Dog.get(@pname).age.should eql 10
     @p.update
-    Dogs.get(@pname).age.should eql 12
+    Dog.get(@pname).age.should eql 12
     
     @p.auto_update = nil
     @p.auto_update?.should be nil
     @p.age = 10
-    Dogs.get(@pname).age.should eql 10
+    Dog.get(@pname).age.should eql 10
   end
 
 end
 
 describe "JiakResource simple" do
-  class Dogs           # :nodoc:
+  class Dog           # :nodoc:
     include JiakResource
     server         SERVER_URI
     group          'dogs'
@@ -333,9 +332,9 @@ describe "JiakResource simple" do
     @pname = 'p'
     @c1name = 'c1'
     @c2name = 'c2'
-    @p = Dogs.new(:name => @pname, :age => 10)
-    @c1 = Dogs.new(:name => @c1name, :age => 4)
-    @c2 = Dogs.new(:name => @c2name, :age => 4)
+    @p = Dog.new(:name => @pname, :age => 10)
+    @c1 = Dog.new(:name => @c1name, :age => 4)
+    @c2 = Dog.new(:name => @c2name, :age => 4)
   end
   
   after do
@@ -345,50 +344,49 @@ describe "JiakResource simple" do
   end
 
   it "should do basic interaction and single-step relationships" do
-    Dogs.exist?(@pname).should be true
-    Dogs.get(@pname).should eql @p
+    Dog.exist?(@pname).should be true
+    Dog.get(@pname).should eql @p
 
     @p.name.should eql @pname
     @p.age.should eql 10
     
     @p.age = 11
-    @p = Dogs.get(@pname)
+    @p = Dog.get(@pname)
     @p.age.should eql 11
 
     [@c1,@c2].each {|c| @p.link(c,'pup')}
-    pups = @p.query([Dogs,'pup'])
+    pups = @p.query([Dog,'pup'])
     pups.size.should eql 2
     same_elements = pups.map {|c| c.name}.same_elements?([@c1.name,@c2.name])
     same_elements.should be true
 
     @c1.bi_link(@c2,'sibling')
-    [@c1,@c2].each {|c| c.query([Dogs,'sibling']).size.should eql 1}
-    @c1.query([Dogs,'sibling'])[0].should eql @c2
-    @c2.query([Dogs,'sibling'])[0].should eql @c1
+    [@c1,@c2].each {|c| c.query([Dog,'sibling']).size.should eql 1}
+    @c1.query([Dog,'sibling'])[0].should eql @c2
+    @c2.query([Dog,'sibling'])[0].should eql @c1
 
     @c1.remove_link(@c2,'sibling')
-    @c1.query([Dogs,'sibling']).size.should eql 0
-    @c2.query([Dogs,'sibling']).size.should eql 1
+    @c1.query([Dog,'sibling']).size.should eql 0
+    @c2.query([Dog,'sibling']).size.should eql 1
 
     [@c1,@c2].each {|c| c.link(@p,'parent')}
 
-    @c1.query([Dogs,QueryLink::ANY]).size.should eql 1
-    @c2.query([Dogs,QueryLink::ANY]).size.should eql 2
-    @c2.query([Dogs,'sibling']).size.should eql 1
-    @c2.query([Dogs,'parent']).size.should eql 1
+    @c1.query([Dog,QueryLink::ANY]).size.should eql 1
+    @c2.query([Dog,QueryLink::ANY]).size.should eql 2
+    @c2.query([Dog,'sibling']).size.should eql 1
+    @c2.query([Dog,'parent']).size.should eql 1
   end
 end
 
 describe "JiakResource complex" do
-  class Parents           # :nodoc:
+  class Parent           # :nodoc:
     include JiakResource
     server        SERVER_URI
     attr_accessor :name
     keygen { name }
   end
 
-  Children = Parents.dup
-  Children.group 'children'
+  (Child = Parent.dup).group 'child'
 
   it "should do multi-step relationships" do
     # relationships
@@ -409,12 +407,12 @@ describe "JiakResource complex" do
 
     # store data and relationships
     parent_children.each do |pname,cnames|
-      p = Parents.new(:name => pname).post
+      p = Parent.new(:name => pname).post
       cnames.each do |cname|
         begin
-          c = Children.get(cname)
+          c = Child.get(cname)
         rescue
-          c = Children.new(:name => cname)
+          c = Child.new(:name => cname)
         end
         c.link(p,'parent')
         c.put
@@ -423,13 +421,13 @@ describe "JiakResource complex" do
       p.update
     end
 
-    parents  = parent_children.keys.map {|p| Parents.get(p)}
-    children = child_parents.keys.map {|c| Children.get(c)}
+    parents  = parent_children.keys.map {|p| Parent.get(p)}
+    children = child_parents.keys.map {|c| Child.get(c)}
     c0,c1,c2,c3,c4 = children
 
     # siblings
     c0s,c1s,c2s,c3s,c4s = children.map do |c|
-      c.query([Parents,'parent',Children,'child']).delete_if{|s| s.eql?(c)}
+      c.query([Parent,'parent',Child,'child']).delete_if{|s| s.eql?(c)}
     end
     c0s.size.should eql 2
     c1s.size.should eql 2
@@ -443,18 +441,18 @@ describe "JiakResource complex" do
     same_elements.should be true
 
     # c3's step-sibling's other parent?
-    c3sp = c3.query([Parents,'parent',Children,'child',Parents,'parent'])
-    c3.query([Parents,'parent']).each {|p| c3sp.delete_if{|sp| p.eql?(sp)}}
+    c3sp = c3.query([Parent,'parent',Child,'child',Parent,'parent'])
+    c3.query([Parent,'parent']).each {|p| c3sp.delete_if{|sp| p.eql?(sp)}}
     c3sp[0].name.should eql parents[1].name
 
     # add sibling links
-    Children.auto_update true
+    Child.auto_update true
     children.each do |c|
       siblings = 
-        c.query([Parents,'parent',Children,'child']).delete_if{|s| s.eql?(c)}
+        c.query([Parent,'parent',Child,'child']).delete_if{|s| s.eql?(c)}
       siblings.each {|s| c.link(s,'sibling')}
     end
-    sibling_query = [Children,'sibling']
+    sibling_query = [Child,'sibling']
     c0.query(sibling_query).size.should eql 2
     c1.query(sibling_query).size.should eql 2
     c2.query(sibling_query).size.should eql 3

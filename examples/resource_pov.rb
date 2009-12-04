@@ -1,32 +1,46 @@
+# buoy.rb contains resource and POV class declarations
 require File.join(File.dirname(__FILE__), 'buoy')
-include Examples
 
-buoys = BUOYS.map {|m| BuoyData.load(m)}.map {|b| Buoy.new(b)}.each {|m| m.post}
+# Load buoy data
+buoy0,buoy1,buoy2 = 
+  BUOYS.map {|m| BuoyData.load(m)}.map {|b| Buoy.new(b)}.each {|m| m.post}
 
-b0_srf = buoys[0].pov(BuoySurface)
-b0_srf.temp_air = 15.0
-b0_srf.update
+# Loaded data for Buoy, BuoySurface, and BuoySST
+buoy0_srf = buoy0.pov(BuoySurface)
+buoy0_sst = buoy0.pov(BuoySST)
+puts "Loaded data"
+show_data(buoy0)
+show_data(buoy0_srf)
+show_data(buoy0_sst)
 
-buoys[0].refresh
+# Change SST via BuoySurface POV
+buoy0_srf.temp_0 = 14.99
+buoy0_srf.update
+buoy0.refresh
+buoy0_sst.refresh
+puts
+puts "SST set to 14.99 via BuoySurface POV"
+show_data(buoy0)
+show_data(buoy0_srf)
+show_data(buoy0_sst)
 
-class Region
-  include JiakResource
-  server  SERVER_URI
-  group 'region'
-  
-  attr_accessor :name
-end
-
+# Create a region and link the 3 buoys
 mbay = Region.new(:name => 'Monterey Bay')
 mbay.post
-
-buoys.each {|buoy| mbay.link(buoy,'buoy')}
+[buoy0,buoy1,buoy2].each {|buoy| mbay.link(buoy,'buoy')}
 mbay.update
 
-moorings = mbay.query([Buoy,'buoy'])
-moorings[0] == buoys[0]
+# Get all MBay buoys via query as both Buoy and BuoySST
+buoys = mbay.query([Buoy,'buoy'])
+sst = mbay.query([BuoySST,'buoy'])
+puts
+puts "Check SST of M0 buoy as both Buoy and BuoySST POV"
+m0_buoy = buoys.find {|buoy| buoy.name.eql?('M0')}
+m0_sst  =   sst.find {|buoy| buoy.name.eql?('M0')}
+show_data(m0_buoy)
+show_data(m0_sst)
+puts " #{m0_buoy.temp_0 == m0_sst.temp_0}"                   # => true
 
-# sst = buoys.map {|b| b.pov(BuoySST)}
-
-
+# Clean-up
+[buoy0,buoy1,buoy2,mbay].each {|rsrc| rsrc.delete}
 

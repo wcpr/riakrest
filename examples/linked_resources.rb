@@ -1,5 +1,8 @@
 require File.dirname(__FILE__) + '/example_helper.rb'
 
+# Simple resource classes. Parent group (Jiak bucket name) defaults to
+# lowercase of class name, so Child class just like Parent, but in a different
+# group.
 class Parent
   include JiakResource
   server         SERVER_URI
@@ -8,7 +11,14 @@ class Parent
 end
 (Child = Parent.dup).group 'child'
 
-# relationships
+# 
+def show_name(rsrc,expected)
+  name = rsrc.name
+  puts " #{name}? #{name.eql?(expected)}"
+end
+
+
+# Some relationships to play with.
 parent_children = {
   'p0' => ['c0'],
   'p1' => ['c0','c1','c2'],
@@ -16,7 +26,7 @@ parent_children = {
   'p3' => ['c3']
 }
 
-# invert relationships
+# Invert relationships for comparison purposes.
 child_parents = parent_children.inject({}) do |build, (p,cs)|
   cs.each do |c|
     build[c] ? build[c] << p : build[c] = [p]
@@ -24,7 +34,7 @@ child_parents = parent_children.inject({}) do |build, (p,cs)|
   build
 end
 
-# store data and relationships
+# Store data and relationships
 parent_children.each do |pname,cnames|
   p = Parent.new(:name => pname).post
   cnames.each do |cname|
@@ -40,49 +50,50 @@ parent_children.each do |pname,cnames|
   p.update
 end
 
-# retrieve parents
+# Retrieve parents by key
 parents = parent_children.keys.map {|p| Parent.get(p)}
 p0,p1,p2,p3 = parents
-puts p1.name                                      # => 'p1'
+show_name(p1,'p1')                                # => 'p1'
 
-# retrieve children
+# Retrieve children by key
 children = child_parents.keys.map {|c| Child.get(c)}
 c0,c1,c2,c3 = children
-puts c1.name                                      # => 'c1'
+show_name(c1,'c1')                                # => 'c1'
 
-# retrieve parent children
+# Retrieve parent children by query
 p0c,p1c,p2c,p3c = parents.map {|p| p.query([Child,'child'])}
-puts p2c[0].name                                  # => 'c2' (could be 'c3')
+show_name(p2c[0],'c2')                            # => 'c2' (could be 'c3')
 
-# retrieve children parents
+# Retrieve children parents by query
 c0p,c1p,c2p,c3p = children.map {|c| c.query([Parent,'parent'])}
-puts c3p[0].name                                  # => 'p2'
-puts c3p[1].name                                  # => 'p3'
+show_name(c3p[0],'p2')                            # => 'p2'
+show_name(c3p[1],'p3')                            # => 'p2'
 
-# retrieve children siblings
+# Retrieve children siblings by multi-step query
 c0s,c1s,c2s,c3s = children.map do |c|
   c.query([Parent,'parent',Child,'child']).delete_if{|s| s.eql?(c)}
 end
-puts c3s[0].name                                  # => 'c2'
+show_name(c3s[0],'c2')                            # => 'c2'
 
-# who is c3's step-sibling's other parent?
+# Who is c3's step-sibling's other parent?
 c3sp = c3.query([Parent,'parent',Child,'child',Parent,'parent'])
 c3p.each {|p| c3sp.delete_if{|sp| p.eql?(sp)}}
-puts c3sp[0].name                                 # => "p1"
+show_name(c3sp[0],'p1')                           # => 'p1'
 
-# turn on auto-update at class level
+# Set auto-update at class level
 Parent.auto_update true
 Child.auto_update  true
 
-# add sibling links
+# Add sibling links using existing links (say, for convenience)
 children.each do |c|
   siblings = c.query([Parent,'parent',Child,'child']).delete_if{|s| s.eql?(c)}
   siblings.each {|s| c.link(s,'sibling')}
   c.update
 end
-puts c1.query([Child,'sibling']).size               # => 2  
+qsize = c1.query([Child,'sibling']).size
+puts "  #{qsize}? #{qsize == 2}"                 # => 2  
   
-# some folks are odd, and others are normal
+# Some folks are odd, and others are normal (example for link futzing)
 parent_children.keys.each do |p|
   parent = Parent.get(p)
   p_children = parent.query([Child,'child'])
@@ -93,17 +104,17 @@ parent_children.keys.each do |p|
   end
   parent.update
 end
-# refresh parents and children variables
+# Refresh parents and children variables
 parents.each {|p| p.refresh}
 children.each {|c| c.refresh}
 
-# do any odd parents have normal children?
+# Do any odd parents have normal children?
 op = parents.inject([]) do |build,parent|
   build << parent.query([Child,'normal',Parent,'odd'])
   build.flatten.uniq
 end
-puts op[0].name                                   # => 'p1'
+show_name(op[0],'p1')                             # => 'p1'
 
-# clean-up by deleting everybody
+# Clean-up by deleting all parents and children
 parents.each  {|p| p.delete}
 children.each {|c| c.delete}
