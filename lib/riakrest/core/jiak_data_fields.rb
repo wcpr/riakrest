@@ -28,15 +28,15 @@ module RiakRest
         if(args.size == 1)
           case args[0]
           when Symbol, Array
-            jattr_accessor *args[0]
+            attr_accessor *args[0]
           when JiakSchema
-            jattr_reader *args[0].read_mask
-            jattr_writer *args[0].write_mask
+            attr_reader *args[0].read_mask
+            attr_writer *args[0].write_mask
             allow    *args[0].allowed_fields
             require  *args[0].required_fields
           end
         else
-          jattr_accessor *args
+          attr_accessor *args
         end
 
         # :call-seq:

@@ -36,7 +36,7 @@ $:.unshift(dirname) unless
 #  class People
 #    include JiakResource
 #    server 'http://localhost:8002/jiak'
-#    jattr_accessor :name, :age
+#    attr_accessor :name, :age
 #    auto_manage
 #  end
 #

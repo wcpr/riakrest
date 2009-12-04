@@ -4,20 +4,20 @@ class AB
   include JiakResource
   server SERVER_URI
   group  "test"
-  jattr_accessor :a, :b
+  attr_accessor :a, :b
   keygen { "k#{a}" }
 end
 
 class A
   include JiakResourcePOV
   resource AB
-  jattr_accessor :a
+  attr_accessor :a
 end
 
 class B
   include JiakResourcePOV
   resource AB
-  jattr_accessor :b
+  attr_accessor :b
 end
 
 ab = AB.new(:a => 1, :b => 2)

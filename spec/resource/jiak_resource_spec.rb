@@ -4,7 +4,7 @@ describe "JiakResource default" do
   class Rsrc           # :nodoc:
     include JiakResource
     server        SERVER_URI
-    jattr_accessor :f1, :f2
+    attr_accessor :f1, :f2
   end
 
   before do
@@ -16,7 +16,7 @@ describe "JiakResource default" do
   describe "class creation" do
     it "should respond to" do
       Rsrc.should respond_to(:server,:group)
-      Rsrc.should respond_to(:jattr_reader,:jattr,:jattr_writer,:jattr_accessor)
+      Rsrc.should respond_to(:attr_reader,:attr,:attr_writer,:attr_accessor)
       Rsrc.should respond_to(:params,:auto_update,:keys)
       Rsrc.should respond_to(:schema,:push_schema,:server_schema?)
       Rsrc.should respond_to(:post,:put,:get,:delete)
@@ -79,7 +79,7 @@ describe "JiakResource schema" do
     include JiakResource
     server         SERVER_URI
     group          'schema'
-    jattr_accessor  :name, :age
+    attr_accessor  :name, :age
     keygen { name }
   end
 
@@ -103,7 +103,7 @@ describe "JiakResource default class-level auto-post/auto-update" do
     include JiakResource
     server         SERVER_URI
     group          'people'
-    jattr_accessor  :name, :age
+    attr_accessor  :name, :age
     keygen { name }
   end
 
@@ -152,7 +152,7 @@ describe "JiakResource class auto-post" do
     include JiakResource
     server         SERVER_URI
     group          'people'
-    jattr_accessor  :name, :age
+    attr_accessor  :name, :age
     keygen { name }
   end
 
@@ -230,7 +230,7 @@ describe "JiakResource class auto-update" do
     include JiakResource
     server         SERVER_URI
     group          'dogs'
-    jattr_accessor  :name, :age
+    attr_accessor  :name, :age
     keygen { name }
     auto_manage
   end
@@ -324,7 +324,7 @@ describe "JiakResource simple" do
     include JiakResource
     server         SERVER_URI
     group          'dogs'
-    jattr_accessor  :name, :age
+    attr_accessor  :name, :age
     keygen { name }
     auto_manage
   end
@@ -383,7 +383,7 @@ describe "JiakResource complex" do
   class Parents           # :nodoc:
     include JiakResource
     server        SERVER_URI
-    jattr_accessor :name
+    attr_accessor :name
     keygen { name }
   end
 

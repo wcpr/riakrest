@@ -12,7 +12,7 @@ module RiakRest
   #
   #  class PeopleData
   #    include JiakData
-  #    jattr_accessor :name, :age
+  #    attr_accessor :name, :age
   #  end
   #
   #  client = JiakClient.new("http://localhost:8002/jiak")

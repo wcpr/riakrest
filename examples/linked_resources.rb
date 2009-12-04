@@ -3,7 +3,7 @@ require File.dirname(__FILE__) + '/example_helper.rb'
 class Parent
   include JiakResource
   server         SERVER_URI
-  jattr_accessor :name
+  attr_accessor :name
   keygen { name }
 end
 (Child = Parent.dup).group 'child'

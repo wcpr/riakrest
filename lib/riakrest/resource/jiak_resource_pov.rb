@@ -10,7 +10,7 @@ module RiakRest
                                       JiakDataFields.create)
       end
 
-      def jattr_reader(*fields)
+      def attr_reader(*fields)
         check_fields(fields,@resource.schema.read_mask)
         added_fields = @jiak.bucket.data_class.readable(*fields)
         added_fields.each do |field|
@@ -24,7 +24,7 @@ module RiakRest
         nil
       end
 
-      def jattr_writer(*fields)
+      def attr_writer(*fields)
         check_fields(fields,@resource.schema.write_mask)
         added_fields = @jiak.bucket.data_class.writable(*fields)
         added_fields.each do |field|
@@ -38,9 +38,9 @@ module RiakRest
         nil
       end
 
-      def jattr_accessor(*fields)
-        jattr_reader(*fields)
-        jattr_writer(*fields)
+      def attr_accessor(*fields)
+        attr_reader(*fields)
+        attr_writer(*fields)
       end
 
       def check_fields(fields,valid)

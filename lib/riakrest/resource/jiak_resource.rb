@@ -8,7 +8,7 @@ module RiakRest
   #  class People
   #    include JiakResource
   #    server 'http://localhost:8002/jiak'
-  #    jattr_accessor :name, :age
+  #    attr_accessor :name, :age
   #    auto_manage
   #  end
   #
@@ -66,10 +66,10 @@ module RiakRest
       end
 
       # :call-seq:
-      #   jattr_reader :f1,...,:fn
+      #   attr_reader :f1,...,:fn
       #
       # Add read accessible fields.
-      def jattr_reader(*fields)
+      def attr_reader(*fields)
         check_fields(fields)
         added_fields = jiak.data.readable(*fields)
         added_fields.each do |field|
@@ -81,13 +81,13 @@ module RiakRest
         end
         nil
       end
-      alias :jattr :jattr_reader
+      alias :attr :attr_reader
 
       # :call-seq:
-      #   jattr_writer :f1,...,:fn
+      #   attr_writer :f1,...,:fn
       #
       # Add write accessible fields.
-      def jattr_writer(*fields)
+      def attr_writer(*fields)
         check_fields(fields)
         added_fields = jiak.data.writable(*fields)
         added_fields.each do |field|
@@ -102,12 +102,12 @@ module RiakRest
       end
 
       # :call-seq:
-      #   jattr_accessor :f1,...,:fn
+      #   attr_accessor :f1,...,:fn
       #
       # Add read/write accessible fields.
-      def jattr_accessor(*fields)
-        jattr_reader *fields
-        jattr_writer *fields
+      def attr_accessor(*fields)
+        attr_reader *fields
+        attr_writer *fields
       end
 
       def check_fields(fields)

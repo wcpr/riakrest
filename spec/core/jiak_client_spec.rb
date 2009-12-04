@@ -3,7 +3,7 @@ require File.dirname(__FILE__) + '/../spec_helper.rb'
 class FooBarBaz  # :nodoc:
   include JiakData
 
-  jattr_accessor :foo, :bar
+  attr_accessor :foo, :bar
   require :foo
   allow   :baz
 end
@@ -355,7 +355,7 @@ end
 
 class PersonData
   include JiakData
-  jattr_accessor :name
+  attr_accessor :name
 end
 
 describe "JiakClient links" do

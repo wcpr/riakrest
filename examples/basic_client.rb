@@ -2,7 +2,7 @@ require File.dirname(__FILE__) + '/example_helper.rb'
 
 class PeopleData
   include JiakData
-  jattr_accessor :name, :age
+  attr_accessor :name, :age
 end
 
 client = JiakClient.new(SERVER_URI)

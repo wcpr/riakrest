@@ -14,7 +14,7 @@ class Region
   server  SERVER_URI
   group 'region'
   
-  jattr_accessor :name
+  attr_accessor :name
 end
 
 mbay = Region.new(:name => 'Monterey Bay')

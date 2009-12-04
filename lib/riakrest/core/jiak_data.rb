@@ -7,8 +7,8 @@ module RiakRest
   # user-data instances, rather it facilitates creating the class used to
   # create user-data instances.
   #
-  # The class methods <code>jattr_reader,jattr_writer</code>, and
-  # <code>jattr_accessor</code> are used to declare the Jiak readable and
+  # The class methods <code>attr_reader,attr_writer</code>, and
+  # <code>attr_accessor</code> are used to declare the Jiak readable and
   # writable fields for a JiakData. The method <code>keygen</code> is used
   # to specify a block for generating the key for a data instance. By default,
   # JiakData generates an empty key which is interpreted by the Jiak server as
@@ -16,7 +16,7 @@ module RiakRest
   # ====Example
   #  class FooBar
   #    include JiakData
-  #    jattr_accessor :foo, :bar
+  #    attr_accessor :foo, :bar
   #    keygen { foo.downcase }
   #  end
   #
@@ -54,29 +54,29 @@ module RiakRest
     module ClassMethods
 
       # :call-seq:
-      #   jattr_reader :f1,...,:fn
+      #   attr_reader :f1,...,:fn
       #
       # Add read accessible fields.
-      def jattr_reader(*fields)
+      def attr_reader(*fields)
         readable *fields
         nil
       end
-      alias :jattr :jattr_reader
+      alias :attr :attr_reader
 
       # :call-seq:
-      #   jattr_writer :f1,...,:fn
+      #   attr_writer :f1,...,:fn
       #
       # Add write accessible fields.
-      def jattr_writer(*fields)
+      def attr_writer(*fields)
         writable *fields
         nil
       end
 
       # :call-seq:
-      #   jattr_accessor :f1,...,:fn
+      #   attr_accessor :f1,...,:fn
       #
       # Add read/write accessible fields.
-      def jattr_accessor(*fields)
+      def attr_accessor(*fields)
         readable *fields
         writable *fields
       end
@@ -147,7 +147,17 @@ module RiakRest
         prev_allowed = @schema.allowed_fields
         added_fields = @schema.send(method,*fields)
         added_allowed = @schema.allowed_fields - prev_allowed
-        added_allowed.each {|field| attr_accessor field}
+        # added_allowed.each {|field| attr_accessor field}
+        added_allowed.each do |field| 
+          class_eval <<-EOH
+            def #{field}
+              @#{field}
+            end
+            def #{field}=(val)
+              @#{field} = val
+            end
+          EOH
+        end
         added_fields
       end
       private :expand_schema
@@ -178,7 +188,7 @@ module RiakRest
       # structured Jiak interaction. See JiakSchema for read mask discussion.
       #
       # User-defined data classes must either override this method explicitly
-      # or use the <code>jattr_*</code> methods which implicitly override this
+      # or use the <code>attr_*</code> methods which implicitly override this
       # method. The method is automatically called to marshall data from
       # Jiak. You do not call this method explicitly.
       #
@@ -242,11 +252,11 @@ module RiakRest
     # for shema discussion.
     #
     # User-defined data classes must either override this method explicitly or
-    # use the <code>jattr_*</code> methods which implicitly provide an implicit
+    # use the <code>attr_*</code> methods which implicitly provide an implicit
     # override. The method is automatically called to marshall data to
     # Jiak. You do not call this method explicitly.
 
-    # Data classes that do not used the jattr_* methods to specify attributes
+    # Data classes that do not used the attr_* methods to specify attributes
     # must override this method. 
     #
     # ====Example

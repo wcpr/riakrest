@@ -10,37 +10,37 @@ class Buoy
 
   keygen { name }
 
-  jattr_accessor :name
-  jattr_accessor :lat, :lon
-  jattr_accessor :wind_u, :wind_v, :temp_air
-  jattr_accessor :temp_0, :salt_0
-  jattr_accessor :temp_10, :salt_10
-  jattr_accessor :temp_20, :salt_20
+  attr_accessor :name
+  attr_accessor :lat, :lon
+  attr_accessor :wind_u, :wind_v, :temp_air
+  attr_accessor :temp_0, :salt_0
+  attr_accessor :temp_10, :salt_10
+  attr_accessor :temp_20, :salt_20
 end
 
 class BuoySurface
   include JiakResourcePOV
   resource Buoy
 
-  jattr_reader :name
-  jattr_reader :lat, :lon
-  jattr_accessor :wind_u, :wind_v, :temp_air
-  jattr_accessor :temp_0, :salt_0
+  attr_reader :name
+  attr_reader :lat, :lon
+  attr_accessor :wind_u, :wind_v, :temp_air
+  attr_accessor :temp_0, :salt_0
 end
 
 class BuoySeaTemps
   include JiakResourcePOV
   resource Buoy
 
-  jattr_reader :name
-  jattr_accessor :temp_0, :temp_10, :temp_20
+  attr_reader :name
+  attr_accessor :temp_0, :temp_10, :temp_20
 end
 
 class BuoySST
   include JiakResourcePOV
   resource Buoy
 
-  jattr_reader :temp_0
+  attr_reader :temp_0
 end
 
 M0 = ["m0",[36.83, -121.90], [2.51, 3.12],
