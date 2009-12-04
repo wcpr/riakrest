@@ -63,15 +63,8 @@ describe "JiakResource default" do
     
     it "should have default settings" do
       @rsrc.jiak.should be_a Struct
-      @rsrc.jiak.should respond_to(:object)
-      @rsrc.jiak.should respond_to(:bucket,:key,:data,:links)
-      @rsrc.jiak.should respond_to(:auto_update)
+      @rsrc.jiak.should respond_to(:object,:auto_update)
 
-      @rsrc.jiak.bucket.should == @rsrc.jiak.object.bucket
-      @rsrc.jiak.key.should    == @rsrc.jiak.object.key
-      @rsrc.jiak.data.should   == @rsrc.jiak.object.data
-      @rsrc.jiak.links.should  == @rsrc.jiak.object.links
-      
       @rsrc.jiak.object.should be_a JiakObject
       @rsrc.jiak.object.bucket.should be_a JiakBucket
       @rsrc.jiak.object.bucket.name.should eql @group
@@ -199,7 +192,7 @@ describe "JiakResource class auto-post" do
       p.local?.should be false
       p.age.should be 12
       People.get(@name).age.should be 12
-      p.query(People,'link')[0].should eql q
+      p.query([People,'link'])[0].should eql q
       
       p.age = 10
       People.get(@name).age.should be 10
@@ -267,13 +260,13 @@ describe "JiakResource class auto-update" do
     @p.name = @pname.upcase
     Dogs.get(@pname).name.should eql @pname.upcase
 
-    @p.query(Dogs,'pup').size.should eql 0
+    @p.query([Dogs,'pup']).size.should eql 0
     @p.link(@c1,'pup')
-    @p.query(Dogs,'pup').size.should eql 1
+    @p.query([Dogs,'pup']).size.should eql 1
 
-    [@c1,@c2].each {|c| c.query(Dogs,'sibling').size.should eql 0}
+    [@c1,@c2].each {|c| c.query([Dogs,'sibling']).size.should eql 0}
     @c1.bi_link(@c2,'sibling')
-    [@c1,@c2].each {|c| c.query(Dogs,'sibling').size.should eql 1}
+    [@c1,@c2].each {|c| c.query([Dogs,'sibling']).size.should eql 1}
   end
 
   it "should allow instance level override of class level auto-update true" do
@@ -287,11 +280,11 @@ describe "JiakResource class auto-update" do
     @p.update
     Dogs.get(@pname).age.should eql 12
     
-    [@c1,@c2].each {|c| c.query(Dogs,'sibling').size.should eql 0}
+    [@c1,@c2].each {|c| c.query([Dogs,'sibling']).size.should eql 0}
     @c2.auto_update = false
     @c1.bi_link(@c2,'sibling')
-    @c1.query(Dogs,'sibling').size.should eql 1
-    @c2.query(Dogs,'sibling').size.should eql 0
+    @c1.query([Dogs,'sibling']).size.should eql 1
+    @c2.query([Dogs,'sibling']).size.should eql 0
   end
 
   it "should allow instance level override of class level auto-update false" do
@@ -303,11 +296,11 @@ describe "JiakResource class auto-update" do
     @p.age = 12
     Dogs.get(@pname).age.should eql 12
     
-    [@c1,@c2].each {|c| c.query(Dogs,'sibling').size.should eql 0}
+    [@c1,@c2].each {|c| c.query([Dogs,'sibling']).size.should eql 0}
     @c2.auto_update = true
     @c1.bi_link(@c2,'sibling')
-    @c1.query(Dogs,'sibling').size.should eql 0
-    @c2.query(Dogs,'sibling').size.should eql 1
+    @c1.query([Dogs,'sibling']).size.should eql 0
+    @c2.query([Dogs,'sibling']).size.should eql 1
   end
 
   it "should allow instance level deferring back to class level" do
@@ -363,26 +356,26 @@ describe "JiakResource simple" do
     @p.age.should eql 11
 
     [@c1,@c2].each {|c| @p.link(c,'pup')}
-    pups = @p.query(Dogs,'pup')
+    pups = @p.query([Dogs,'pup'])
     pups.size.should eql 2
     same_elements = pups.map {|c| c.name}.same_elements?([@c1.name,@c2.name])
     same_elements.should be true
 
     @c1.bi_link(@c2,'sibling')
-    [@c1,@c2].each {|c| c.query(Dogs,'sibling').size.should eql 1}
-    @c1.query(Dogs,'sibling')[0].should eql @c2
-    @c2.query(Dogs,'sibling')[0].should eql @c1
+    [@c1,@c2].each {|c| c.query([Dogs,'sibling']).size.should eql 1}
+    @c1.query([Dogs,'sibling'])[0].should eql @c2
+    @c2.query([Dogs,'sibling'])[0].should eql @c1
 
     @c1.remove_link(@c2,'sibling')
-    @c1.query(Dogs,'sibling').size.should eql 0
-    @c2.query(Dogs,'sibling').size.should eql 1
+    @c1.query([Dogs,'sibling']).size.should eql 0
+    @c2.query([Dogs,'sibling']).size.should eql 1
 
     [@c1,@c2].each {|c| c.link(@p,'parent')}
 
-    @c1.query(Dogs).size.should eql 1
-    @c2.query(Dogs).size.should eql 2
-    @c2.query(Dogs,'sibling').size.should eql 1
-    @c2.query(Dogs,'parent').size.should eql 1
+    @c1.query([Dogs,QueryLink::ANY]).size.should eql 1
+    @c2.query([Dogs,QueryLink::ANY]).size.should eql 2
+    @c2.query([Dogs,'sibling']).size.should eql 1
+    @c2.query([Dogs,'parent']).size.should eql 1
   end
 end
 
@@ -436,7 +429,7 @@ describe "JiakResource complex" do
 
     # siblings
     c0s,c1s,c2s,c3s,c4s = children.map do |c|
-      c.query(Parents,'parent',Children,'child').delete_if{|s| s.eql?(c)}
+      c.query([Parents,'parent',Children,'child']).delete_if{|s| s.eql?(c)}
     end
     c0s.size.should eql 2
     c1s.size.should eql 2
@@ -450,25 +443,26 @@ describe "JiakResource complex" do
     same_elements.should be true
 
     # c3's step-sibling's other parent?
-    c3sp = c3.query(Parents,'parent',Children,'child',Parents,'parent')
-    c3.query(Parents,'parent').each {|p| c3sp.delete_if{|sp| p.eql?(sp)}}
+    c3sp = c3.query([Parents,'parent',Children,'child',Parents,'parent'])
+    c3.query([Parents,'parent']).each {|p| c3sp.delete_if{|sp| p.eql?(sp)}}
     c3sp[0].name.should eql parents[1].name
 
     # add sibling links
     Children.auto_update true
     children.each do |c|
-      siblings = c.query(Parents,'parent',Children,'child').delete_if{|s| s.eql?(c)}
+      siblings = 
+        c.query([Parents,'parent',Children,'child']).delete_if{|s| s.eql?(c)}
       siblings.each {|s| c.link(s,'sibling')}
     end
-    c0.query(Children,'sibling').size.should eql 2
-    c1.query(Children,'sibling').size.should eql 2
-    c2.query(Children,'sibling').size.should eql 3
-    c3.query(Children,'sibling').size.should eql 1
-    c4.query(Children,'sibling').size.should eql 0
+    sibling_query = [Children,'sibling']
+    c0.query(sibling_query).size.should eql 2
+    c1.query(sibling_query).size.should eql 2
+    c2.query(sibling_query).size.should eql 3
+    c3.query(sibling_query).size.should eql 1
+    c4.query(sibling_query).size.should eql 0
 
-    parents.each {|p| p.delete}
+    parents.each  {|p| p.delete}
     children.each {|c| c.delete}
   end
 end
 
-# CxINC Many more tests to go

@@ -20,7 +20,7 @@ puts People.get('remy').age                      # => 11      (from Jiak server)
 callie = People.new(:name => 'Callie', :age => 13)
 remy.link(callie,'sister')
 
-sisters = remy.query(People,'sister')
+sisters = remy.query([People,'sister'])
 puts sisters[0].eql?(callie)                     # => true
 
 remy.delete
