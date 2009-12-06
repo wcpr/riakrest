@@ -11,13 +11,6 @@ class Parent
 end
 (Child = Parent.dup).group 'child'
 
-# 
-def show_name(rsrc,expected)
-  name = rsrc.name
-  puts " #{name}? #{name.eql?(expected)}"
-end
-
-
 # Some relationships to play with.
 parent_children = {
   'p0' => ['c0'],
@@ -53,32 +46,32 @@ end
 # Retrieve parents by key
 parents = parent_children.keys.map {|p| Parent.get(p)}
 p0,p1,p2,p3 = parents
-show_name(p1,'p1')                                # => 'p1'
+puts " p1? #{p1.name.eql?('p1')}"                 # => true
 
 # Retrieve children by key
 children = child_parents.keys.map {|c| Child.get(c)}
 c0,c1,c2,c3 = children
-show_name(c1,'c1')                                # => 'c1'
+puts " c1? #{c1.name.eql?('c1')}"                 # => true
 
 # Retrieve parent children by query
 p0c,p1c,p2c,p3c = parents.map {|p| p.query([Child,'child'])}
-show_name(p2c[0],'c2')                            # => 'c2' (could be 'c3')
+puts " c2? #{p2c.include?(c2)}"                   # => true
 
 # Retrieve children parents by query
 c0p,c1p,c2p,c3p = children.map {|c| c.query([Parent,'parent'])}
-show_name(c3p[0],'p2')                            # => 'p2'
-show_name(c3p[1],'p3')                            # => 'p2'
+puts " p2? #{c3p.include?(p2)}"                   # => true
+puts " p3? #{c3p.include?(p3)}"                   # => true
 
 # Retrieve children siblings by multi-step query
 c0s,c1s,c2s,c3s = children.map do |c|
   c.query([Parent,'parent',Child,'child']).delete_if{|s| s.eql?(c)}
 end
-show_name(c3s[0],'c2')                            # => 'c2'
+puts " c2? #{c3s.include?(c2)}"                   # => true
 
 # Who is c3's step-sibling's other parent?
 c3sp = c3.query([Parent,'parent',Child,'child',Parent,'parent'])
 c3p.each {|p| c3sp.delete_if{|sp| p.eql?(sp)}}
-show_name(c3sp[0],'p1')                           # => 'p1'
+puts " p1? #{c3sp.include?(p1)}"                  # => true
 
 # Set auto-update at class level
 Parent.auto_update true
@@ -113,7 +106,7 @@ op = parents.inject([]) do |build,parent|
   build << parent.query([Child,'normal',Parent,'odd'])
   build.flatten.uniq
 end
-show_name(op[0],'p1')                             # => 'p1'
+puts " p1? #{op.include?(p1)}"                    # => true
 
 # Clean-up by deleting all parents and children
 parents.each  {|p| p.delete}
