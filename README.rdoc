@@ -53,7 +53,7 @@ sudo gem install riakrest
 
   # Change and store
   remy.age = 11
-  remy.update
+  remy.put
 
   # Create another resource
   callie = Person.new(:name => 'Callie', :age => 13)
@@ -61,7 +61,7 @@ sudo gem install riakrest
   
   # Add a link from remy to callie tagged as 'sister'
   remy.link(callie,'sister')
-  remy.update
+  remy.put
 
   # Retrieve sister via link
   sisters = remy.query([Person,'sister'])
