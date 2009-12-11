@@ -1,13 +1,13 @@
 = RiakREST
 
-http://riakrest.com/
+More information available at RiakREST[http://riakrest.com/].
 
-== DESCRIPTION:
+== Description:
 
 RiakREST is a Ruby library providing structured, RESTful interaction with
 Riak[http://riak.basho.com], an open-source document datastore.
 
-== RIAK:
+== Riak:
 
 Riak[http://riak.basho.com] is an open-source project developed and maintained
 by the fine folks at Basho[http://www.basho.com] Technologies. Riak combines a
@@ -23,11 +23,7 @@ Resource. Core Client works at the Jiak level and mirrors Jiak internals,
 whereas, Resource is an abstraction built on top of the Core Client that
 gives a simplier, RESTful feel.
 
-== Web Site:
-
-Information is available at the RiakREST[http://riakrest.com] web site.
-
-== REQUIREMENTS:
+== Requirements:
 
 RestClient (Ruby gem rest-client) is used for RESTful server interaction.
 
@@ -37,11 +33,11 @@ Riak[http://riak.basho.com] provides the runs the server cluser and provides
 the Jiak HTTP/JSON interface.
 store.
 
-== INSTALL:
+== Install:
 
 sudo gem install riakrest
 
-== EXAMPLE
+== Example
   require 'riakrest'
   include RiakRest
 
@@ -49,22 +45,32 @@ sudo gem install riakrest
     include JiakResource
     server 'http://localhost:8002/jiak'
     jattr_accessor :name, :age
-    auto_manage
   end
 
-  remy = People.new(:name => 'Remy',:age => 10)    # (auto-post)
-  remy.age = 11                                    # (auto-update)
+  # Created and store a resource.
+  remy = Person.new(:name => 'Remy',:age => 10)
+  remy.post
 
-  callie = People.new(:name => 'Callie', :age => 13)
+  # Change and store
+  remy.age = 11
+  remy.update
+
+  # Create another resource
+  callie = Person.new(:name => 'Callie', :age => 13)
+  callie.post
+  
+  # Add a link from remy to callie tagged as 'sister'
   remy.link(callie,'sister')
+  remy.update
 
-  sisters = remy.query(People,'sister')
+  # Retrieve sister via link
+  sisters = remy.query([Person,'sister'])
   puts sisters[0].eql?(callie)                     # => true
 
   remy.delete
   callie.delete
 
-== LICENSE:
+== License:
 
 Copyright (c) 2009 Paul Rogers, DingoSky. See LICENSE for details.
 
