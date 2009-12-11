@@ -1,3 +1,9 @@
+=== 0.1.5 2009-12-11
+  - Added POV processing.
+  - Refactored jattr_* to attr_*.
+  - Added opts to query, which forced steps arg to be an explicit array.
+  - Changes to examples for web site.
+
 === 0.1.2 2009-11-29
   - Add wide open schemas.
   - Add wild card schema arrays.
