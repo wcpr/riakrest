@@ -16,7 +16,6 @@ def show_jiak_values
   puts "name:#{rsrc.name}, age:#{rsrc.age}"
 end
 
-
 # Create resource. Auto-manage auto-posts the create.
 remy = Person.new(:name => 'remy', :age => 10)
 show_jiak_values                                       # => remy, 10

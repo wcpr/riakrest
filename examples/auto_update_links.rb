@@ -9,48 +9,50 @@ class Person
   auto_post
 end
 
-# Convenience method for showing results
-def num_links(rsrc,tag,expect)
+# Convenience method for checking number of links
+def check_num_links(rsrc,tag,expect)
   num = rsrc.query([Person,tag]).size
   puts " #{expect}? #{num == expect}"
 end
 
-# Create resources. Auto-post posts the create.
+# Create resources. (Auto-posted)
 remy = Person.new(:name => 'remy', :age => 10)
 callie = Person.new(:name => 'Callie', :age => 12)
 
-# Add links. Auto-post does not auto-update.
+# Add links. Class-level auto-post does not trigger auto-update.
 remy.link(callie,'sister')
-num_links(remy,'sister',0)                           # => true
+check_num_links(remy,'sister',0)                           # => true
 remy.update
-num_links(remy,'sister',1)                           # => true
+check_num_links(remy,'sister',1)                           # => true
 remy.remove_link(callie,'sister')
 remy.update
-num_links(remy,'sister',0)                           # => true
+check_num_links(remy,'sister',0)                           # => true
 
 # Turn on class level auto-update.
 Person.auto_update true
 remy.link(callie,'sibling')
-num_links(remy,'sibling',1)                          # => true
+check_num_links(remy,'sibling',1)                          # => true
 remy.remove_link(callie,'sibling')
 
 # Instance level auto-update settings.
 callie.auto_update = false
 callie.link(remy,'sibling')
-num_links(callie,'sibling',0)                        # => true
+check_num_links(callie,'sibling',0)                        # => true
 callie.update
-num_links(callie,'sibling',1)                        # => true
+check_num_links(callie,'sibling',1)                        # => true
 callie.remove_link(remy,'sibling')
 
-# bi_link create links in both directions.
+# Another permutation of class and instance level auto-update settings.
 Person.auto_update false
 remy.auto_update = true
 callie.auto_update = nil
+
+# bi_link create links in both directions.
 remy.bi_link(callie,'sisters')
-num_links(remy,'sisters',1)                          # => true
-num_links(callie,'sisters',0)                        # => true
+check_num_links(remy,'sisters',1)                          # => true
+check_num_links(callie,'sisters',0)                        # => true
 callie.update
-num_links(callie,'sisters',1)                        # => true
+check_num_links(callie,'sisters',1)                        # => true
 
 # Clean-up
 remy.delete

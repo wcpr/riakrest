@@ -1,7 +1,7 @@
 require File.join(File.dirname(__FILE__), 'example_helper.rb')
 
 # Primary resource declares server URI, and optional group and keygen, along
-# with full complement of attributes (read, write, or both).
+# with full complement of attributes.
 class Buoy
   include JiakResource
 
@@ -12,12 +12,12 @@ class Buoy
   attr_accessor :name
   attr_accessor :lat, :lon
   attr_accessor :wind_u, :wind_v, :temp_air
-  attr_accessor :temp_0, :salt_0
+  attr_accessor :temp_0,  :salt_0
   attr_accessor :temp_10, :salt_10
   attr_accessor :temp_20, :salt_20
 end
 
-# POV declares an existing JiakResource and a subset of attributes, which can
+# POVs declares an existing JiakResource and a subset of attributes, which can
 # be read, write, or both.
 class BuoySurface
   include JiakResourcePOV
@@ -29,12 +29,21 @@ class BuoySurface
   attr_accessor :temp_0, :salt_0
 end
 
-class BuoySeaTemps
+class BuoyChain
+  include JiakResourcePOV
+  resource Buoy
+
+  attr_accessor :temp_0,  :salt_0
+  attr_accessor :temp_10, :salt_10
+  attr_accessor :temp_20, :salt_20
+end
+
+class BuoyWind
   include JiakResourcePOV
   resource Buoy
 
   attr_reader   :name
-  attr_accessor :temp_0, :temp_10, :temp_20
+  attr_accessor :wind_u, :wind_v
 end
 
 class BuoySST
@@ -77,7 +86,6 @@ class BuoyData
   end
 
 end
-
 
 def show_data(rsrc)
   if(rsrc.class.include?(JiakResourcePOV))

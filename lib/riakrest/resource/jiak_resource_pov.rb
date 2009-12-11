@@ -1,10 +1,9 @@
 module RiakRest
 
-  # JiakResourcePOV provides a point-of-view interface to existing JiakResource
-  # data that restricts the fields available during Jiak interaction. This
-  # restriction provides two primary benefits: Only explicitly declared fields
-  # can be read or written via the POV, thereby protecting all other
-  # JiakResource fields, and only the declared fields are transported to and
+  # JiakResourcePOV provides a restricted interface to existing JiakResource
+  # data. This restriction offers two primary benefits: Only explicitly
+  # declared fields can be read or written via the POV, thereby protecting
+  # other JiakResource fields, and only the POV fields are transported to and
   # from the Jiak server, thereby reducing the HTTP message sizes.
   #
   # ===Example
@@ -27,6 +26,7 @@ module RiakRest
   #
   #  ab = AB.new(:a => 1, :b => 2)
   #  ab.post
+  #
   #  a = ab.pov(A)
   #  a.a = 11
   #  a.update

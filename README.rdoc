@@ -1,11 +1,11 @@
-= RiakRest
+= RiakREST
 
-http://github.com/wcpr/riakrest
+http://riakrest.com/
 
 == DESCRIPTION:
 
-RiakRest provides structured, RESTful interaction with a Riak document
-store.
+RiakREST is a Ruby library providing structured, RESTful interaction with
+Riak[http://riak.basho.com], an open-source document datastore.
 
 == RIAK:
 
@@ -13,24 +13,28 @@ Riak[http://riak.basho.com] is an open-source project developed and maintained
 by the fine folks at Basho[http://www.basho.com] Technologies. Riak combines a
 decentralized key-value store, a flexible map/reduce engine, and a friendly
 HTTP/JSON query interface to provide a database ideally suited for Web
-applications. RiakRest interacts with the HTTP/JSON query interface, which is
-called Jiak.
+applications.
 
-== SYNOPSIS:
+== RiakREST
 
-RiakRest provides structured, RESTful interaction with the HTTP/JSON interface
-of a Riak[http://riak.basho.com] document data store. RiakRest provides two
-levels of interaction: Core Client and Resource. Core Client works at the Jiak
-level and exposes Jiak internals. JiakResource is an abstraction built on top
-of the Core Client that gives a true RESTful feel.
+RiakREST provides Ruby interaction with Jiak, the HTTP/JSON interface to a Riak
+cluster, through two different levels of Jiak interaction: Core Client and
+Resource. Core Client works at the Jiak level and mirrors Jiak internals,
+whereas, Resource is an abstraction built on top of the Core Client that
+gives a simplier, RESTful feel.
+
+== Web Site:
+
+Information is available at the RiakREST[http://riakrest.com] web site.
 
 == REQUIREMENTS:
 
-RestClient is used for REST server interaction.
+RestClient (Ruby gem rest-client) is used for RESTful server interaction.
 
 JSON is used for data exchange.
 
-Riak[http://riak.basho.com] provides the HTTP/JSON Jiak interface and data
+Riak[http://riak.basho.com] provides the runs the server cluser and provides
+the Jiak HTTP/JSON interface.
 store.
 
 == INSTALL:
