@@ -301,9 +301,11 @@ module RiakRest
           jobj.key
         end
       rescue RestClient::ExceptionWithResponse => err
-        fail_with_response("put", err)
+        fail_with_response("store", err)
       rescue RestClient::Exception => err
-        fail_with_message("put", err)
+        fail_with_message("store", err)
+      rescue Errno::ECONNREFUSED => err
+        fail_connection("store", err)
       end
     end
     
@@ -351,6 +353,8 @@ module RiakRest
         fail_with_response("get", err)
       rescue RestClient::Exception => err
         fail_with_message("get",err)
+      rescue Errno::ECONNREFUSED => err
+        fail_connection("get", err)
       end
     end
 
@@ -375,6 +379,8 @@ module RiakRest
         fail_with_response("delete", err)
       rescue RestClient::Exception => err
         fail_with_message("delete", err)
+      rescue Errno::ECONNREFUSED => err
+        fail_connection("delete", err)
       end
     end
 
@@ -389,8 +395,8 @@ module RiakRest
         true
       rescue RestClient::ResourceNotFound
         false
-      rescue RestClient::Exception => err
-        fail_with_message("delete", err)
+      rescue Errno::ECONNREFUSED => err
+        fail_connection("exist?", err)
       end
     end
 
@@ -425,9 +431,11 @@ module RiakRest
           JiakObject.jiak_create(jiak,data_class)
         end
       rescue RestClient::ExceptionWithResponse => err
-        fail_with_response("put", err)
+        fail_with_response("walk", err)
       rescue RestClient::Exception => err
-        fail_with_message("put", err)
+        fail_with_message("walk", err)
+      rescue Errno::ECONNREFUSED => err
+        fail_connection("walk", err)
       end
     end
 
@@ -480,16 +488,18 @@ module RiakRest
         uri = jiak_uri(bucket,"") << jiak_qstring({ignore => false})
         JSON.parse(RestClient.get(uri, :accept => APP_JSON))[info]
       rescue RestClient::ExceptionWithResponse => err
-        fail_with_response("get", err)
+        fail_with_response("info", err)
       rescue RestClient::Exception => err
-        fail_with_message("get", err)
+        fail_with_message("info", err)
+      rescue Errno::ECONNREFUSED => err
+        fail_connection("info", err)
       end
     end
     private :bucket_info
 
     def fail_with_response(action,err)
-      raise( JiakResourceException,
-             "failed #{action}: HTTP code #{err.http_code}: #{err.http_body}")
+      raise(JiakResourceException,
+            "failed #{action}: HTTP code #{err.http_code}: #{err.http_body}")
     end
     private :fail_with_response
 
@@ -497,6 +507,12 @@ module RiakRest
       raise JiakResourceException, "failed #{action}: #{err.message}"
     end
     private :fail_with_message
+
+    def fail_connection(action,err)
+      raise(JiakClientException,
+            "failed #{action}: Connection refused for server #{@server}")
+    end
+    private :fail_connection
 
   end
 

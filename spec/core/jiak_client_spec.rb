@@ -133,6 +133,34 @@ describe "JiakClient" do
   end
 end
 
+describe "JiakClient connection" do
+  before do
+    @client = JiakClient.new("http://localhost:9999/jiak/")
+    @data = FooBarBaz.new(:foo => 'Foo',:bar => 'Bar')
+    @bucket = JiakBucket.new('actions_bucket',FooBarBaz)
+  end
+
+  it "should report refused errors" do
+    client = JiakClient.new("http://localhost:9999/jiak/")
+    data = FooBarBaz.new(:foo => 'Foo',:bar => 'Bar')
+    bucket = JiakBucket.new('actions_bucket',FooBarBaz)
+    key = 'key'
+    jobj = JiakObject.new(:bucket => bucket, :key => key, :data => data)
+    qlink = QueryLink.new(bucket,'tag',nil)
+
+    [lambda {client.keys(bucket)},
+     lambda {client.schema(bucket)},
+     lambda {client.store(jobj)},
+     lambda {client.get(bucket,key)},
+     lambda {client.exist?(bucket,key)},
+     lambda {client.delete(bucket,key)},
+     lambda {client.walk(bucket,'tag',qlink,FooBarBaz)}
+    ].each do |bad_req|
+      bad_req.should raise_error(JiakClientException,/Connection refused/)
+    end
+  end
+end
+
 describe "JiakClient URI handling" do
   before do
     @base_uri = SERVER_URI
