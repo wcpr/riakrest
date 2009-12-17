@@ -105,7 +105,7 @@ module RiakRest
     # <code>delete</code> requests take precendence over the setting maintained
     # by a JiakClient. Any request parameter not set in JiakClient or on an
     # individual request will default to the values set in the Riak cluster.
-    # 
+    #
     def initialize(uri, opts={})
       check_opts(opts,CLIENT_PARAMS,JiakClientException)
       self.server = uri
@@ -263,7 +263,7 @@ module RiakRest
     def store(jobj,opts={})
       check_opts(opts,STORE_PARAMS,JiakClientException)
       req_params = {
-        WRITES => opts[:writes] || @params[:writes], 
+        WRITES => opts[:writes] || @params[:writes],
         DURABLE_WRITES => opts[:durable_writes] || @params[:durable_writes],
         COPY => opts[:copy]
       }
@@ -292,7 +292,7 @@ module RiakRest
         else
           resp = RestClient.put(uri,payload,headers)
         end
-        
+
         if(req_params[RETURN_BODY])
           JiakObject.jiak_create(JSON.parse(resp),jobj.bucket.data_class)
         elsif(key_empty)
@@ -301,14 +301,14 @@ module RiakRest
           jobj.key
         end
       rescue RestClient::ExceptionWithResponse => err
-        fail_with_response("store", err)
+        JiakClient.fail_with_response("store", err)
       rescue RestClient::Exception => err
-        fail_with_message("store", err)
+        JiakClient.fail_with_message("store", err)
       rescue Errno::ECONNREFUSED => err
-        fail_connection("store", err)
+        JiakClient.fail_connection("store", err)
       end
     end
-    
+
     # :call-seq:
     #   get(bucket,key,opts={})  -> JiakObject
     #
@@ -350,11 +350,11 @@ module RiakRest
       rescue RestClient::ResourceNotFound => err
         raise JiakResourceNotFound, "failed get: #{err.message}"
       rescue RestClient::ExceptionWithResponse => err
-        fail_with_response("get", err)
+        JiakClient.fail_with_response("get", err)
       rescue RestClient::Exception => err
-        fail_with_message("get",err)
+        JiakClient.fail_with_message("get",err)
       rescue Errno::ECONNREFUSED => err
-        fail_connection("get", err)
+        JiakClient.fail_connection("get", err)
       end
     end
 
@@ -376,11 +376,11 @@ module RiakRest
         RestClient.delete(uri,:accept => APP_JSON)
         true
       rescue RestClient::ExceptionWithResponse => err
-        fail_with_response("delete", err)
+        JiakClient.fail_with_response("delete", err)
       rescue RestClient::Exception => err
-        fail_with_message("delete", err)
+        JiakClient.fail_with_message("delete", err)
       rescue Errno::ECONNREFUSED => err
-        fail_connection("delete", err)
+        JiakClient.fail_connection("delete", err)
       end
     end
 
@@ -396,7 +396,7 @@ module RiakRest
       rescue RestClient::ResourceNotFound
         false
       rescue Errno::ECONNREFUSED => err
-        fail_connection("exist?", err)
+        JiakClient.fail_connection("exist?", err)
       end
     end
 
@@ -431,11 +431,11 @@ module RiakRest
           JiakObject.jiak_create(jiak,data_class)
         end
       rescue RestClient::ExceptionWithResponse => err
-        fail_with_response("walk", err)
+        JiakClient.fail_with_response("walk", err)
       rescue RestClient::Exception => err
-        fail_with_message("walk", err)
+        JiakClient.fail_with_message("walk", err)
       rescue Errno::ECONNREFUSED => err
-        fail_connection("walk", err)
+        JiakClient.fail_connection("walk", err)
       end
     end
 
@@ -446,7 +446,7 @@ module RiakRest
     def ==(other)
       (@server == other.server) rescue false
     end
-    
+
     # :call-seq:
     #    eql?(other) -> true or false
     #
@@ -460,6 +460,8 @@ module RiakRest
     def hash    # :nodoc:
       @server.hash
     end
+
+    # :stopdoc:
 
     # Build the URI for accessing the Jiak server.
     def jiak_uri(bucket,key="")
@@ -480,7 +482,7 @@ module RiakRest
       qstring
     end
     private :jiak_qstring
-    
+
     # Get either the schema or keys for the bucket.
     def bucket_info(bucket,info)
       ignore = (info == SCHEMA) ? KEYS : SCHEMA
@@ -488,31 +490,30 @@ module RiakRest
         uri = jiak_uri(bucket,"") << jiak_qstring({ignore => false})
         JSON.parse(RestClient.get(uri, :accept => APP_JSON))[info]
       rescue RestClient::ExceptionWithResponse => err
-        fail_with_response("info", err)
+        JiakClient.fail_with_response("info", err)
       rescue RestClient::Exception => err
-        fail_with_message("info", err)
+        JiakClient.fail_with_message("info", err)
       rescue Errno::ECONNREFUSED => err
-        fail_connection("info", err)
+        JiakClient.fail_connection("info", err)
       end
     end
     private :bucket_info
 
-    def fail_with_response(action,err)
+    def self.fail_with_response(action,err)
       raise(JiakResourceException,
             "failed #{action}: HTTP code #{err.http_code}: #{err.http_body}")
     end
-    private :fail_with_response
 
-    def fail_with_message(action,err)
+    def self.fail_with_message(action,err)
       raise JiakResourceException, "failed #{action}: #{err.message}"
     end
-    private :fail_with_message
 
-    def fail_connection(action,err)
+    def self.fail_connection(action,err)
       raise(JiakClientException,
             "failed #{action}: Connection refused for server #{@server}")
     end
-    private :fail_connection
+
+    # :startdoc:
 
   end
 
