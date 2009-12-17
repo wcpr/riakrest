@@ -2,10 +2,21 @@ require File.dirname(__FILE__) + '/../spec_helper.rb'
 
 class FooBarBaz  # :nodoc:
   include JiakData
-
   attr_accessor :foo, :bar
   require :foo
   allow   :baz
+end
+
+require 'date'
+class DateData
+  include JiakData
+  attr_accessor :name, :date
+  convert :date => lambda { |v| Date.parse(v) }
+end
+
+class PersonData
+  include JiakData
+  attr_accessor :name
 end
 
 describe "JiakClient" do
@@ -67,7 +78,7 @@ describe "JiakClient" do
 
     no_no = lambda {JiakClient::KEYS << 'a'}
     no_no.should raise_error(StandardError,/frozen/)
-    
+
     no_no = lambda {JiakClient::SCHEMA << 'a'}
     no_no.should raise_error(StandardError,/frozen/)
   end
@@ -97,7 +108,7 @@ describe "JiakClient" do
     client.proxy.should eql 'proxy_uri'
     client.params.should have_exactly(4).items
     @params.each {|k,v| client.params[k].should == @params[k]}
-    
+
     @opts.delete(:proxy)
     @opts.delete(:writes)
     client = JiakClient.new(@base_uri,@opts)
@@ -126,7 +137,7 @@ describe "JiakClient" do
 
     bad_opts = lambda {@client.set_params(:junk => 'junk')}
     bad_opts.should raise_error(JiakClientException,/option/)
-    
+
     @params[:junk] = 'junk'
     bad_opts = lambda {@client.params = @params}
     bad_opts.should raise_error(JiakClientException,/option/)
@@ -202,7 +213,7 @@ describe "JiakClient processing" do
 
     it "should set and fetch a bucket schema" do
       schema = @client.schema(@bucket)
-      
+
       ['allowed_fields',
        'required_fields',
        'read_mask',
@@ -216,7 +227,7 @@ describe "JiakClient processing" do
     it "should update an existing bucket schema" do
       FooBarBazBuz = JiakDataFields.create(:foo,:bar,:baz,:buz)
       @client.set_schema(JiakBucket.new(@bucket_name,FooBarBazBuz))
-      
+
       resp_schema = @client.schema(@bucket)
       resp_schema.allowed_fields.should include :buz
       resp_schema.required_fields.should be_empty
@@ -291,7 +302,7 @@ describe "JiakClient processing" do
         jobj.local?.should be true
         resp.local?.should be false
       end
-      
+
       it "should handle odd key values" do
         key = '$ p @ c #'
         jobj = JiakObject.new(:bucket => @bucket, :key => key, :data => @data)
@@ -304,7 +315,7 @@ describe "JiakClient processing" do
       it "should check for resource existence" do
         jobj = JiakObject.new(:bucket => @bucket, :data => @data)
         key = @client.store(jobj)
-        
+
         @client.exist?(@bucket,key).should be true
         @client.exist?(@bucket,'nope').should be false
       end
@@ -325,10 +336,25 @@ describe "JiakClient processing" do
         fetched.should be_a JiakObject
       end
 
+      it "should optionally convert data values" do
+        bucket = JiakBucket.new('date data',DateData)
+        name = 'leap'
+        date = Date.new(2004,02,29)
+        jobj = JiakObject.new(:bucket => bucket,
+                              :data => DateData.new(:name => name,
+                                                    :date => date))
+        jobj.data.name.should eql name
+        jobj.data.date.should eql date
+
+        jobj = @client.store(jobj, :return => :object)
+        jobj.data.name.should eql name
+        jobj.data.date.should eql date
+      end
+
       it "should accept write and read parameters" do
         key = 'fetch_key_wr'
         jobj = JiakObject.new(:bucket => @bucket, :key => key, :data => @data)
-        jobj = @client.store(jobj, 
+        jobj = @client.store(jobj,
                              :writes => 3, :reads => 3,
                              :return => :object)
 
@@ -346,7 +372,7 @@ describe "JiakClient processing" do
         jobj =
           @client.store(JiakObject.new(:bucket => @bucket, :data => @data),
                         {:return => :object})
-        
+
         jobj.data.should eql @data
         [:vclock,:vtag,:lastmod].each do |field|
           jobj.riak.should include field
@@ -356,7 +382,7 @@ describe "JiakClient processing" do
 
         updated_data = FooBarBaz.new(:foo => 'new val')
         jobj.data = updated_data
-        updated_object = 
+        updated_object =
           @client.store(jobj,{:return => :object})
         updated_data = updated_object.data
         updated_data.should_not eql @data
@@ -379,11 +405,6 @@ describe "JiakClient processing" do
     end
   end
 
-end
-
-class PersonData
-  include JiakData
-  attr_accessor :name
 end
 
 describe "JiakClient links" do
@@ -468,7 +489,7 @@ describe "JiakClient links" do
         child.links.should include p_link
       end
     end
-    
+
     # p's should include links to their c's
     c_link = QueryLink.new(@c_bucket,'child',nil)
     parent_children.each do |p_name,children|

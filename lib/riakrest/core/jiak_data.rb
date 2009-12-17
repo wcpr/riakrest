@@ -47,9 +47,9 @@ module RiakRest
     # ----------------------------------------------------------------------
     #   Class methods
     # ----------------------------------------------------------------------
-    
+
     # Class methods for use in creating a user-defined JiakData. The methods
-    # <code>allow, require, readable, writable</code> delegate to JiakSchema. 
+    # <code>allow, require, readable, writable</code> delegate to JiakSchema.
     # See JiakSchema for discussion on the use of schemas in Riak.
     module ClassMethods
 
@@ -148,7 +148,7 @@ module RiakRest
         added_fields = @schema.send(method,*fields)
         added_allowed = @schema.allowed_fields - prev_allowed
         # added_allowed.each {|field| attr_accessor field}
-        added_allowed.each do |field| 
+        added_allowed.each do |field|
           class_eval <<-EOH
             def #{field}
               @#{field}
@@ -161,7 +161,7 @@ module RiakRest
         added_fields
       end
       private :expand_schema
-      
+
       # :call-seq:
       #   JiakData.schema  -> JiakSchema
       #
@@ -173,7 +173,7 @@ module RiakRest
       # :call-seq:
       #   JiakData.keygen(&block)  -> nil
       #
-      # Define the key generation for an instance of the created JiakData
+      # Specify the key generation for an instance of the created JiakData
       # class. Key generation will call the specified block in the scope of the
       # current instance.
       def keygen(&block)
@@ -181,26 +181,33 @@ module RiakRest
       end
 
       # :call-seq:
-      #  JiakData.jiak_create(jiak)  -> JiakData
+      #   JiakData.convert(hash)  -> nil
       #
-      # Create an instance of user-defined data object from the fields read
-      # by Jiak. These fields are determined by the read mask of the
-      # structured Jiak interaction. See JiakSchema for read mask discussion.
-      #
-      # User-defined data classes must either override this method explicitly
-      # or use the <code>attr_*</code> methods which implicitly override this
-      # method. The method is automatically called to marshall data from
-      # Jiak. You do not call this method explicitly.
+      # Specify optional Procs for converting the data values stored in Riak
+      # during the process of inflating returned Riak data into Ruby
+      # objects. The hash should contain keys of data attribute symbols
+      # associated with values equal to Procs for use in converting the data
+      # attribute specified by the hash key. The Procs must accept one
+      # argument, the data value actually stored in Riak. The converted result
+      # is the actual value of the data field inside the inflated Ruby object.
       #
       # ====Example
-      #  def initialize(f1,f2)
-      #    @f1 = f1
-      #    @f2 = f2
-      #  end
-      #  def jiak_create(jiak)
-      #    new(jiak['f1'], jiak['f2'])
-      #  end
-      def jiak_create(jiak)
+      # def PersonData
+      #   include JiakData
+      #   attr_accessor :name, :birthdate
+      #   convert :birthdate => lambda {|val| Date.parse(val)}
+      # end
+      def convert(hash)
+        @converter ||= {}
+        hash.each {|k,blk| @converter[k.to_s] = blk}
+      end
+
+      # Use optional converters to convert returned data values before passing
+      # to the JiakData constructor.
+      def jiak_create(jiak)     # :nodoc:
+        unless(@converter.nil?)
+          @converter.each {|k,blk| jiak[k] = blk.call(jiak[k])}
+        end
         new(jiak)
       end
 
@@ -235,41 +242,13 @@ module RiakRest
         end
       end
     end
-    
+
     # ----------------------------------------------------------------------
     #   Instance methods
     # ----------------------------------------------------------------------
 
     def initialize(hash={})
       hash.each {|k,v| instance_variable_set("@#{k}", v)}
-    end
-
-    # :call-seq:
-    #   to_jiak  -> hash
-    #
-    # Provide a hash structure of the data to write to Jiak. The fields for
-    # this structure should come from the JiakData write mask. See JiakSchema
-    # for shema discussion.
-    #
-    # User-defined data classes must either override this method explicitly or
-    # use the <code>attr_*</code> methods which implicitly provide an implicit
-    # override. The method is automatically called to marshall data to
-    # Jiak. You do not call this method explicitly.
-
-    # Data classes that do not used the attr_* methods to specify attributes
-    # must override this method. 
-    #
-    # ====Example
-    #  def to_jiak
-    #    { :writable_f1 => @writable_f1,
-    #      :writable_f2 => @writable_f2
-    #    }
-    #  end
-    def to_jiak
-      self.class.schema.write_mask.inject({}) do |build,field|
-        build[field] = send("#{field}")
-        build
-      end
     end
 
     # :call-seq:
