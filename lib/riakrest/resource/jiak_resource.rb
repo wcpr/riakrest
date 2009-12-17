@@ -125,13 +125,27 @@ module RiakRest
       private :check_fields
 
       # :call-seq:
-      #   keygen(&block)
+      #   JiakResource.keygen(&block)
       #
       # Specify the block for generating keys for a JiakResource instance.
       def keygen(&block)
         jiak.data.class_eval <<-EOS
           define_method(:keygen,&block)
         EOS
+      end
+
+      # :call-seq:
+      #   JiakResource.convert(hash)
+      #
+      # Specify a hash of optional Procs for converting the data values stored
+      # in Riak during the process of inflating returned Riak data into
+      # JiakResource objects. The hash values should be Procs used to convert
+      # the data attribute specified by the hash key. The Procs must accept one
+      # argument, the data value actually stored in Riak. The converted result
+      # will be the actual value of the data field inside the inflated
+      # JiakResource.
+      def convert(hash)
+        jiak.data.convert(hash)
       end
 
       # :call-seq:

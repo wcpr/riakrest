@@ -183,13 +183,13 @@ module RiakRest
       # :call-seq:
       #   JiakData.convert(hash)  -> nil
       #
-      # Specify optional Procs for converting the data values stored in Riak
-      # during the process of inflating returned Riak data into Ruby
-      # objects. The hash should contain keys of data attribute symbols
-      # associated with values equal to Procs for use in converting the data
+      # Specify a hash of optional Procs for converting the data values stored
+      # in Riak during the process of inflating returned Riak data into Ruby
+      # objects. The hash values should be Procs used to convert the data
       # attribute specified by the hash key. The Procs must accept one
       # argument, the data value actually stored in Riak. The converted result
-      # is the actual value of the data field inside the inflated Ruby object.
+      # will be the actual value of the data field inside the inflated Ruby
+      # object.
       #
       # ====Example
       # def PersonData

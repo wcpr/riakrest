@@ -318,6 +318,29 @@ describe "JiakResource class auto-update" do
 
 end
 
+describe "JiakResource data conversion" do
+  require 'date'
+  class Dog           # :nodoc:
+    include JiakResource
+    server         SERVER_URI
+    group          'dogs'
+    attr_accessor  :name, :birthdate
+    convert :birthdate => lambda{|value| Date.parse(value)}
+    keygen { name }
+    auto_manage
+  end
+
+  it "should convert date data into a Date" do
+    name = 'Adelaide'
+    date = Date.new(1993,10,8)
+
+    addie = Dog.new(:name => name, :birthdate => date)
+    addie.name.should eql name
+    addie.birthdate.should eql date
+  end
+
+end
+
 describe "JiakResource simple" do
   class Dog           # :nodoc:
     include JiakResource
