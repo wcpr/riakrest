@@ -320,7 +320,7 @@ end
 
 describe "JiakResource data conversion" do
   require 'date'
-  class Dog           # :nodoc:
+  class DogDate           # :nodoc:
     include JiakResource
     server         SERVER_URI
     group          'dogs'
@@ -334,9 +334,11 @@ describe "JiakResource data conversion" do
     name = 'Adelaide'
     date = Date.new(1993,10,8)
 
-    addie = Dog.new(:name => name, :birthdate => date)
+    addie = DogDate.new(:name => name, :birthdate => date)
     addie.name.should eql name
     addie.birthdate.should eql date
+
+    addie.delete
   end
 
 end

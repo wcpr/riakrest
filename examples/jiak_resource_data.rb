@@ -25,3 +25,5 @@ remy.post
 puts remy.birthdate.inspect                     # => #<Date: 1999-06-26 (etc.)>
 puts remy.age                                   # => current age
 
+remy.delete
+
