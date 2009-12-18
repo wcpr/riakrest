@@ -20,8 +20,8 @@ Jeweler::Tasks.new do |gem|
     that gives a true RESTful feel.
   EOS
   gem.authors = ["Paul Rogers"]
-  gem.email = "riak@dingosky.com"
-  gem.homepage = "http://github.com/wcpr/riakrest"
+  gem.email = "paul@riakrest.com"
+  gem.homepage = "http://riakrest.com"
   gem.add_dependency('rest-client', '>= 1.0.0')
   gem.add_dependency('json', '>= 1.1.9')
   gem.add_development_dependency "rest-client", ">= 1.0.0"

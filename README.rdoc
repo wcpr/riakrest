@@ -44,7 +44,7 @@ sudo gem install riakrest
   class People
     include JiakResource
     server 'http://localhost:8002/jiak'
-    jattr_accessor :name, :age
+    attr_accessor :name, :age
   end
 
   # Created and store a resource.
