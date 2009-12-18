@@ -1,5 +1,8 @@
+=== 0.1.7 2009-12-17
+  - Added write data conversion.
+
 === 0.1.6 2009-12-17
-  - Add method for specifying data conversion in JiakData and JiakResouce.
+  - Add method for specifying read data conversion in JiakData and JiakResouce.
   - Add testing and examples for data conversion.
 
 === 0.1.5 2009-12-11
