@@ -82,6 +82,34 @@ module RiakRest
       end
 
       # :call-seq:
+      #   att_converter(hash)  -> nil
+      #
+      # Specify a hash of optional Procs for converting data attribute values
+      # during reading and writing data to a Jiak server. Each hash key should
+      # be a data class attribute, with an associated value of a hash
+      # containing a write and/or a read Proc for use in converting data. Each
+      # Procs should accept one argument, the data value actually stored in
+      # Riak.
+      #
+      # ====Example
+      #
+      # A Person data class that stores a Date in ordinal format:
+      #
+      # def PersonData
+      #   include JiakData
+      #   attr_accessor :name, :birthdate
+      #   attr_converter(:birthdate => {
+      #     :write => lambda {|v| { :year => v.year, :yday => v.yday} },
+      #     :read  => lambda {|v| Date::ordinal(v['year'],v['yday'])} } )
+      # end
+      def attr_converter(hash)
+        hash.each do |attr,blks|
+          @read_converter[attr]  = blks[:read]   if(blks[:read])
+          @write_converter[attr] = blks[:write]  if(blks[:write])
+        end
+      end
+
+      # :call-seq:
       #   allow :f1, ..., :fn   -> array
       #   allow [:f1, ..., :fn]   -> array
       #
@@ -180,33 +208,12 @@ module RiakRest
         define_method(:keygen,&block)
       end
 
-      # :call-seq:
-      #   JiakData.convert(hash)  -> nil
-      #
-      # Specify a hash of optional Procs for converting the data values stored
-      # in Riak during the process of inflating returned Riak data into Ruby
-      # objects. The hash values should be Procs used to convert the data
-      # attribute specified by the hash key. The Procs must accept one
-      # argument, the data value actually stored in Riak. The converted result
-      # will be the actual value of the data field inside the inflated Ruby
-      # object.
-      #
-      # ====Example
-      # def PersonData
-      #   include JiakData
-      #   attr_accessor :name, :birthdate
-      #   convert :birthdate => lambda {|val| Date.parse(val)}
-      # end
-      def convert(hash)
-        @converter ||= {}
-        hash.each {|k,blk| @converter[k.to_s] = blk}
-      end
-
-      # Use optional converters to convert returned data values before passing
-      # to the JiakData constructor.
+      # Use optional read converters to convert returned data values before
+      # passing to the JiakData constructor.
       def jiak_create(jiak)     # :nodoc:
-        unless(@converter.nil?)
-          @converter.each {|k,blk| jiak[k] = blk.call(jiak[k])}
+        read_converter.each do |attr,blk|
+          key = attr.to_s
+          jiak[key] = blk.call(jiak[key])
         end
         new(jiak)
       end
@@ -214,11 +221,27 @@ module RiakRest
     end
 
     def self.included(including_class)  # :nodoc:
-      including_class.extend(ClassMethods)
+      including_class.instance_eval do
+        extend ClassMethods
+
+        def read_converter
+          @read_converter
+        end
+        @read_converter =  {}
+        
+        def write_converter
+          @write_converter
+        end
+        @write_converter = {}
+      end
 
       define_method(:to_jiak) do
-        self.class.schema.write_mask.inject({}) do |build,field|
-          build[field] = send("#{field}")
+        self.class.schema.write_mask.inject({}) do |build,attr|
+          val = send("#{attr}")
+          if(self.class.write_converter[attr])
+            val = self.class.write_converter[attr].call(val)
+          end
+          build[attr] = val
           build
         end
       end

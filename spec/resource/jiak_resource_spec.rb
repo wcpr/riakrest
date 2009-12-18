@@ -325,7 +325,9 @@ describe "JiakResource data conversion" do
     server         SERVER_URI
     group          'dogs'
     attr_accessor  :name, :birthdate
-    convert :birthdate => lambda{|value| Date.parse(value)}
+    attr_converter(:birthdate => {
+                     :write => lambda{|v| {:year => v.year, :yday => v.yday} },
+                     :read  => lambda{|v| Date::ordinal(v['year'],v['yday'])}})
     keygen { name }
     auto_manage
   end

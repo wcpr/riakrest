@@ -11,7 +11,9 @@ require 'date'
 class DateData
   include JiakData
   attr_accessor :name, :date
-  convert :date => lambda { |v| Date.parse(v) }
+  attr_converter(:date => {
+                   :write => lambda {|v| { :year => v.year, :yday => v.yday} },
+                   :read  => lambda {|v| Date::ordinal(v['year'],v['yday'])} } )
 end
 
 class PersonData

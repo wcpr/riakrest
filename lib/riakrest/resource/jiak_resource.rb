@@ -135,17 +135,16 @@ module RiakRest
       end
 
       # :call-seq:
-      #   JiakResource.convert(hash)
+      #   attr_converter(hash)
       #
-      # Specify a hash of optional Procs for converting the data values stored
-      # in Riak during the process of inflating returned Riak data into
-      # JiakResource objects. The hash values should be Procs used to convert
-      # the data attribute specified by the hash key. The Procs must accept one
-      # argument, the data value actually stored in Riak. The converted result
-      # will be the actual value of the data field inside the inflated
-      # JiakResource.
-      def convert(hash)
-        jiak.data.convert(hash)
+      # Specify a hash of optional Procs for converting data attribute values
+      # during reading and writing data to a Jiak server. Each hash key should
+      # be a data class attribute, with an associated value of a hash
+      # containing a write and/or a read Proc for use in converting data. Each
+      # Procs should accept one argument, the data value actually stored in
+      # Riak.
+      def attr_converter(hash)
+        jiak.data.attr_converter(hash)
       end
 
       # :call-seq:
